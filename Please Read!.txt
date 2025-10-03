@@ -1,0 +1,44 @@
+1. Create your virtual environment first for the storage of your libraries
+
+to create on mac:
+python3 -m venv venv
+
+on windows:
+python -m venv venv
+
+2. Activate your virtual environment
+
+on mac:
+source venv/bin/activate
+
+on windows:
+venv\Scripts\activate.bat
+
+3. Download all needed libraries for project
+
+If there are more needed libraries, inform Aaron nalang
+
+pip install -r requirements.txt
+
+
+To commit changes:
+
+git checkout -b <name ng branch>
+
+to push changes:
+git add .
+git commit -m ""
+git push
+
+
+To pull branch:
+
+git checkout main 
+
+git fetch --all
+
+git pull --all
+
+git pull origin main
+
+
