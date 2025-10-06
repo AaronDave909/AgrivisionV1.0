@@ -65,7 +65,7 @@ class SharedComponents:
         self.root.configure(fg_color=BG_COLOR)
 
     # use this def to create the title
-    def create_title(self, text="AGRIVISION v1.0", x=119, y=-20):
+    def create_title(self, text="AGRIVISION v1.0", x=119, y=0):
         if not hasattr(self, "title_label"):  # create only once
             self.title_label = ctk.CTkLabel(
                 self.root,
