@@ -1,0 +1,71 @@
+#Dito yung sa topdown window ng file viewer.
+
+
+import customtkinter as ctk
+from tkinter import messagebox
+import pdf_manager 
+
+# --- APP SETUP ---
+ctk.set_appearance_mode("System")
+ctk.set_default_color_theme("blue")
+
+app = ctk.CTk()
+app.title("📚 PDF Gallery")
+app.geometry("800x600")
+
+# --- FUNCTIONS ---
+def load_pdfs():
+    """Fetch and display PDFs in the scrollable frame."""
+    for widget in frame_gallery.winfo_children():
+        widget.destroy()
+
+    try:
+        pdfs = pdf_manager.get_pdf_list()
+    except FileNotFoundError as e:
+        messagebox.showerror("Error", str(e))
+        return
+
+    if not pdfs:
+        ctk.CTkLabel(frame_gallery, text="No PDFs found.", text_color="gray").pack(pady=10)
+        return
+
+    for pdf in pdfs:
+        frame = ctk.CTkFrame(frame_gallery, corner_radius=10)
+        frame.pack(padx=10, pady=10, fill="x")
+
+        title_lbl = ctk.CTkLabel(frame, text=f"📄 {pdf['title']}", font=ctk.CTkFont(size=14, weight="bold"))
+        title_lbl.pack(anchor="w", padx=10, pady=5)
+
+        pages_lbl = ctk.CTkLabel(frame, text=f"Pages: {pdf['pages']}", text_color="gray")
+        pages_lbl.pack(anchor="w", padx=10)
+
+        btn = ctk.CTkButton(frame, text="Open PDF", width=100,
+                            command=lambda path=pdf['path']: open_pdf_file(path))
+        btn.pack(anchor="e", padx=10, pady=5)
+
+
+def open_pdf_file(path):
+    """Wrapper for pdf_manager.open_pdf with error handling."""
+    try:
+        pdf_manager.open_pdf(path)
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
+
+
+# --- UI LAYOUT ---
+frame_top = ctk.CTkFrame(app, height=60)
+frame_top.pack(fill="x", pady=(10, 5), padx=10)
+
+label_title = ctk.CTkLabel(frame_top, text="PDF Gallery", font=ctk.CTkFont(size=20, weight="bold"))
+label_title.pack(side="left", padx=20)
+
+refresh_btn = ctk.CTkButton(frame_top, text="🔄 Refresh", width=100, command=load_pdfs)
+refresh_btn.pack(side="right", padx=20)
+
+frame_gallery = ctk.CTkScrollableFrame(app, label_text="Your PDFs")
+frame_gallery.pack(expand=True, fill="both", padx=10, pady=10)
+
+# --- INITIAL LOAD ---
+load_pdfs()
+
+app.mainloop()
