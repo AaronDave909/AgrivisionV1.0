@@ -102,24 +102,20 @@ class SharedComponents:
             anchor=anchor,
             font=BUTTON_FONT,
             fg_color=BUTTON_COLOR,
-            hover_color=BUTTON_HOVER,
+            hover_color=BUTTON_COLOR,
             corner_radius=8,
             command=command
         )
         button.place(x=x, y=y)
-        return button
 
-    def create_dashboard_buttons(self, buttons_config=DASHBOARD_BUTTONS_CONFIG):
-        self.buttons = []
-        for config in buttons_config:
-            btn = self.create_button(
-                text=config["text"],
-                x=config["x"],
-                y=config["y"],
-                width=config.get("width", 140),
-                height=config.get("height", 140),
-                anchor=config.get("anchor", "sw"),
-                command=config.get("command")
-            )
-            self.buttons.append(btn)
-        return self.buttons
+        def on_enter(event):
+            button.place_configure(y=y-5)  # Move up by 5 pixels
+
+        def on_leave(event):
+            button.place_configure(y=y)    # Move back to original position
+
+        button.bind("<Enter>", on_enter)
+        button.bind("<Leave>", on_leave)
+
+        return button
+        
