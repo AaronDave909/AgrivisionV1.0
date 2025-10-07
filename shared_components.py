@@ -1,11 +1,12 @@
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import font as tkfont
-from PIL import ImageFont
+from PIL import Image, ImageFont, ImageTk
 
 # Paths to custom font files
 FONT_BOLD = "Main Font Folder/AOTFShinGoProHeavy.otf"
 FONT_REGULAR = "Main Font Folder/AOTFShinGoProRegular.otf"
+
 
 def load_custom_font(path, size):
     try:
@@ -64,6 +65,17 @@ class SharedComponents:
         self.root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
         self.root.configure(fg_color=BG_COLOR)
 
+    def create_leaf_image(self, image_path="Image Assets/Leaf.png", x=5, y=5, size=(100, 100)):
+        leaf_img = Image.open(image_path).convert("RGBA")
+        leaf_img = leaf_img.resize(size)
+        bg_color = BUTTON_COLOR
+        background = Image.new("RGBA", leaf_img.size, bg_color)
+        background.paste(leaf_img, (0, 0), leaf_img)
+        self.leaf_photo = ImageTk.PhotoImage(background)
+        self.leaf_label = ctk.CTkLabel(self.root, image=self.leaf_photo, text="")
+        self.leaf_label.place(x=x, y=y)
+        self.leaf_label.image = self.leaf_photo  # Prevent garbage collection
+        return self.leaf_label
     # use this def to create the title
     def create_title(self, text="AGRIVISION v1.0", x=119, y=0):
         if not hasattr(self, "title_label"):  # create only once
@@ -93,7 +105,9 @@ class SharedComponents:
         return self.left_panel
 
     # use this def to create buttons
-    def create_button(self, text="Button", x=100, y=100, width=140, height=140, anchor="sw", command=None):
+    def create_button(self, text="Button", x=100, y=100, 
+                      width=140, height=140, anchor="sw", 
+                      command=None, image=None, compound="top"):
         button = ctk.CTkButton(
             self.root,
             width=width,
@@ -104,7 +118,9 @@ class SharedComponents:
             fg_color=BUTTON_COLOR,
             hover_color=BUTTON_COLOR,
             corner_radius=8,
-            command=command
+            command=command,
+            image=image,
+            compound=compound
         )
         button.place(x=x, y=y)
 

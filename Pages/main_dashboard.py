@@ -1,12 +1,14 @@
 from shared_components import SharedComponents
-from Pages.crop_count import show_crop_input_popup 
+from Pages.crop_count import show_crop_input_popup
+from PIL import Image, ImageTk
+import customtkinter as ctk 
 
 class MyDashboard(SharedComponents):
     def __init__(self):
         super().__init__()
         self.create_title()
         self.create_left_panel()
-        
+        self.create_leaf_image()
         self.crops_button = self.create_button(
             text="___\nCrops in Monitor\n", x=118, y=75, width=140, height=140,
             anchor="s"
@@ -19,8 +21,16 @@ class MyDashboard(SharedComponents):
                            anchor="s", 
                            command=None)
         
+
+        futures_img = Image.open("Image Assets/futures.png").resize((75, 78))
+        futures_photo = ImageTk.PhotoImage(futures_img, master=self.root)
+        self.futures_photo = futures_photo
+
         self.create_button(text="Manage Files\n", x=422, y=75, 
-                           command=None)
+                           command=None,
+                           image=self.futures_photo,
+                           compound="top",)
+        
         
         self.create_button(text="Analytics", x=121, y=232, 
                            width=205, height=229, anchor="nw",
