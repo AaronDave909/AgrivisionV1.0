@@ -32,17 +32,13 @@ def show_crop_input_popup(root, target_button):
         value = entry.get()
         if value.isdigit():
             num = int(value)
-            # Remove button text
             if hasattr(target_button, "number_frame") and target_button.number_frame is not None:
                 target_button.number_frame.destroy()
-            # Create new frame for the number
             frame = ctk.CTkFrame(target_button, fg_color="transparent")
             frame.place(relx=0.15, rely=0.2, anchor="nw")  # upper left
             num_label = ctk.CTkLabel(frame, text=str(num), font=("Arial", 32, "bold"), fg_color="transparent")
             num_label.pack()
-            # Store reference to frame for future removal
             target_button.number_frame = frame
-            # Keep button text
             target_button.configure(text="Crops in Monitor\n")
             popup.destroy()
         else:
