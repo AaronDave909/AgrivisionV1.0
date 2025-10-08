@@ -1,96 +1,154 @@
 import customtkinter as ctk
-import os
-from viewer import list_items, open_pdf  # Assuming viewer.py holds your functions
+from pathlib import Path
+import fitz  # PyMuPDF
+from viewer import list_items
+import re
 
 
-def open_file_manager(main_window):
+def extract_pdf_text(file_path):
+    """Extract readable text from a PDF."""
+    text = ""
+    try:
+        with fitz.open(file_path) as pdf:
+            for page in pdf:
+                text += page.get_text("text") + "\n"
+    except Exception as e:
+        text = f"Error reading PDF: {e}"
+    return text.strip() or "[No text found in this PDF]"
+
+
+def format_pdf_text(raw_text):
     """
-    Opens a file manager gallery for the '_reports_' folder.
-    Displays files/folders as clickable tiles in a grid layout.
+    Format the extracted PDF text into a structured, stylized layout.
+    - Bold section headers
+    - Align key-value pairs
+    - Keep clean spacing
     """
-    folder_name = "_reports_"
+    lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+    formatted = ""
 
-    # Hide main window (collapse it)
+    for line in lines:
+        # Detect headers like PLANT INFORMATION, DETECTION REPORT
+        if re.match(r"^[A-Z ]{4,}$", line):
+            formatted += f"\n\n**{line}**\n"
+        # Detect key-value pairs
+        elif ":" in line:
+            key, value = line.split(":", 1)
+            formatted += f"{key.strip()}: {value.strip()}\n"
+        else:
+            formatted += f"{line}\n"
+
+    return formatted.strip()
+
+
+def open_gallery(main_window, folder_name, title):
+    """Main gallery + inline PDF text viewer."""
     main_window.withdraw()
 
-    # Make sure the folder exists (directly handled here)
-    if not os.path.exists(folder_name):
-        os.makedirs(folder_name)
+    folder = Path(folder_name)
+    folder.mkdir(exist_ok=True)
 
-    # Create gallery window
+    # === Window setup ===
     manager = ctk.CTkToplevel()
-    manager.title("Reports File Manager Gallery")
-    manager.geometry("900x700")
+    manager.title(title)
+    manager.geometry("1024x600")
+    manager.resizable(False, False)
 
-    # Function to return to main window
     def return_to_main():
         manager.destroy()
-        main_window.deiconify()  # Show the main window again
+        main_window.deiconify()
 
-    # Top bar with return button
+    # === Top bar ===
     top_bar = ctk.CTkFrame(manager, fg_color="transparent")
-    top_bar.pack(fill="x", pady=10, padx=10)
+    top_bar.pack(fill="x", pady=5, padx=5)
+    ctk.CTkButton(top_bar, text="← Return", width=100, command=return_to_main).pack(anchor="w", padx=5)
 
-    back_button = ctk.CTkButton(top_bar, text="← Return", width=100, command=return_to_main)
-    back_button.pack(anchor="w")
+    # === Main split layout ===
+    container = ctk.CTkFrame(manager)
+    container.pack(fill="both", expand=True, padx=10, pady=10)
 
-    # Scrollable area
-    frame = ctk.CTkScrollableFrame(manager, width=880, height=620)
-    frame.pack(padx=10, pady=10, fill="both", expand=True)
+    # Gallery (left)
+    gallery_frame = ctk.CTkScrollableFrame(container, width=280, height=520)
+    gallery_frame.pack(side="left", fill="y", padx=(0, 10), pady=5)
 
-    # Get items from folder
+    # Viewer (right)
+    viewer_frame = ctk.CTkFrame(container, corner_radius=10)
+    viewer_frame.pack(side="right", fill="both", expand=True, pady=5)
+
+    viewer_title = ctk.CTkLabel(viewer_frame, text="Select a PDF to view its report",
+                                font=("Arial", 15, "bold"), anchor="w")
+    viewer_title.pack(fill="x", padx=10, pady=(10, 5))
+
+    viewer_text_frame = ctk.CTkScrollableFrame(viewer_frame, width=700, height=460)
+    viewer_text_frame.pack(fill="both", expand=True, padx=10, pady=5)
+
+    viewer_text_label = ctk.CTkTextbox(viewer_text_frame, wrap="word", font=("Consolas", 13))
+    viewer_text_label.pack(fill="both", expand=True, padx=10, pady=10)
+    viewer_text_label.configure(state="disabled")
+
+    def update_viewer(text, title_text):
+        """Render formatted text with styled headings."""
+        viewer_title.configure(text=f"📄 {title_text}")
+        viewer_text_label.configure(state="normal")
+        viewer_text_label.delete("1.0", "end")
+        viewer_text_label.insert("1.0", text)
+        viewer_text_label.configure(state="disabled")
+
+    close_btn = ctk.CTkButton(viewer_frame, text="Clear Viewer",
+                              command=lambda: update_viewer("", "Select a PDF to view its report"))
+    close_btn.pack(pady=(5, 10))
+
+    # === Gallery population ===
     items = list_items(folder_name)
-
     if not items:
-        ctk.CTkLabel(frame, text="The _reports_ folder is empty").pack(pady=20)
+        ctk.CTkLabel(gallery_frame, text=f"The {folder_name} folder is empty").pack(pady=20)
         return
 
-    # Emoji icons for file types
-    folder_icon = "📁"
-    pdf_icon = "📄"
-    file_icon = "📦"
+    icons = {"folder": "📁", "pdf": "📄", "other": "📦"}
+    columns = 1  # one per line
 
-    # Grid layout
-    columns = 4
+    def show_pdf_inline(file_path):
+        """Extract and show formatted PDF text."""
+        raw_text = extract_pdf_text(file_path)
+        formatted_text = format_pdf_text(raw_text)
+        update_viewer(formatted_text, Path(file_path).name)
+
     for index, item in enumerate(items):
-        item_path = os.path.join(folder_name, item)
-        ext = os.path.splitext(item)[1].lower()
+        item_path = folder / item
+        ext = item_path.suffix.lower()
+        icon = icons["pdf"] if ext == ".pdf" else icons["other"]
 
-        # Select icon
-        if os.path.isdir(item_path):
-            icon = folder_icon
-        elif ext == ".pdf":
-            icon = pdf_icon
-        else:
-            icon = file_icon
+        # Tile
+        tile = ctk.CTkFrame(gallery_frame, width=260, height=60, corner_radius=10)
+        tile.grid(row=index // columns, column=index % columns, padx=10, pady=5, sticky="nsew")
 
-        # Tile container
-        tile = ctk.CTkFrame(frame, width=180, height=140, corner_radius=12)
-        tile.grid(row=index // columns, column=index % columns, padx=10, pady=10, sticky="nsew")
+        def on_enter(e, t=tile): t.configure(fg_color="#2a2d2e")
+        def on_leave(e, t=tile): t.configure(fg_color="transparent")
+        tile.bind("<Enter>", on_enter)
+        tile.bind("<Leave>", on_leave)
 
-        # Icon label
-        icon_label = ctk.CTkLabel(tile, text=icon, font=("Arial", 48))
-        icon_label.pack(pady=(10, 0))
+        # Icon + label
+        ctk.CTkLabel(tile, text=icon, font=("Arial", 28)).pack(side="left", padx=10)
+        display_name = item if len(item) <= 25 else item[:22] + "..."
+        ctk.CTkLabel(tile, text=display_name, anchor="w").pack(side="left", padx=5)
 
-        # File/folder name label
-        display_name = item if len(item) <= 20 else item[:17] + "..."
-        name_label = ctk.CTkLabel(tile, text=display_name, wraplength=160)
-        name_label.pack(pady=(5, 10))
-
-        # Click handlers
-        for widget in (tile, icon_label, name_label):
-            widget.bind("<Button-1>", lambda e, path=item_path: open_pdf(path))
+        if ext == ".pdf":
+            tile.bind("<Button-1>", lambda e, path=item_path: show_pdf_inline(path))
+            for child in tile.winfo_children():
+                child.bind("<Button-1>", lambda e, path=item_path: show_pdf_inline(path))
 
 
 def main_app():
-    """Main GUI entry point."""
+    """Main entry point."""
     ctk.set_appearance_mode("dark")
     app = ctk.CTk()
     app.title("Main App")
     app.geometry("400x200")
 
-    open_button = ctk.CTkButton(app, text="Open Reports Gallery", command=lambda: open_file_manager(app))
-    open_button.pack(expand=True, pady=40)
+    ctk.CTkButton(app, text="Reports Gallery",
+                  command=lambda: open_gallery(app, "_reports_", "Reports Gallery")).pack(expand=True, pady=5)
+    ctk.CTkButton(app, text="Diseases Gallery",
+                  command=lambda: open_gallery(app, "_diseases_", "Diseases Gallery")).pack(expand=True, pady=5)
 
     app.mainloop()
 
