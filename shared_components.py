@@ -14,8 +14,8 @@ BUTTON_HOVER = "#383C4E"
 
 # Use system Helvetica fonts
 custom_font_title = ("Arial", 32, "bold")
-custom_font_bold = ("Arial", 12, "bold")
-custom_font_regular = ("Arial", 12)
+custom_font_bold = ("Arial", 14, "bold")
+custom_font_regular = ("Arial", 14)
 
 class SharedComponents:
     def __init__(self):

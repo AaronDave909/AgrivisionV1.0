@@ -1,6 +1,6 @@
 from shared_components import SharedComponents as SC
 from Pages.crop_count import show_crop_input_popup
-from Pages.gallery import GalleryPage
+from Pages.gallery import GalleryPage, gallery_preview
 from PIL import Image, ImageTk
 import customtkinter as ctk
 
@@ -50,6 +50,7 @@ class MyDashboard(SC):
         self.create_button(
             text="Manage Files\n",
             x=422, y=75,
+            anchor="s",
             command=None,
             image=futures_photo,
             compound="top"
@@ -57,22 +58,39 @@ class MyDashboard(SC):
         
         # Analytics Button
         self.create_button(
-            text="\n  Analytics",
+            text="Analytics",
             x=121, y=232,
             width=205, height=232,
-            anchor="nw",
+            anchor="n",
             command=None
         )
         
+
+        gallery_photo, file_label = gallery_preview(self.root)
+
         # Capture Gallery Button
         self.create_button(
-            text="\n  Capture Gallery",
+            text="Capture Gallery",
             x=340, y=232,
-            width=222, height=229,
-            anchor="nw",
+            width=222, height=232,
+            anchor="n",
+            image=gallery_photo,
+            compound="bottom",
             command=self.open_gallery
         )
-        
+
+        frame = ctk.CTkFrame(self.root, fg_color="#2A2E3F", corner_radius=8)
+        frame.place(x=443, y=430)  # position only, no width/height fixed
+
+        # === Label for filename (auto-sizes to text) ===
+        label = ctk.CTkLabel(
+            frame,
+            text=f"{file_label}",
+            justify="center",
+            text_color="white",
+        )
+        label.pack(anchor="center")  # left-align and let it auto-size
+
         # Disease Record Panel
         self.create_panel(
             text="\nDisease Record History",
