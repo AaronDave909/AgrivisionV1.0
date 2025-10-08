@@ -6,7 +6,7 @@ import random
 
 def gallery_preview(root):
     """Returns a CTkImage and text to display as part of a button preview."""
-    gallery_folder = "gallery_files"
+    gallery_folder = "Page_files/gallery_files"
     random_image = None
     gallery_photo = None
     file_label = ""
@@ -25,7 +25,7 @@ def gallery_preview(root):
             # Extract filename (without extension)
             file_label = os.path.splitext(random_image)[0]
         else:
-            print("No JPG images found in gallery_files.")
+            print("No JPG images found in Page_files/gallery_files.")
     else:
         print(f"Folder '{gallery_folder}' not found.")
 
@@ -81,7 +81,7 @@ class GalleryPage(SC):
         # Load the gallery images
         self.load_gallery_images()
 
-    def load_gallery_images(self, folder_path="gallery_files"):
+    def load_gallery_images(self, folder_path="Page_files/gallery_files"):
         panel_width = 197.33
         panel_height = 190.45
         image_width = 141

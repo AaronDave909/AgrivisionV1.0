@@ -3,6 +3,7 @@ from Pages.crop_count import show_crop_input_popup
 from Pages.gallery import GalleryPage, gallery_preview
 from PIL import Image, ImageTk
 import customtkinter as ctk
+import os
 
 class MyDashboard(SC):
 
@@ -27,6 +28,17 @@ class MyDashboard(SC):
         # Settings Button
         self.settings_button()
 
+        # === Read saved crop count from file ===
+        crops_file = os.path.join("Page_files", "crops_monitored.txt")
+        if os.path.exists(crops_file):
+            try:
+                with open(crops_file, "r") as f:
+                    saved_crops = int(f.read().strip())
+            except ValueError:
+                saved_crops = 0
+        else:
+            saved_crops = 0
+
         # Crops Button
         self.crops_button = self.create_button(
             text="Crops in Monitor\n",
@@ -35,6 +47,18 @@ class MyDashboard(SC):
             anchor="s",
             command=lambda: show_crop_input_popup(self.root, self.crops_button)
         )
+
+        if saved_crops > 0:
+            frame = ctk.CTkFrame(self.crops_button, fg_color="transparent")
+            frame.place(relx=0.15, rely=0.2, anchor="nw")
+            num_label = ctk.CTkLabel(
+                frame,
+                text=str(saved_crops),
+                font=("Arial", 32, "bold"),
+                fg_color="transparent"
+            )
+            num_label.pack()
+            self.crops_button.number_frame = frame
         
         # Recent Disease Button
         self.create_button(
