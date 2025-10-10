@@ -80,7 +80,7 @@ class SharedComponents:
         btn.place(x=x, y=y, anchor="center")
         return btn
 
-    def settings_button(self):
+    def settings_button(self, command=None):
         settings_img = Image.open("_image_assets/Settings.png").resize((80, 80))
         settings_photo = ctk.CTkImage(light_image=settings_img, dark_image=settings_img, size=(80, 80)) 
 
@@ -91,7 +91,7 @@ class SharedComponents:
             height=80,
             image=settings_photo,
             compound="top",
-            command=None,
+            command=command,
             fg_color="#2A2E3F",
             hover_color="#2A2E3F",
             corner_radius=0
