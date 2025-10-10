@@ -1,6 +1,7 @@
 from shared_components import SharedComponents as SC
 from Pages.crop_count import show_crop_input_popup
 from Pages.gallery import GalleryPage, gallery_preview
+from Pages.settings import SettingsPage  # Import here to avoid circular import
 from PIL import Image, ImageTk
 import customtkinter as ctk
 import os
@@ -8,13 +9,19 @@ import os
 class MyDashboard(SC):
 
     def open_gallery(self):
-        """Opens the Gallery Page while keeping the same window position and size."""
         geometry = self.root.geometry()  # Save current window geometry
         self.root.destroy()
 
         gallery = GalleryPage()
         gallery.root.geometry(geometry)  # Apply same geometry (prevents window 'jumping')
         gallery.root.mainloop()
+
+    def open_settings(self):
+        geometry = self.root.geometry()
+        self.root.destroy()
+        settings = SettingsPage()
+        settings.root.geometry(geometry)
+        settings.root.mainloop()
 
     def __init__(self):
         super().__init__()
@@ -26,7 +33,7 @@ class MyDashboard(SC):
         self.create_record_button(x=107 / 2, y=480 / 2, command=None)
         
         # Settings Button
-        self.settings_button()
+        self.settings_button(command=self.open_settings)
 
         # === Read saved crop count from file ===
         crops_file = os.path.join("Page_files", "crops_monitored.txt")
