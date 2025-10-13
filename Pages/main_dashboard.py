@@ -56,13 +56,14 @@ class MyDashboard(SC):
         )
 
         if saved_crops > 0:
-            frame = ctk.CTkFrame(self.crops_button, fg_color="transparent")
+            frame = ctk.CTkFrame(self.crops_button, fg_color="#2A2E3F")
             frame.place(relx=0.15, rely=0.2, anchor="nw")
             num_label = ctk.CTkLabel(
                 frame,
                 text=str(saved_crops),
                 font=("Arial", 32, "bold"),
-                fg_color="transparent"
+                text_color="white",
+                fg_color="#2A2E3F"
             )
             num_label.pack()
             self.crops_button.number_frame = frame

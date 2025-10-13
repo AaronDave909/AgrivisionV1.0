@@ -1,6 +1,5 @@
 import os
 import customtkinter as ctk
-from shared_components import SharedComponents
 
 def show_crop_input_popup(root, target_button):
     popup_width = 300
@@ -29,15 +28,24 @@ def show_crop_input_popup(root, target_button):
     x = root_x + (root_width // 2) - (popup_width // 2)
     y = root_y + (root_height // 2) - (popup_height // 2)
 
-    # Create popup window
+    # Create popup window with enforced focus
     popup = ctk.CTkToplevel(root)
+    popup.withdraw()  # Hide initially
     popup.title("Crops in Monitor")
     popup.geometry(f"{popup_width}x{popup_height}+{x}+{y}")
-    popup.grab_set()
-    popup.lift()
     popup.configure(fg_color="#202332")
 
-    label = ctk.CTkLabel(popup, text="Enter number of crops:")
+    # Forcefully bring popup to front and grab input
+    popup.after(50, lambda: (
+        popup.deiconify(),               # Show window
+        popup.lift(),                    # Bring to front
+        popup.focus_force(),             # Try to grab keyboard
+        popup.attributes('-topmost', True),  # Keep on top temporarily
+        popup.after(200, lambda: popup.attributes('-topmost', False)),  # Release topmost
+        popup.grab_set()                 # Lock interactions to popup
+    ))
+
+    label = ctk.CTkLabel(popup, text="Enter number of crops:", text_color="white")
     label.pack(pady=10)
 
     entry = ctk.CTkEntry(
@@ -69,6 +77,7 @@ def show_crop_input_popup(root, target_button):
                 frame,
                 text=str(num),
                 font=("Arial", 32, "bold"),
+                text_color="white",
                 fg_color="transparent"
             )
             num_label.pack()
@@ -106,4 +115,5 @@ def show_crop_input_popup(root, target_button):
     )
     return_btn.pack(pady=5)
 
-    entry.focus_set()
+    # Make sure entry gets keyboard input ASAP
+    popup.after(100, entry.focus_set)

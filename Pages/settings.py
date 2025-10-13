@@ -18,7 +18,7 @@ class SettingsPage(SC):
         self.create_memory_usage_bar()
         self.create_brightness_slider()  # Added below storage bar
 
-        label = ctk.CTkLabel(self.root, text="Agrivision v1.0", font=("Arial", 12))
+        label = ctk.CTkLabel(self.root, text="Agrivision v1.0", font=("Arial", 12), text_color="white")
         label.place(x=123, y=449)
         self.load_saved_brightness()
 
@@ -28,7 +28,7 @@ class SettingsPage(SC):
         free_gb = disk.free / (1024 ** 3)
         percent_used = disk.percent
 
-        label = ctk.CTkLabel(self.root, text="System Storage", font=("Arial", 14, "bold"))
+        label = ctk.CTkLabel(self.root, text="System Storage", font=("Arial", 14, "bold"), text_color="white")
         label.place(x=123, y=128)
 
         self.storage_bar = ctk.CTkProgressBar(self.root, width=300, progress_color="white")
@@ -36,11 +36,11 @@ class SettingsPage(SC):
         self.storage_bar.set(percent_used / 100)
 
         usage_text = f"Used: {used_gb:.1f} GB | Free: {free_gb:.1f} GB"
-        usage_label = ctk.CTkLabel(self.root, text=usage_text, font=("Arial", 12))
+        usage_label = ctk.CTkLabel(self.root, text=usage_text, font=("Arial", 12), text_color="white")
         usage_label.place(x=123, y=152)
 
     def create_brightness_slider(self):
-        brightness_label = ctk.CTkLabel(self.root, text="Brightness", font=("Arial", 14, "bold"))
+        brightness_label = ctk.CTkLabel(self.root, text="Brightness", font=("Arial", 14, "bold"), text_color="white")
         brightness_label.place(x=123, y=66)
 
         self.brightness_slider = ctk.CTkSlider(
