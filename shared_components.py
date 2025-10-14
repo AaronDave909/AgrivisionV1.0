@@ -15,7 +15,7 @@ BUTTON_HOVER = "#383C4E"
 ADJUSTED_HEIGHT_MARGIN_PIXELS = 20
 
 # Use system Helvetica fonts (Stored as lists to allow in-place size modification)
-custom_font_title = ["Arial", 42, "bold"]
+custom_font_title = ["Arial", 50, "bold"]
 custom_font_bold = ["Arial", 23, "bold"]
 custom_font_regular = ["Arial", 20]
 
@@ -56,8 +56,6 @@ class SharedComponents:
         # 4. Calculate scaling factors based on the final window size
         self.scale_x = self.actual_width / ORIGINAL_WIDTH
         self.scale_y = self.actual_height / ORIGINAL_HEIGHT
-        
-        # --- END CRITICAL FIX ---
         
         if not SharedComponents._fonts_scaled:
             

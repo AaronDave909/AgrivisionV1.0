@@ -132,7 +132,7 @@ class MyDashboard(SC):
         if file_label not in ("Gallery Empty", "No Images"):
             frame_corner_radius = self._scale_value(8, 'x')
             file_frame = ctk.CTkFrame(self.gallery_button, fg_color="#2A2E3F", corner_radius=frame_corner_radius)
-            file_frame.place(relx=0.5, rely=0.9, anchor="s")
+            file_frame.place(relx=0.5, rely=1.0, anchor="s")
 
             label = ctk.CTkLabel(
                 file_frame,
@@ -142,7 +142,7 @@ class MyDashboard(SC):
                 text_color="white",
             )
             # Use scaled padding
-            label.pack(padx=self._scale_value(5, 'x'), pady=self._scale_value(2, 'y')) 
+            label.pack(padx=self._scale_value(5, 'x'), pady=self._scale_value(1, 'y')) 
 
         # Disease Record Panel
         self.create_panel(

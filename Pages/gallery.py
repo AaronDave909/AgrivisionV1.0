@@ -10,8 +10,8 @@ def gallery_preview(root):
         scale_x = root.scale_x
         scale_y = root.scale_y
     else:
-        scale_x = 2.0
-        scale_y = 2.0
+        scale_x = 2.5
+        scale_y = 2.5
 
     def scale_val(value, axis='x'):
         factor = scale_x if axis == 'x' else scale_y
@@ -52,6 +52,7 @@ def gallery_preview(root):
 class GalleryPage(SC):
     def __init__(self):
         super().__init__()
+        self.root.update_idletasks()
         self.create_title(text="Capture Gallery", x=119, y=0)
         self.create_left_panel()
         self.create_leaf_image()
