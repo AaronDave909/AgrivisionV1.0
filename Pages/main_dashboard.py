@@ -5,9 +5,7 @@ from Pages.settings import SettingsPage
 from PIL import Image, ImageTk
 import customtkinter as ctk
 import os
-
-# Import scaled font and original size for reference
-from shared_components import custom_font_bold, custom_font_title, ORIGINAL_WIDTH, ORIGINAL_HEIGHT
+from shared_components import custom_font_bold, custom_font_title, custom_font_regular, ORIGINAL_WIDTH, ORIGINAL_HEIGHT
 
 class MyDashboard(SC):
 
@@ -23,12 +21,14 @@ class MyDashboard(SC):
 
     def __init__(self):
         super().__init__()
+        
+        self.root.update_idletasks()
+        
         self.create_title()
         self.create_left_panel()
         self.create_leaf_image()
         
         # --- Helper for scaled coordinates ---
-        # Note: You can use self._scale_value directly, but these helpers keep the lines clean.
         def scale_x(val): return self._scale_value(val, 'x')
         def scale_y(val): return self._scale_value(val, 'y')
         # ---
@@ -42,7 +42,7 @@ class MyDashboard(SC):
 
         scale_x_factor = self.scale_x
         scale_y_factor = self.scale_y
-        scaled_title_font = tuple(SC.custom_font_title)
+        scaled_title_font = tuple(custom_font_title)
 
         # === Read saved crop count from file ===
         crops_file = os.path.join("Page_files", "crops_monitored.txt")
@@ -60,8 +60,7 @@ class MyDashboard(SC):
             text="Crops in Monitor\n",
             x=118, y=75,
             width=140, height=140,
-            anchor="s",
-            # --- UPDATED COMMAND CALL ---
+            anchor="s", # Changed anchor for vertical consistency
             command=lambda: show_crop_input_popup(
                 self.root, 
                 self.crops_button,
@@ -88,6 +87,7 @@ class MyDashboard(SC):
         self.create_button(
             text="Recent Disease\nDetected",
             x=270, y=75,
+            width=140, height=140, # Added width/height for consistency
             anchor="s",
             command=None
         )
@@ -98,6 +98,7 @@ class MyDashboard(SC):
         self.create_button(
             text="Manage Files\n",
             x=422, y=75,
+            width=140, height=140, # Added width/height for consistency
             anchor="s",
             command=None,
             image=futures_photo,
@@ -113,11 +114,11 @@ class MyDashboard(SC):
             command=None
         )
         
-
+        # Get Gallery Preview data
         gallery_photo, file_label = gallery_preview(self.root)
 
         # Capture Gallery Button
-        self.create_button(
+        self.gallery_button = self.create_button(
             text="Capture Gallery",
             x=340, y=232,
             width=222, height=232,
@@ -126,22 +127,22 @@ class MyDashboard(SC):
             compound="bottom",
             command=self.open_gallery
         )
+        
+        # Image Filename Label (placed relative to the Gallery Button)
+        if file_label not in ("Gallery Empty", "No Images"):
+            frame_corner_radius = self._scale_value(8, 'x')
+            file_frame = ctk.CTkFrame(self.gallery_button, fg_color="#2A2E3F", corner_radius=frame_corner_radius)
+            file_frame.place(relx=0.5, rely=0.9, anchor="s")
 
-        # === FIX 2: Scale the frame position and corner radius ===
-        frame_corner_radius = self._scale_value(8, 'x')
-        frame = ctk.CTkFrame(self.root, fg_color="#2A2E3F", corner_radius=frame_corner_radius)
-        frame.place(x=scale_x(443), y=scale_y(430))
-
-        # === FIX 3: Scale the label's font ===
-        label = ctk.CTkLabel(
-            frame,
-            text=f"{file_label}",
-            justify="center",
-            # Use the SCALED global font (converted to tuple)
-            font=tuple(SC.custom_font_regular), # Assuming SC uses custom_font_regular
-            text_color="white",
-        )
-        label.pack(anchor="center")
+            label = ctk.CTkLabel(
+                file_frame,
+                text=f"{file_label}",
+                justify="center",
+                font=tuple(custom_font_regular), 
+                text_color="white",
+            )
+            # Use scaled padding
+            label.pack(padx=self._scale_value(5, 'x'), pady=self._scale_value(2, 'y')) 
 
         # Disease Record Panel
         self.create_panel(
@@ -152,32 +153,26 @@ class MyDashboard(SC):
         )
         
         # Dock Mode Button
-        # === FIX 4: Use scaled custom_font_bold for consistency ===
         self.create_button(
             text="Dock Mode",
             x=572, y=368,
             width=217, height=37,
             anchor="center",
-            font=tuple(custom_font_bold), # Use scaled font
+            font=tuple(custom_font_bold),
             command=None
         )
         
         # Diseases Button
-        # === FIX 5: Use scaled custom_font_bold for consistency ===
         self.create_button(
             text="Diseases",
-            x=572, y=424,
+            x=572, y=414,
             width=217, height=37,
             anchor="center",
-            font=tuple(custom_font_bold), # Use scaled font
+            font=tuple(custom_font_bold), 
             command=None
         )
 
         # Help Button (rounded)
-        # === FIX 6: Use scaled font (or manually scale the size if necessary) ===
-        # Here we manually scale the font size, using the general scale factor for robustness.
-        # It's better to use a dedicated scaled variable from SC if available. 
-        # Since we only have custom_font_bold, we'll manually scale the 20pt size.
         scaled_help_font_size = self._scale_value(20, 'y') 
         scaled_help_font = ("Arial", scaled_help_font_size, "bold")
         
@@ -186,11 +181,10 @@ class MyDashboard(SC):
             x=674, y=21,
             width=114, height=37,
             anchor="center",
-            font=scaled_help_font, # Use the manually scaled font tuple
+            font=scaled_help_font,
             corner_radius=50,
             command=None
         )
 
     def run(self):
-        """Runs the main loop for the dashboard."""
         self.root.mainloop()

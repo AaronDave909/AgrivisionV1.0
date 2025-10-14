@@ -12,6 +12,8 @@ BG_COLOR = "#202332"
 BUTTON_COLOR = "#2A2E3F"
 BUTTON_HOVER = "#383C4E"
 
+ADJUSTED_HEIGHT_MARGIN_PIXELS = 20
+
 # Use system Helvetica fonts (Stored as lists to allow in-place size modification)
 custom_font_title = ["Arial", 42, "bold"]
 custom_font_bold = ["Arial", 23, "bold"]
@@ -19,10 +21,6 @@ custom_font_regular = ["Arial", 20]
 
 class SharedComponents:
 
-    custom_font_title = ["Arial", 42, "bold"]
-    custom_font_bold = ["Arial", 23, "bold"]
-    custom_font_regular = ["Arial", 20]
-    # Class-level flag to ensure fonts are scaled only once
     _fonts_scaled = False
 
     def _scale_value(self, value, axis='x'):
@@ -33,27 +31,38 @@ class SharedComponents:
         return round(value * factor)
 
     def _calculate_scaling_factors(self):
-        """Sets the root to fullscreen and calculates scaling factors."""
+        """Sets window geometry to fill screen (minus margin) and calculates scaling factors."""
         
-        # Set the window to fullscreen
-        self.root.attributes('-fullscreen', True)
+        # Get actual screen dimensions
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+
+        # Calculate the scaled margin based on the screen's size
+        estimated_scale_y = screen_height / ORIGINAL_HEIGHT
+        scaled_margin = round(ADJUSTED_HEIGHT_MARGIN_PIXELS * estimated_scale_y)
+        
+        # --- START CRITICAL FIX ---
+        
+        # 1. Determine the final desired usable window size
+        self.actual_width = screen_width
+        self.actual_height = screen_height - scaled_margin
+        
+        # 2. Set geometry to the REDUCED height. This creates the space at the bottom.
+        self.root.geometry(f"{self.actual_width}x{self.actual_height}+0+0") 
+        
+        # 3. Update the window to make sure the new geometry is registered
         self.root.update_idletasks()
         
-        # Get actual dimensions after fullscreen is set
-        self.actual_width = self.root.winfo_width()
-        self.actual_height = self.root.winfo_height()
-
-        # Calculate screen scaling factors
+        # 4. Calculate scaling factors based on the final window size
         self.scale_x = self.actual_width / ORIGINAL_WIDTH
         self.scale_y = self.actual_height / ORIGINAL_HEIGHT
         
-        # --- FIX: One-Time, Capped Font Scaling ---
+        # --- END CRITICAL FIX ---
+        
         if not SharedComponents._fonts_scaled:
             
-            # Use the average scale factor
             scale_avg = (self.scale_x + self.scale_y) / 2
             
-            # Cap the font scale factor to prevent fonts from becoming too large (e.g., max 30% increase)
             FONT_MAX_CAP = 1.3
             font_scale_factor = min(scale_avg, FONT_MAX_CAP)
             
@@ -61,7 +70,6 @@ class SharedComponents:
             
             def scale_font(font_list):
                 name, size, *styles = font_list
-                # Scale the font size and update the list in place
                 new_size = round(size * font_scale_factor)
                 font_list[1] = new_size 
 
@@ -69,18 +77,14 @@ class SharedComponents:
             scale_font(custom_font_bold)
             scale_font(custom_font_regular)
             
-            SharedComponents._fonts_scaled = True # Set flag after scaling
+            SharedComponents._fonts_scaled = True 
 
     def __init__(self):
         self.root = ctk.CTk()
         self.root.title("Agrivision Dashboard")
         self.root.configure(fg_color=BG_COLOR)
         
-        # --- FIX: Set fullscreen and calculate scaling on initialization ---
         self._calculate_scaling_factors()
-
-
-    # --- Component Creation Methods (All scaled and using tuple(font)) ---
 
     def create_leaf_image(self, image_path="_image_assets/Leaf.png", x=5, y=5, size=(100, 100)):
         # Scale position and size
@@ -118,7 +122,7 @@ class SharedComponents:
         return self.title_label
 
     def create_left_panel(self):
-        # Scale width, height is set to actual_height
+        # Scale width, height is set to actual_height (the reduced height)
         scaled_width = self._scale_value(LEFT_PANEL_WIDTH, 'x')
         scaled_height = self.actual_height 
 
@@ -232,11 +236,7 @@ class SharedComponents:
         return btn
 
     def go_back_to_dashboard(self):
-        # Removed geometry saving/loading as the app is always fullscreen
         self.root.destroy()
-        # Note: You need to ensure Pages.main_dashboard is accessible here
-        # E.g., from Pages.main_dashboard import MyDashboard
-        # If your environment is correct, this will work:
         from Pages.main_dashboard import MyDashboard 
         dashboard = MyDashboard()
         dashboard.root.mainloop()
