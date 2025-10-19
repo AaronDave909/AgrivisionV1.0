@@ -1,9 +1,12 @@
 import customtkinter as ctk
 from PIL import Image
-from shared_components import SharedComponents as SC, custom_font_regular # Import scaled font
+from shared_components import SharedComponents as SC, custom_font_regular
 import os
 import random
+# NEW: Import the analysis page to switch to it
+from Pages.analysis_page import AnalysisPage 
 
+# ... (No changes to gallery_preview function) ...
 def gallery_preview(root):
     
     if hasattr(root, 'scale_x') and hasattr(root, 'scale_y'):
@@ -58,12 +61,12 @@ class GalleryPage(SC):
         self.create_leaf_image()
         self.undo_button(command=self.go_back_to_dashboard)
         
-        # Define helper functions for cleaner scaling calls
         self.scale_x_val = lambda val: self._scale_value(val, 'x')
         self.scale_y_val = lambda val: self._scale_value(val, 'y')
 
         self.create_scrollable_gallery()
-
+        
+    # ... (No changes to create_scrollable_gallery) ...
     def create_scrollable_gallery(self):
         
         scaled_x_start = self.scale_x_val(120)
@@ -104,12 +107,11 @@ class GalleryPage(SC):
 
     def load_gallery_images(self, folder_path="Page_files/gallery_files"):
         
-        # Original dimensions:
         ORIGINAL_PANEL_WIDTH = 197.33
         ORIGINAL_PANEL_HEIGHT = 190.45
         ORIGINAL_IMAGE_WIDTH = 141
         ORIGINAL_IMAGE_HEIGHT = 146
-        ORIGINAL_SPACING = 10 # Used for grid padx/pady
+        ORIGINAL_SPACING = 10
         
         panel_width = self.scale_x_val(ORIGINAL_PANEL_WIDTH)
         panel_height = self.scale_y_val(ORIGINAL_PANEL_HEIGHT)
@@ -117,7 +119,7 @@ class GalleryPage(SC):
         image_height = self.scale_y_val(ORIGINAL_IMAGE_HEIGHT)
         spacing = self.scale_x_val(ORIGINAL_SPACING) 
 
-        max_per_row = 3 # This is layout logic, not a dimension, so it doesn't scale
+        max_per_row = 3
 
         if not os.path.exists(folder_path):
             print(f"Folder '{folder_path}' not found.")
@@ -132,6 +134,12 @@ class GalleryPage(SC):
 
         for index, filename in enumerate(jpg_files):
             file_path = os.path.join(folder_path, filename)
+            
+            # NEW: Check if the corresponding JSON file exists
+            json_path = os.path.splitext(file_path)[0] + ".json"
+            if not os.path.exists(json_path):
+                print(f"⚠️ Warning: Missing JSON for {filename}. Skipping.")
+                continue # Skip this file as it has no data
 
             # Load and resize image
             img = Image.open(file_path)
@@ -148,7 +156,6 @@ class GalleryPage(SC):
                 fg_color="#2A2E3F", 
                 corner_radius=self.scale_x_val(10)
             )
-            # Use scaled spacing for padx/pady
             frame.grid(row=row, column=col, padx=spacing, pady=spacing)
 
             # Image button
@@ -160,7 +167,8 @@ class GalleryPage(SC):
                 height=image_height,
                 fg_color="transparent",
                 hover_color="#3B3F51",
-                command=lambda path=file_path: print(f"Clicked: {path}")
+                # MODIFIED: Change the command to call our new function
+                command=lambda path=file_path: self.open_analysis_view(path)
             )
             img_button.image = ctk_img
             img_button.place(relx=0.5, rely=0.45, anchor="center")
@@ -174,3 +182,11 @@ class GalleryPage(SC):
                 font=scaled_name_font 
             )
             name_label.place(relx=0.5, rely=0.9, anchor="center")
+
+    # NEW: Function to switch from Gallery to Analysis page
+    def open_analysis_view(self, image_path):
+        """Destroys the gallery and opens the analysis page in view-only mode."""
+        self.root.destroy()
+        # Pass the path to the image and set view_only=True
+        app = AnalysisPage(image_path=image_path, view_only=True)
+        app.root.mainloop()

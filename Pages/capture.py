@@ -59,7 +59,7 @@ class CapturePage(SC):
     def open_camera(self):
         if self.cap and self.cap.isOpened():
              self.cap.release()
-        self.cap = cv2.VideoCapture(0) # For Pi, may need to try 0 or use a GStreamer pipeline
+        self.cap = cv2.VideoCapture(1) # For Pi, may need to try 0 or use a GStreamer pipeline
         if not self.cap.isOpened():
             self.camera_label.configure(text="Camera not found or busy", text_color="red")
             self.record_button.configure(state="disabled")
@@ -116,7 +116,7 @@ class CapturePage(SC):
             self.cleanup_camera()
             self.root.destroy()
             from Pages.analysis_page import AnalysisPage
-            analysis_app = AnalysisPage(captured_image_path=temp_path)
+            analysis_app = AnalysisPage(image_path=temp_path, view_only=False)
             analysis_app.root.mainloop()
             
     def cleanup_camera(self):
