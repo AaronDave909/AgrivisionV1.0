@@ -4,7 +4,6 @@ from PIL import Image, ImageTk
 import datetime
 import os
 
-# Mock external function (replace with your real one)
 def disease_detector(image_path):
     # This function returns a code like 'ABC', 'XYZ', or None
     return "ABC"  # For testing purposes
@@ -30,9 +29,7 @@ class CameraApp(ctk.CTk):
         # UI setup
         self.build_main_window()
 
-    # -------------------------
-    # 🪟 MAIN CAMERA WINDOW
-    # -------------------------
+
     def build_main_window(self):
         for widget in self.winfo_children():
             widget.destroy()
@@ -52,11 +49,8 @@ class CameraApp(ctk.CTk):
         self.back_btn = ctk.CTkButton(btn_frame, text="⬅ Back", command=self.back_to_camera)
         self.back_btn.grid(row=0, column=2, padx=10)
 
-    # -------------------------
-    # 🎥 OPEN CAMERA
-    # -------------------------
     def open_camera(self):
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(1)
         if not self.cap.isOpened():
             print("❌ Could not open camera.")
             return
@@ -78,9 +72,6 @@ class CameraApp(ctk.CTk):
         if self.running:
             self.after(10, self.update_frame)
 
-    # -------------------------
-    # 📸 CAPTURE IMAGE
-    # -------------------------
     def capture_image(self):
         if self.current_frame is not None:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
@@ -91,9 +82,6 @@ class CameraApp(ctk.CTk):
             print(f"✅ Image captured: {temp_path}")
             self.run_analysis()
 
-    # -------------------------
-    # 🔬 RUN DISEASE ANALYSIS
-    # -------------------------
     def run_analysis(self):
         if self.captured_image_path:
             print("🧠 Running disease analysis...")

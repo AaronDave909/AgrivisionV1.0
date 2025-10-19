@@ -1,9 +1,36 @@
 import os
 import customtkinter as ctk
 
-def show_crop_input_popup(root, target_button):
-    popup_width = 300
-    popup_height = 180
+# The function now accepts the scaling factors and the scaled font
+def show_crop_input_popup(root, target_button, scale_x_factor, scale_y_factor, scaled_title_font):
+
+    # --- Scaling Helper ---
+    def scale_val(value, axis='x'):
+        factor = scale_x_factor if axis == 'x' else scale_y_factor
+        return round(value * factor)
+    # ---
+
+    # --- Scale the original fixed dimensions ---
+    ORIGINAL_POPUP_WIDTH = 300
+    ORIGINAL_POPUP_HEIGHT = 180
+    
+    # 1. Calculate base scaled dimensions first
+    popup_width = scale_val(ORIGINAL_POPUP_WIDTH, 'x')
+    popup_height = scale_val(ORIGINAL_POPUP_HEIGHT, 'y')
+
+    # 2. THEN calculate dimensions dependent on the popup size
+    BUTTON_WIDTH_RATIO = 0.8
+    scaled_button_width = round(popup_width * BUTTON_WIDTH_RATIO) 
+    
+    # Define internal font size (Original 14pt bold)
+    scaled_label_font_size = scale_val(14, 'y')
+    # Assuming you want bold for the button/label text inside the popup:
+    scaled_label_font = ("Arial", scaled_label_font_size, "bold") 
+    
+    # Define button height and padding
+    scaled_button_height = scale_val(30, 'y')
+    scaled_pady_10 = scale_val(10, 'y')
+    scaled_pady_5 = scale_val(5, 'y')
 
     # Ensure the folder and file exist
     crops_file = os.path.join("Page_files", "crops_monitored.txt")
@@ -19,50 +46,47 @@ def show_crop_input_popup(root, target_button):
         except ValueError:
             existing_value = 0
 
-    # Update root to get correct geometry
+    # Scale Position Calculation (Centered on Root Window)
     root.update_idletasks()
     root_x = root.winfo_x()
     root_y = root.winfo_y()
-    root_width = root.winfo_width()
-    root_height = root.winfo_height()
+    root_width = root.winfo_width() 
+    root_height = root.winfo_height() 
+    
     x = root_x + (root_width // 2) - (popup_width // 2)
     y = root_y + (root_height // 2) - (popup_height // 2)
 
-    # Create popup window with enforced focus
     popup = ctk.CTkToplevel(root)
-    popup.withdraw()  # Hide initially
     popup.title("Crops in Monitor")
     popup.geometry(f"{popup_width}x{popup_height}+{x}+{y}")
     popup.configure(fg_color="#202332")
+    popup.transient(root) 
 
-    # Forcefully bring popup to front and grab input
     popup.after(50, lambda: (
-        popup.deiconify(),               # Show window
-        popup.lift(),                    # Bring to front
-        popup.focus_force(),             # Try to grab keyboard
-        popup.attributes('-topmost', True),  # Keep on top temporarily
-        popup.after(200, lambda: popup.attributes('-topmost', False)),  # Release topmost
-        popup.grab_set()                 # Lock interactions to popup
+        popup.lift(),                    
+        popup.focus_force(),             
+        popup.grab_set()                 
     ))
 
-    label = ctk.CTkLabel(popup, text="Enter number of crops:", text_color="white")
-    label.pack(pady=10)
+    label = ctk.CTkLabel(popup, text="Enter number of crops:", text_color="white", font=scaled_label_font)
+    label.pack(pady=scaled_pady_10)
 
     entry = ctk.CTkEntry(
         popup,
         justify="center",
         fg_color="#333645",
-        text_color="#FFFFFF"
+        text_color="#FFFFFF",
+        width=scaled_button_width,
+        font=scaled_label_font 
     )
-    entry.insert(0, str(existing_value))  # pre-fill existing value
-    entry.pack(pady=5)
+    entry.insert(0, str(existing_value))
+    entry.pack(pady=scaled_pady_5)
 
     def on_enter(event=None):
         value = entry.get()
         if value.isdigit():
             num = int(value)
 
-            # Save updated value to file
             with open(crops_file, "w") as f:
                 f.write(str(num))
 
@@ -76,32 +100,35 @@ def show_crop_input_popup(root, target_button):
             num_label = ctk.CTkLabel(
                 frame,
                 text=str(num),
-                font=("Arial", 32, "bold"),
+                font=scaled_title_font, 
                 text_color="white",
                 fg_color="transparent"
             )
             num_label.pack()
             target_button.number_frame = frame
 
-            # Reset button text
             target_button.configure(text="Crops in Monitor\n")
-
             popup.destroy()
 
         else:
             entry.delete(0, "end")
             entry.insert(0, "Enter number only")
+            entry.configure(text_color="white")
 
     entry.bind("<Return>", on_enter)
 
+    # Both buttons now use the same, calculated width and height
     submit_btn = ctk.CTkButton(
         popup,
         text="Enter",
         command=on_enter,
         fg_color="#2A2E3F",
-        hover_color="#383C4E"
+        hover_color="#383C4E",
+        height=scaled_button_height,
+        width=scaled_button_width,
+        font=scaled_label_font
     )
-    submit_btn.pack(pady=10)
+    submit_btn.pack(pady=scaled_pady_10)
 
     def return_to_dashboard():
         popup.destroy()
@@ -111,9 +138,12 @@ def show_crop_input_popup(root, target_button):
         text="Return to Dashboard",
         command=return_to_dashboard,
         fg_color="#2A2E3F",
-        hover_color="#383C4E"
+        hover_color="#383C4E",
+        height=scaled_button_height,
+        width=scaled_button_width,
+        font=scaled_label_font
     )
-    return_btn.pack(pady=5)
+    return_btn.pack(pady=scaled_pady_5)
 
-    # Make sure entry gets keyboard input ASAP
     popup.after(100, entry.focus_set)
+    root.wait_window(popup)

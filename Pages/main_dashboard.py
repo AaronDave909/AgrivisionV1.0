@@ -1,39 +1,54 @@
 from shared_components import SharedComponents as SC
 from Pages.crop_count import show_crop_input_popup
 from Pages.gallery import GalleryPage, gallery_preview
-from Pages.settings import SettingsPage  # Import here to avoid circular import
+from Pages.settings import SettingsPage
+from Pages.capture import CapturePage
 from PIL import Image, ImageTk
 import customtkinter as ctk
 import os
+from shared_components import custom_font_bold, custom_font_title, custom_font_regular, ORIGINAL_WIDTH, ORIGINAL_HEIGHT
 
 class MyDashboard(SC):
 
     def open_gallery(self):
-        geometry = self.root.geometry()  # Save current window geometry
         self.root.destroy()
-
         gallery = GalleryPage()
-        gallery.root.geometry(geometry)  # Apply same geometry (prevents window 'jumping')
         gallery.root.mainloop()
 
     def open_settings(self):
-        geometry = self.root.geometry()
         self.root.destroy()
         settings = SettingsPage()
-        settings.root.geometry(geometry)
         settings.root.mainloop()
+
+    def open_capture(self):
+        self.root.destroy()
+        capture_page = CapturePage()
+        capture_page.root.mainloop()
 
     def __init__(self):
         super().__init__()
+        
+        self.root.update_idletasks()
+        
         self.create_title()
         self.create_left_panel()
         self.create_leaf_image()
+        
+        # --- Helper for scaled coordinates ---
+        def scale_x(val): return self._scale_value(val, 'x')
+        def scale_y(val): return self._scale_value(val, 'y')
+        # ---
 
         # Record Button
-        self.create_record_button(x=107 / 2, y=480 / 2, command=None)
+        # The coordinates 107/2 and 480/2 are relative to the original 800x480 design
+        self.create_record_button(x=107 / 2, y=480 / 2, command=self.open_capture)
         
         # Settings Button
         self.settings_button(command=self.open_settings)
+
+        scale_x_factor = self.scale_x
+        scale_y_factor = self.scale_y
+        scaled_title_font = tuple(custom_font_title)
 
         # === Read saved crop count from file ===
         crops_file = os.path.join("Page_files", "crops_monitored.txt")
@@ -51,8 +66,14 @@ class MyDashboard(SC):
             text="Crops in Monitor\n",
             x=118, y=75,
             width=140, height=140,
-            anchor="s",
-            command=lambda: show_crop_input_popup(self.root, self.crops_button)
+            anchor="s", # Changed anchor for vertical consistency
+            command=lambda: show_crop_input_popup(
+                self.root, 
+                self.crops_button,
+                scale_x_factor,  # Pass the x factor
+                scale_y_factor,  # Pass the y factor
+                scaled_title_font  # Pass the scaled font
+            )
         )
 
         if saved_crops > 0:
@@ -61,7 +82,7 @@ class MyDashboard(SC):
             num_label = ctk.CTkLabel(
                 frame,
                 text=str(saved_crops),
-                font=("Arial", 32, "bold"),
+                font=scaled_title_font, 
                 text_color="white",
                 fg_color="#2A2E3F"
             )
@@ -72,6 +93,7 @@ class MyDashboard(SC):
         self.create_button(
             text="Recent Disease\nDetected",
             x=270, y=75,
+            width=140, height=140, # Added width/height for consistency
             anchor="s",
             command=None
         )
@@ -82,6 +104,7 @@ class MyDashboard(SC):
         self.create_button(
             text="Manage Files\n",
             x=422, y=75,
+            width=140, height=140, # Added width/height for consistency
             anchor="s",
             command=None,
             image=futures_photo,
@@ -92,36 +115,40 @@ class MyDashboard(SC):
         self.create_button(
             text="Analytics",
             x=121, y=232,
-            width=205, height=232,
+            width=205, height=229,
             anchor="n",
             command=None
         )
         
-
+        # Get Gallery Preview data
         gallery_photo, file_label = gallery_preview(self.root)
 
         # Capture Gallery Button
-        self.create_button(
+        self.gallery_button = self.create_button(
             text="Capture Gallery",
             x=340, y=232,
-            width=222, height=232,
+            width=222, height=229,
             anchor="n",
             image=gallery_photo,
             compound="bottom",
             command=self.open_gallery
         )
+        
+        # Image Filename Label (placed relative to the Gallery Button)
+        if file_label not in ("Gallery Empty", "No Images"):
+            frame_corner_radius = self._scale_value(8, 'x')
+            file_frame = ctk.CTkFrame(self.gallery_button, fg_color="#2A2E3F", corner_radius=frame_corner_radius)
+            file_frame.place(relx=0.5, rely=1.0, anchor="s")
 
-        frame = ctk.CTkFrame(self.root, fg_color="#2A2E3F", corner_radius=8)
-        frame.place(x=443, y=430)  # position only, no width/height fixed
-
-        # === Label for filename (auto-sizes to text) ===
-        label = ctk.CTkLabel(
-            frame,
-            text=f"{file_label}",
-            justify="center",
-            text_color="white",
-        )
-        label.pack(anchor="center")  # left-align and let it auto-size
+            label = ctk.CTkLabel(
+                file_frame,
+                text=f"{file_label}",
+                justify="center",
+                font=tuple(custom_font_regular), 
+                text_color="white",
+            )
+            # Use scaled padding
+            label.pack(padx=self._scale_value(5, 'x'), pady=self._scale_value(1, 'y')) 
 
         # Disease Record Panel
         self.create_panel(
@@ -137,31 +164,33 @@ class MyDashboard(SC):
             x=572, y=368,
             width=217, height=37,
             anchor="center",
-            font=("Arial", 24, "bold"),
+            font=tuple(custom_font_bold),
             command=None
         )
         
         # Diseases Button
         self.create_button(
             text="Diseases",
-            x=572, y=424,
+            x=572, y=414,
             width=217, height=37,
             anchor="center",
-            font=("Arial", 24, "bold"),
+            font=tuple(custom_font_bold), 
             command=None
         )
 
         # Help Button (rounded)
+        scaled_help_font_size = self._scale_value(20, 'y') 
+        scaled_help_font = ("Arial", scaled_help_font_size, "bold")
+        
         self.create_button(
             text="Help",
             x=674, y=21,
             width=114, height=37,
             anchor="center",
-            font=("Arial", 20, "bold"),
+            font=scaled_help_font,
             corner_radius=50,
             command=None
         )
 
     def run(self):
-        """Runs the main loop for the dashboard."""
         self.root.mainloop()
