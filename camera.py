@@ -9,9 +9,6 @@ from PIL import Image, ImageTk
 # - self.disease_result, self.captured_image_path, self.cap, self.running, self.current_frame exist
 # - self.disease_detector(image_path) exists externally
 
-# -------------------------
-# 🎥 1. OPEN CAMERA
-# -------------------------
 def open_camera(self):
     """Starts the webcam and begins live feed updates."""
     self.cap = cv2.VideoCapture(0)
@@ -37,9 +34,6 @@ def update_frame(self):
     if self.running:
         self.after(10, self.update_frame)
 
-# -------------------------
-# 📸 2. CAPTURE SCREEN
-# -------------------------
 def capture_image(self):
     """Captures a frame and saves it temporarily."""
     if self.current_frame is not None:
@@ -51,9 +45,7 @@ def capture_image(self):
         print(f"✅ Image captured: {temp_path}")
         self.run_analysis()
 
-# -------------------------
-# 🧠 3. RUN ANALYSIS
-# -------------------------
+
 def run_analysis(self):
     """Runs the external disease analysis function on the captured image."""
     if self.captured_image_path:
@@ -62,9 +54,6 @@ def run_analysis(self):
         print(f"Analysis Result: {self.disease_result}")
         self.open_review_window()
 
-# -------------------------
-# 🖼️ 4. OPEN REVIEW WINDOW
-# -------------------------
 def open_review_window(self):
     """Opens the image review window (user decides to save or discard)."""
     # stop camera feed

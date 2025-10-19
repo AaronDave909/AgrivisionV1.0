@@ -20,7 +20,7 @@ class SettingsPage(SC):
         self.create_title(text="Settings", x=119, y=0)
         self.create_left_panel()
         self.create_leaf_image()
-        self.undo_button()
+        self.undo_button(command=self.go_back_to_dashboard)
         
         # Define a scaled font for smaller text (12pt original)
         # We reuse the scaling factor from SC to ensure consistency
@@ -34,7 +34,7 @@ class SettingsPage(SC):
             font=self.scaled_12pt_font, # Use scaled font
             text_color="white"
         )
-        label.place(x=scale_x(123), y=scale_y(449)) # Use scaled position
+        label.place(x=scale_x(123), y=scale_y(440)) # Use scaled position
         
         self.create_memory_usage_bar()
         self.create_brightness_slider() 

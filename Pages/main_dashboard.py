@@ -2,6 +2,7 @@ from shared_components import SharedComponents as SC
 from Pages.crop_count import show_crop_input_popup
 from Pages.gallery import GalleryPage, gallery_preview
 from Pages.settings import SettingsPage
+from Pages.capture import CapturePage
 from PIL import Image, ImageTk
 import customtkinter as ctk
 import os
@@ -19,6 +20,11 @@ class MyDashboard(SC):
         settings = SettingsPage()
         settings.root.mainloop()
 
+    def open_capture(self):
+        self.root.destroy()
+        capture_page = CapturePage()
+        capture_page.root.mainloop()
+
     def __init__(self):
         super().__init__()
         
@@ -35,7 +41,7 @@ class MyDashboard(SC):
 
         # Record Button
         # The coordinates 107/2 and 480/2 are relative to the original 800x480 design
-        self.create_record_button(x=107 / 2, y=480 / 2, command=None)
+        self.create_record_button(x=107 / 2, y=480 / 2, command=self.open_capture)
         
         # Settings Button
         self.settings_button(command=self.open_settings)
@@ -109,7 +115,7 @@ class MyDashboard(SC):
         self.create_button(
             text="Analytics",
             x=121, y=232,
-            width=205, height=232,
+            width=205, height=229,
             anchor="n",
             command=None
         )
@@ -121,7 +127,7 @@ class MyDashboard(SC):
         self.gallery_button = self.create_button(
             text="Capture Gallery",
             x=340, y=232,
-            width=222, height=232,
+            width=222, height=229,
             anchor="n",
             image=gallery_photo,
             compound="bottom",

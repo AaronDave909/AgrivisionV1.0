@@ -10,8 +10,8 @@ def gallery_preview(root):
         scale_x = root.scale_x
         scale_y = root.scale_y
     else:
-        scale_x = 2.5
-        scale_y = 2.5
+        scale_x = 1.5
+        scale_y = 1.5
 
     def scale_val(value, axis='x'):
         factor = scale_x if axis == 'x' else scale_y
@@ -56,7 +56,7 @@ class GalleryPage(SC):
         self.create_title(text="Capture Gallery", x=119, y=0)
         self.create_left_panel()
         self.create_leaf_image()
-        self.undo_button()
+        self.undo_button(command=self.go_back_to_dashboard)
         
         # Define helper functions for cleaner scaling calls
         self.scale_x_val = lambda val: self._scale_value(val, 'x')

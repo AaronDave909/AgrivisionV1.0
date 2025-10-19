@@ -2,6 +2,7 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import font as tkfont
 from PIL import Image, ImageTk
+import cv2
 
 # Layout and color constant defaults (These now define the ORIGINAL design size)
 ORIGINAL_WIDTH = 800
@@ -16,8 +17,8 @@ ADJUSTED_HEIGHT_MARGIN_PIXELS = 20
 
 # Use system Helvetica fonts (Stored as lists to allow in-place size modification)
 custom_font_title = ["Arial", 50, "bold"]
-custom_font_bold = ["Arial", 23, "bold"]
-custom_font_regular = ["Arial", 20]
+custom_font_bold = ["Arial", 14, "bold"]
+custom_font_regular = ["Arial", 12]
 
 class SharedComponents:
 
@@ -40,9 +41,7 @@ class SharedComponents:
         # Calculate the scaled margin based on the screen's size
         estimated_scale_y = screen_height / ORIGINAL_HEIGHT
         scaled_margin = round(ADJUSTED_HEIGHT_MARGIN_PIXELS * estimated_scale_y)
-        
-        # --- START CRITICAL FIX ---
-        
+                
         # 1. Determine the final desired usable window size
         self.actual_width = screen_width
         self.actual_height = screen_height - scaled_margin
@@ -141,6 +140,7 @@ class SharedComponents:
         scaled_width = self._scale_value(90, 'x')
         scaled_height = self._scale_value(90, 'y')
         scaled_img_size = (self._scale_value(80, 'x'), self._scale_value(80, 'y'))
+        scaled_hover_offset = self._scale_value(5, 'y')
 
         record_img = Image.open("_image_assets/record.png")
         record_photo = ctk.CTkImage(light_image=record_img, dark_image=record_img, size=scaled_img_size)
@@ -157,6 +157,15 @@ class SharedComponents:
             hover_color="#2A2E3F",
         )
         btn.place(x=scaled_x, y=scaled_y, anchor="center")
+
+        def on_enter(event):
+            btn.place_configure(y=scaled_y - scaled_hover_offset) 
+        def on_leave(event):
+            btn.place_configure(y=scaled_y) 
+
+        btn.bind("<Enter>", on_enter)
+        btn.bind("<Leave>", on_leave)
+
         return btn
 
     def settings_button(self, command=None):
@@ -196,7 +205,7 @@ class SharedComponents:
         btn.bind("<Leave>", on_leave)
         return btn
 
-    def undo_button(self):
+    def undo_button(self,command=None):
         # Scale image size, position, width, height, and hover offset
         scaled_img_size = (self._scale_value(80, 'x'), self._scale_value(80, 'y'))
         scaled_width = self._scale_value(80, 'x')
@@ -216,7 +225,7 @@ class SharedComponents:
             height=scaled_height,
             image=undo_photo,
             compound="top",
-            command=self.go_back_to_dashboard,
+            command=command,
             fg_color="#2A2E3F",
             hover_color="#2A2E3F",
             corner_radius=0
@@ -232,8 +241,29 @@ class SharedComponents:
         btn.bind("<Enter>", on_enter)
         btn.bind("<Leave>", on_leave)
         return btn
+    
+    def cleanup_camera(self):
+        """Releases the camera and turns off the LED/resource."""
+        if self.cap and self.cap.isOpened():
+            self.running = False # Stop the update loop
+            self.cap.release()
+            cv2.destroyAllWindows()
+            print("✅ Camera successfully released.")
+        
+        # NOTE: You should also destroy the camera_label widget 
+        # to ensure it's removed from the UI when navigating pages.
+        if hasattr(self, 'camera_label') and self.camera_label.winfo_exists():
+            self.camera_label.destroy()
 
     def go_back_to_dashboard(self):
+        # self.cleanup_camera()
+        self.root.destroy()
+        from Pages.main_dashboard import MyDashboard 
+        dashboard = MyDashboard()
+        dashboard.root.mainloop()
+    
+    def camera_to_dashboard(self):
+        self.cleanup_camera()
         self.root.destroy()
         from Pages.main_dashboard import MyDashboard 
         dashboard = MyDashboard()
