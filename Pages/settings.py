@@ -34,7 +34,7 @@ class SettingsPage(SC):
             font=self.scaled_12pt_font, # Use scaled font
             text_color="white"
         )
-        label.place(x=scale_x(123), y=scale_y(440)) # Use scaled position
+        label.place(x=scale_x(123), y=scale_y(430)) # Use scaled position
         
         self.create_memory_usage_bar()
         self.create_brightness_slider() 

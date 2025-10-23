@@ -64,7 +64,6 @@ class AnalysisPage(SC):
         else:
             self.run_yolo_analysis()
 
-    # ... (No changes to _create_info_panel or _place_ui_elements) ...
     def _create_info_panel(self):
         """Creates the frame and labels for displaying analysis results."""
         info_panel_w = self._scale_value(213, 'x')
@@ -74,15 +73,15 @@ class AnalysisPage(SC):
         self.info_frame.pack_propagate(False) # Prevent the frame from shrinking to fit widgets
 
         # Title Label
-        title = ctk.CTkLabel(self.info_frame, text="Analysis Results", font=ctk.CTkFont(size=20, weight="bold"))
+        title = ctk.CTkLabel(self.info_frame, text="Analysis Results", font=ctk.CTkFont(size=20, weight="bold"), text_color="white")
         title.pack(pady=(20, 15), padx=10)
 
         # Helper function to create uniform label pairs
         def create_info_row(parent, label_text):
             row_frame = ctk.CTkFrame(parent, fg_color="transparent")
-            label = ctk.CTkLabel(row_frame, text=f"{label_text}:", font=ctk.CTkFont(size=14, weight="bold"), anchor="w")
+            label = ctk.CTkLabel(row_frame, text=f"{label_text}:", font=ctk.CTkFont(size=14, weight="bold"), text_color="white", anchor="w")
             label.pack(side="left", padx=(10, 5))
-            value_label = ctk.CTkLabel(row_frame, text="---", font=ctk.CTkFont(size=14), anchor="w")
+            value_label = ctk.CTkLabel(row_frame, text="---", font=ctk.CTkFont(size=14), anchor="w", text_color="white")
             value_label.pack(side="left", expand=True, fill="x", padx=5)
             row_frame.pack(fill="x", pady=8)
             return value_label

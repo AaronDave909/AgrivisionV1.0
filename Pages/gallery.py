@@ -13,8 +13,8 @@ def gallery_preview(root):
         scale_x = root.scale_x
         scale_y = root.scale_y
     else:
-        scale_x = 1.5
-        scale_y = 1.5
+        scale_x = 1
+        scale_y = 1
 
     def scale_val(value, axis='x'):
         factor = scale_x if axis == 'x' else scale_y
