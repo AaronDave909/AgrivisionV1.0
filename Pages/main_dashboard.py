@@ -115,7 +115,7 @@ class MyDashboard(SC):
         self.create_button(
             text="Analytics",
             x=121, y=232,
-            width=205, height=229,
+            width=205, height=220,
             anchor="n",
             command=None
         )
@@ -127,7 +127,7 @@ class MyDashboard(SC):
         self.gallery_button = self.create_button(
             text="Capture Gallery",
             x=340, y=232,
-            width=222, height=229,
+            width=222, height=220,
             anchor="n",
             image=gallery_photo,
             compound="bottom",

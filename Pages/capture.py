@@ -3,7 +3,8 @@ from PIL import Image, ImageTk
 import datetime
 import cv2
 import os
-from shared_components import SharedComponents as SC, custom_font_regular, LEFT_PANEL_WIDTH # Import scaled font
+from picamera2 import Picamera2 
+from shared_components import SharedComponents as SC, custom_font_regular, LEFT_PANEL_WIDTH 
 
 class CapturePage(SC):
     ORIGINAL_LEFT_PANEL_WIDTH = LEFT_PANEL_WIDTH
@@ -12,27 +13,21 @@ class CapturePage(SC):
 
     def __init__(self, fixed_w=None, fixed_h=None, offset_x=None, offset_y=None):
         super().__init__()
-
         self.fixed_w = 480 
         self.fixed_h = 480
         self.offset_x = offset_x
         self.offset_y = offset_y
-
-        self.cap = None
+        self.picam2 = None 
         self.running = False
-        self.current_frame = None # This will now store the PROCESSED (square) frame
+        self.current_frame = None 
         self.save_path = "Page_files/captured_images"
         os.makedirs(self.save_path, exist_ok=True)
-        
         self.camera_w, self.camera_h, self.camera_x, self.camera_y = 0, 0, 0, 0
-        
         self.create_left_panel()
         self.create_leaf_image()
         self.undo_button(command=self.navigate_to_dashboard) 
-        
         self.record_button = self.create_record_button(x=53.5, y=480 / 2, command=self.capture_image) 
         self.record_button.configure(state="disabled")
-
         self.root.after(100, self.setup_camera_ui)
 
     def setup_camera_ui(self):
@@ -56,17 +51,32 @@ class CapturePage(SC):
             self.camera_y = 0
             print(f"Camera position ALIGNED TOP, CENTERED RIGHT at: {self.camera_x}, {self.camera_y}")
 
+    # ------------------- FINAL PICAMERA2 IMPLEMENTATION -------------------
     def open_camera(self):
-        if self.cap and self.cap.isOpened():
-             self.cap.release()
-        self.cap = cv2.VideoCapture(0) # For Pi, may need to try 0 or use a GStreamer pipeline
-        if not self.cap.isOpened():
-            self.camera_label.configure(text="Camera not found or busy", text_color="red")
+        """Initializes and starts the Picamera2 feed."""
+        if self.picam2:
+            self.cleanup_camera()
+            
+        try:
+            self.picam2 = Picamera2()
+            
+            # 1. FINAL FORMAT: Use BGR888 (standard for OpenCV compatibility)
+            config = self.picam2.create_video_configuration(main={"size": (1280, 720), "format": "RGB888"})
+            self.picam2.configure(config)
+            
+            # Focus fix
+            self.picam2.set_controls({"AfMode": 0, "LensPosition": 1/0.05}) 
+            
+            self.picam2.start()
+            self.running = True
+            self.record_button.configure(state="normal")
+            self.update_frame()
+            
+        except Exception as e:
+            print(f"Error opening PiCamera2: {e}")
+            self.camera_label.configure(text=f"Camera Error: {e}", text_color="red")
             self.record_button.configure(state="disabled")
             return
-        self.running = True
-        self.record_button.configure(state="normal")
-        self.update_frame()
 
     def _crop_center_square(self, frame):
         """Crops the center square of a given frame."""
@@ -78,22 +88,20 @@ class CapturePage(SC):
 
     def update_frame(self):
         """
-        Reads a frame, crops it to a square to maintain aspect ratio, and displays it.
+        Reads a frame from Picamera2, crops it to a square, and displays it.
         """
-        if self.running and self.cap and self.cap.isOpened():
-            ret, frame = self.cap.read()
-            if ret:
-                # --- NEW: Crop the raw frame to a square first ---
-                square_frame = self._crop_center_square(frame)
-                
-                # Store the processed (square) frame for capture
+        if self.running and self.picam2:
+            try:
+                raw_frame = self.picam2.capture_array() 
+                square_frame = self._crop_center_square(raw_frame)
                 self.current_frame = square_frame.copy() 
                 
-                # --- Continue with display logic using the square frame ---
-                image_rgb = cv2.cvtColor(square_frame, cv2.COLOR_BGR2RGB)
+                # â­ FINAL COLOR FIX: BGR-to-RGB using OpenCV. This is the correct, standard swap.
+                # If this doesn't work, there is a fundamental conflict in your environment.
+                image_rgb = square_frame[:, :, ::-1]
+                
                 pil_image = Image.fromarray(image_rgb)
                 
-                # Resize the square frame to fit the 480x480 UI label
                 pil_image_resized = pil_image.resize((self.camera_w, self.camera_h), Image.Resampling.BILINEAR)
                 tk_image = ctk.CTkImage(light_image=pil_image_resized, size=(self.camera_w, self.camera_h))
                 
@@ -101,6 +109,10 @@ class CapturePage(SC):
                 self.camera_label.image = tk_image 
                 
                 self.root.after(10, self.update_frame)
+                
+            except Exception as e:
+                print(f"Error in update_frame loop: {e}")
+                self.running = False 
 
     def capture_image(self):
         """Saves the current square frame, cleans up, and navigates to the AnalysisPage."""
@@ -109,10 +121,9 @@ class CapturePage(SC):
             temp_filename = f"capture_{timestamp}.jpg"
             temp_path = os.path.join(self.save_path, temp_filename)
             
-            # --- MODIFIED: Save the already-cropped square frame ---
-            cv2.imwrite(temp_path, self.current_frame)
-            print(f"📸 Square image captured for analysis: {temp_path}")
-
+            # Saves the BGR frame, which is standard for OpenCV
+            cv2.imwrite(temp_path, self.current_frame) 
+            print(f"ð¸ Square image captured for analysis: {temp_path}")
             self.cleanup_camera()
             self.root.destroy()
             from Pages.analysis_page import AnalysisPage
@@ -123,10 +134,13 @@ class CapturePage(SC):
         """Reliably stops the camera feed and releases the camera resource."""
         print("Cleaning up camera resources...")
         self.running = False
-        if self.cap and self.cap.isOpened():
-            self.cap.release()
-            cv2.destroyAllWindows()
-            print("✅ Camera released.")
+        if self.picam2:
+            try:
+                self.picam2.stop()
+                self.picam2.close()
+                print("â Picamera2 released.")
+            except:
+                pass 
 
     def navigate_to_dashboard(self):
         """Cleans up camera resources and then navigates to the main dashboard."""
@@ -135,4 +149,3 @@ class CapturePage(SC):
         from Pages.main_dashboard import MyDashboard 
         dashboard = MyDashboard()
         dashboard.root.mainloop()
-

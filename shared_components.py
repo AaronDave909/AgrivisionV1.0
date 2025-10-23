@@ -13,7 +13,7 @@ BG_COLOR = "#202332"
 BUTTON_COLOR = "#2A2E3F"
 BUTTON_HOVER = "#383C4E"
 
-ADJUSTED_HEIGHT_MARGIN_PIXELS = 20
+ADJUSTED_HEIGHT_MARGIN_PIXELS = 40
 
 # Use system Helvetica fonts (Stored as lists to allow in-place size modification)
 custom_font_title = ["Arial", 50, "bold"]
