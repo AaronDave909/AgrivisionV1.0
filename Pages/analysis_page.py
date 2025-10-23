@@ -20,6 +20,7 @@ class AnalysisPage(SC):
         self.analysis_data_dict = {}  # NEW: To store data for saving
         self.annotated_image_data = None
         self.gallery_path = "Page_files/gallery_files"
+        self.single_json_path = os.path.join(self.gallery_path, "gallery_data.json")
         os.makedirs(self.gallery_path, exist_ok=True)
 
         self.display_w = self._scale_value(self.CAPTURE_SIZE, 'x')
@@ -53,6 +54,30 @@ class AnalysisPage(SC):
         )
 
         self.root.after(100, self._setup_display)
+
+    def _load_master_json(self):
+        """Loads the master JSON file. Returns an empty dict if it doesn't exist."""
+        try:
+            if os.path.exists(self.single_json_path):
+                with open(self.single_json_path, 'r') as f:
+                    # Handle empty file case
+                    content = f.read()
+                    if not content:
+                        return {}
+                    return json.loads(content)
+            else:
+                return {} # Return an empty dictionary if file doesn't exist
+        except (json.JSONDecodeError, Exception) as e:
+            print(f"❌ Error reading master JSON or file is empty: {e}. Returning empty dict.")
+            return {}
+
+    def _save_master_json(self, data):
+        """Saves the provided dictionary to the master JSON file."""
+        try:
+            with open(self.single_json_path, 'w') as f:
+                json.dump(data, f, indent=4)
+        except Exception as e:
+            print(f"❌ Error writing master JSON: {e}")
 
     def _setup_display(self):
         """Places the UI elements and then runs the correct process."""
@@ -210,31 +235,41 @@ class AnalysisPage(SC):
         self.count_label.configure(text=data_dict.get("count", "---"))
         self.datetime_label.configure(text=data_dict.get("timestamp", "---"))
 
-    # NEW: Function to load data when in "view_only" mode
     def load_and_display_data(self):
-        """Loads annotated image and analysis JSON from gallery paths."""
+        """Loads annotated image and analysis data from the master JSON."""
         try:
-            # self.image_path is the path to the .jpg
-            json_path = os.path.splitext(self.image_path)[0] + ".json"
+            # self.image_path is the full path, e.g., "gallery/img1.jpg"
+            # We need just the filename to use as the key
+            image_filename = os.path.basename(self.image_path)
 
-            if not os.path.exists(self.image_path) or not os.path.exists(json_path):
-                print(f"❌ Error: Missing image or JSON file.")
+            if not os.path.exists(self.image_path):
+                print(f"❌ Error: Missing image file.")
                 self.image_label.configure(text="Error: File not found.", text_color="red")
                 return
 
-            # Load and display the annotated image
+            # Load and display the annotated image (unchanged)
             self.annotated_image_data = cv2.imread(self.image_path)
             self.display_image(self.annotated_image_data)
 
-            # Load and display the analysis data
-            with open(json_path, 'r') as f:
-                data = json.load(f)
-            self.populate_info_panel(data)
+            # --- MODIFIED: JSON Loading Logic ---
+            
+            # 1. Load the master dictionary
+            master_data = self._load_master_json()
+            
+            # 2. Find the data for this specific image using its filename as the key
+            image_specific_data = master_data.get(image_filename)
+
+            # 3. Populate the panel
+            if image_specific_data:
+                self.populate_info_panel(image_specific_data)
+            else:
+                # This case handles if the image exists but its data is missing from the JSON
+                print(f"❌ Error: No data found for {image_filename} in {self.single_json_path}")
+                self.populate_info_panel({}) # Pass empty dict to clear labels
 
         except Exception as e:
             print(f"❌ Error loading gallery data: {e}")
             self.image_label.configure(text="Error loading data.", text_color="red")
-
 
     def display_image(self, image_data_bgr):
         image_rgb = cv2.cvtColor(image_data_bgr, cv2.COLOR_BGR2RGB)
@@ -249,20 +284,26 @@ class AnalysisPage(SC):
             filename = os.path.basename(self.original_image_path)
             base_filename = os.path.splitext(filename)[0]
             
-            # Define paths for both image and JSON
-            save_path_img = os.path.join(self.gallery_path, f"{base_filename}.jpg")
-            save_path_json = os.path.join(self.gallery_path, f"{base_filename}.json")
+            image_filename = f"{base_filename}.jpg"
+            save_path_img = os.path.join(self.gallery_path, image_filename)
 
-            # MODIFIED: Save both the image and the JSON data
             try:
-                # Save the image
+                # Save the image (this is unchanged)
                 cv2.imwrite(save_path_img, self.annotated_image_data)
                 print(f"✅ Annotated image saved to: {save_path_img}")
                 
-                # Save the JSON data
-                with open(save_path_json, 'w') as f:
-                    json.dump(self.analysis_data_dict, f, indent=4)
-                print(f"✅ Analysis data saved to: {save_path_json}")
+                # --- MODIFIED: JSON Saving Logic ---
+                
+                # 1. Load the master dictionary
+                master_data = self._load_master_json()
+                
+                # 2. Add or update the entry for this image
+                # The key is the image filename
+                master_data[image_filename] = self.analysis_data_dict
+                
+                # 3. Save the master dictionary back to the file
+                self._save_master_json(master_data)
+                print(f"✅ Analysis data updated in: {self.single_json_path}")
 
                 # Clean up the original capture
                 os.remove(self.original_image_path)
@@ -283,19 +324,31 @@ class AnalysisPage(SC):
         capture_app = CapturePage()
         capture_app.root.mainloop()
 
-    # NEW: Function for the "delete" button in view_only mode
     def delete_gallery_entry(self):
-        """Deletes the .jpg and .json file from the gallery."""
+        """Deletes the .jpg and its corresponding entry from the master .json file."""
         try:
-            json_path = os.path.splitext(self.image_path)[0] + ".json"
+            # Get the filename to use as the key
+            image_filename = os.path.basename(self.image_path)
             
+            # 1. Delete the image file
             if os.path.exists(self.image_path):
                 os.remove(self.image_path)
                 print(f"🗑️ Deleted image: {self.image_path}")
+            
+            # --- MODIFIED: JSON Deletion Logic ---
+            
+            # 2. Load the master dictionary
+            master_data = self._load_master_json()
+            
+            # 3. Remove the entry for this image (if it exists)
+            if image_filename in master_data:
+                del master_data[image_filename]
+                print(f"🗑️ Deleted data for {image_filename} from {self.single_json_path}")
                 
-            if os.path.exists(json_path):
-                os.remove(json_path)
-                print(f"🗑️ Deleted data: {json_path}")
+                # 4. Save the modified master dictionary
+                self._save_master_json(master_data)
+            else:
+                print(f"⚠️ Warning: No data found for {image_filename} in master JSON. Only image was deleted.")
                 
         except Exception as e:
             print(f"❌ Error deleting files: {e}")

@@ -1,0 +1,80 @@
+{
+    "capture_20251019_215217.jpg": {
+        "disease": "Bacterial_leaf_spot",
+        "accuracy": "48.25%",
+        "count": "1",
+        "timestamp": "Oct 19, 2025 09:52 PM"
+    },
+    "capture_20251019_215317.jpg": {
+        "disease": "Bacterial_leaf_spot",
+        "accuracy": "45.44%",
+        "count": "1",
+        "timestamp": "Oct 19, 2025 09:53 PM"
+    },
+    "capture_20251019_215053.jpg": {
+        "disease": "Downy_mildew_on_lettuce",
+        "accuracy": "74.10%",
+        "count": "2",
+        "timestamp": "Oct 19, 2025 09:50 PM"
+    },
+    "capture_20251019_215259.jpg": {
+        "disease": "Bacterial_leaf_spot",
+        "accuracy": "37.63%",
+        "count": "1",
+        "timestamp": "Oct 19, 2025 09:52 PM"
+    },
+    "capture_20251019_215203.jpg": {
+        "disease": "Downy_mildew_on_lettuce",
+        "accuracy": "84.84%",
+        "count": "1",
+        "timestamp": "Oct 19, 2025 09:52 PM"
+    },
+    "capture_20251019_214804.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "56.70%",
+        "count": "2",
+        "timestamp": "Oct 19, 2025 09:48 PM"
+    },
+    "capture_20251019_215147.jpg": {
+        "disease": "Downy_mildew_on_lettuce",
+        "accuracy": "52.81%",
+        "count": "2",
+        "timestamp": "Oct 19, 2025 09:51 PM"
+    },
+    "capture_20251023_204627.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "43.41%",
+        "count": "1",
+        "timestamp": "Oct 23, 2025 08:46 PM"
+    },
+    "capture_20251023_204635.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "81.40%",
+        "count": "1",
+        "timestamp": "Oct 23, 2025 08:46 PM"
+    },
+    "capture_20251023_204748.jpg": {
+        "disease": "Bacterial_leaf_spot",
+        "accuracy": "42.24%",
+        "count": "2",
+        "timestamp": "Oct 23, 2025 08:47 PM"
+    },
+    "capture_20251023_204803.jpg": {
+        "disease": "Bacterial_leaf_spot",
+        "accuracy": "29.59%",
+        "count": "1",
+        "timestamp": "Oct 23, 2025 08:48 PM"
+    },
+    "capture_20251023_204847.jpg": {
+        "disease": "Bacterial_leaf_spot",
+        "accuracy": "84.98%",
+        "count": "1",
+        "timestamp": "Oct 23, 2025 08:48 PM"
+    },
+    "capture_20251023_204917.jpg": {
+        "disease": "Bacterial_leaf_spot",
+        "accuracy": "41.35%",
+        "count": "2",
+        "timestamp": "Oct 23, 2025 08:49 PM"
+    }
+}

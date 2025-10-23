@@ -3,6 +3,7 @@ from PIL import Image
 from shared_components import SharedComponents as SC, custom_font_regular
 import os
 import random
+import json  # NEW: Import json
 # NEW: Import the analysis page to switch to it
 from Pages.analysis_page import AnalysisPage 
 
@@ -105,6 +106,23 @@ class GalleryPage(SC):
         # Load the gallery images
         self.load_gallery_images()
 
+    # NEW: Add the helper function to load the master JSON
+    def _load_master_json(self, json_path):
+        """Loads the master JSON file. Returns an empty dict if it doesn't exist."""
+        try:
+            if os.path.exists(json_path):
+                with open(json_path, 'r') as f:
+                    # Handle empty file case
+                    content = f.read()
+                    if not content:
+                        return {}
+                    return json.loads(content)
+            else:
+                return {} # Return an empty dictionary if file doesn't exist
+        except (json.JSONDecodeError, Exception) as e:
+            print(f"❌ Error reading master JSON or file is empty: {e}. Returning empty dict.")
+            return {}
+
     def load_gallery_images(self, folder_path="Page_files/gallery_files"):
         
         ORIGINAL_PANEL_WIDTH = 197.33
@@ -125,6 +143,19 @@ class GalleryPage(SC):
             print(f"Folder '{folder_path}' not found.")
             return
 
+        # --- MODIFIED: JSON Loading Logic ---
+        
+        # 1. Define and load the master JSON file
+        master_json_path = os.path.join(folder_path, "gallery_data.json")
+        master_data = self._load_master_json(master_json_path)
+
+        if not master_data:
+            print("⚠️ Warning: gallery_data.json is empty or not found. No items will be loaded.")
+            # We can just return here, as no images should be shown
+            # if their data doesn't exist.
+            return
+            
+        # 2. Get all .jpg files
         jpg_files = [f for f in os.listdir(folder_path) if f.lower().endswith(".jpg")]
         if not jpg_files:
             print("No JPG images found.")
@@ -132,22 +163,31 @@ class GalleryPage(SC):
 
         scaled_name_font = tuple(custom_font_regular)
 
-        for index, filename in enumerate(jpg_files):
+        # 3. We need a new index variable to handle grid placement
+        #    since some images might be skipped.
+        valid_image_index = 0
+
+        # MODIFIED: Loop through all .jpg files found
+        for filename in jpg_files:
             file_path = os.path.join(folder_path, filename)
             
-            # NEW: Check if the corresponding JSON file exists
-            json_path = os.path.splitext(file_path)[0] + ".json"
-            if not os.path.exists(json_path):
-                print(f"⚠️ Warning: Missing JSON for {filename}. Skipping.")
+            # 4. MODIFIED: Check if the image filename is a key in the master JSON
+            if filename not in master_data:
+                print(f"⚠️ Warning: No data for {filename} in master JSON. Skipping.")
                 continue # Skip this file as it has no data
+
+            # --- End of modifications ---
 
             # Load and resize image
             img = Image.open(file_path)
             img = img.resize((image_width, image_height))
             ctk_img = ctk.CTkImage(light_image=img, dark_image=img, size=(image_width, image_height))
 
-            col = index % max_per_row
-            row = index // max_per_row
+            # MODIFIED: Use the new valid_image_index for grid placement
+            col = valid_image_index % max_per_row
+            row = valid_image_index // max_per_row
+            
+            valid_image_index += 1 # Increment index ONLY for valid images
 
             frame = ctk.CTkFrame(
                 self.scrollable_frame, 
@@ -167,7 +207,7 @@ class GalleryPage(SC):
                 height=image_height,
                 fg_color="transparent",
                 hover_color="#3B3F51",
-                # MODIFIED: Change the command to call our new function
+                # This command is still correct
                 command=lambda path=file_path: self.open_analysis_view(path)
             )
             img_button.image = ctk_img

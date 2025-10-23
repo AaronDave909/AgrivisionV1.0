@@ -3,6 +3,7 @@ from Pages.crop_count import show_crop_input_popup
 from Pages.gallery import GalleryPage, gallery_preview
 from Pages.settings import SettingsPage
 from Pages.capture import CapturePage
+from Pages.recents import RecentDiseaseList 
 from PIL import Image, ImageTk
 import customtkinter as ctk
 import os
@@ -151,11 +152,36 @@ class MyDashboard(SC):
             label.pack(padx=self._scale_value(5, 'x'), pady=self._scale_value(1, 'y')) 
 
         # Disease Record Panel
-        self.create_panel(
+        disease_panel = self.create_panel(
             text="\nDisease Record History",
             x=572, y=75,
             anchor="nw",
             width=217, height=275
+        )
+
+        # --- Create and add the recent disease list ---
+
+        # Calculate scaled size, subtracting a bit for padding and the title
+        list_width = self._scale_value(217, 'x') - self._scale_value(10, 'x') # 10px padding
+        list_height = self._scale_value(275, 'y') - self._scale_value(45, 'y') # 45px for title and padding
+
+        # Create an instance of our new widget
+        recent_list = RecentDiseaseList(
+            master=disease_panel,
+            width=list_width,
+            height=list_height,
+            fg_color="#2A2E3F" # Match panel color
+        )
+
+        # Place the list inside the panel
+        # We use pack with side="bottom" so it automatically sits *below* the title label
+        recent_list.pack(
+            side="bottom",
+            fill="both",
+            expand=True,
+            padx=self._scale_value(5, 'x'),
+            # Add top padding (e.g., 10px scaled) to push the list down
+            pady=(self._scale_value(30, 'y'), self._scale_value(5, 'y')) # <-- This is the NEW line
         )
         
         # Dock Mode Button
