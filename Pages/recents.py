@@ -65,40 +65,58 @@ def get_most_recent_detection():
         return None, None
 
 # --- NEW: Standalone PREVIEW Function for Dashboard ---
+# --- NEW: Standalone PREVIEW Function for Dashboard ---
 def recent_disease_preview():
     """
     Gets the most recent disease detection and formats the data
     for the dashboard preview button.
-    
+
     Returns:
         - disease_name (str): Formatted name, e.g., "Bacterial Leaf Spot" or "No Recent Detections"
-        - timestamp (str or None): Full timestamp string, e.g., "Oct 25, 2025 05:37 PM"
+        - date_str (str or None): Formatted date string, e.g., "Oct 26, 2025"
+        - time_str (str or None): Formatted time string, e.g., "07:41 PM"
         - image_path (str or None): Full path to the associated image.
     """
     gallery_path = "Page_files/gallery_files"
-    filename, data = get_most_recent_detection()
-    
+    filename, data = get_most_recent_detection() # This still uses the original timestamp format for sorting
+
     if not filename or not data:
-        return "No Recent\nDetections", None, None
-        
+        return "No Recent\nDetections", None, None, None
+
     try:
         # Format disease name
         disease_name = _format_disease_name(data.get("disease", "Unknown"))
-        
-        # Get timestamp
-        timestamp = data.get("timestamp", None)
-        
+
+        # --- MODIFIED: Parse and format timestamp ---
+        timestamp_str = data.get("timestamp", None)
+        date_str = None
+        time_str = None
+        if timestamp_str:
+            try:
+                # Use the format the JSON *currently* has for parsing
+                timestamp_format_in_json = "%b %d, %Y %I:%M %p"
+                dt_obj = datetime.strptime(timestamp_str, timestamp_format_in_json)
+                # Format date and time separately for the button
+                date_str = dt_obj.strftime("%b %d, %Y") # e.g., Oct 26, 2025
+                time_str = dt_obj.strftime("%I:%M %p") # e.g., 07:41 PM
+            except ValueError:
+                print(f"❌ Error parsing timestamp in preview: {timestamp_str}")
+                date_str = "Invalid Date"
+                time_str = "Invalid Time"
+        # --- END MODIFICATION ---
+
         # Get image path
         image_path = os.path.join(gallery_path, filename)
         if not os.path.exists(image_path):
             # Data exists but image is missing
-            return "Data Error\nMissing Image", None, None
-            
-        return disease_name, timestamp, image_path
+            return "Data Error\nMissing Image", None, None, None
+
+        # Return the separated date and time
+        return disease_name, date_str, time_str, image_path
 
     except Exception as e:
         print(f"❌ Error in recent_disease_preview: {e}")
-        return "Error", None, None
+        return "Error", None, None, None
 
 
 class RecentDiseaseList(ctk.CTkFrame):

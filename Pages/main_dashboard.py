@@ -109,24 +109,23 @@ class MyDashboard(SC):
             self.crops_button.number_frame = frame
         
         # Recent Disease Button
-        # 1. Get the most recent detection data using the new preview function
-        disease_name, timestamp, image_path = recent_disease_preview()
-                
-        if timestamp and image_path:
-            # 2. Format the data for the button
-            # (Timestamp now includes date and time as requested)
-            dynamic_text = f"{disease_name}\n{timestamp}"
-            
+        disease_name, date_str, time_str, image_path = recent_disease_preview()
+
+        dynamic_text = disease_name # Default text if no data
+
+        # Check if we got valid date, time, and path
+        if date_str and time_str and image_path:
+            # 2. Format the data for the button using separate date and time
+            dynamic_text = f"{disease_name}\n{date_str}\n{time_str}" # <-- FORMAT CHANGE HERE
+
             # 3. Set the command
             btn_command = lambda path=image_path: self.open_analysis_view(path)
-        else:
-            dynamic_text = disease_name # This is "No Recent\nDetections"
 
         # 4. Combine dynamic text with the constant footer
-        btn_text = f"{dynamic_text}\n\n\nRecent Disease\nDetected"
+        # Adjusted newlines for better spacing with the new 3-line format
+        btn_text = f"{dynamic_text}\n\nRecent Disease\nDetected"
 
-
-        # 4. Create the button with the new text and command
+        # 5. Create the button with the new text and command
         self.create_button(
             text=btn_text,
             x=270, y=75,
