@@ -4,7 +4,9 @@ from Pages.gallery import GalleryPage, gallery_preview
 from Pages.settings import SettingsPage
 from Pages.capture import CapturePage
 from Pages.recents import RecentDiseaseList 
-from PIL import Image, ImageTk
+from Pages.recents import recent_disease_preview
+from Pages.records import ReportViewerPage 
+from Pages.analysis_page import AnalysisPage
 import customtkinter as ctk
 import os
 from shared_components import custom_font_bold, custom_font_title, custom_font_regular, ORIGINAL_WIDTH, ORIGINAL_HEIGHT
@@ -25,6 +27,22 @@ class MyDashboard(SC):
         self.root.destroy()
         capture_page = CapturePage()
         capture_page.root.mainloop()
+
+    def open_report_viewer(self, folder_name, title):
+        """Destroys dashboard and opens the report viewer page."""
+        self.root.destroy()
+        # Pass the folder, title, and what page to return to
+        app = ReportViewerPage(folder_name=folder_name, 
+                             title=title, 
+                             return_page="dashboard")
+        app.root.mainloop()
+
+    def open_analysis_view(self, image_path):
+        """Destroys the dashboard and opens the analysis page in view-only mode."""
+        self.root.destroy()
+        # Pass the path to the image and set view_only=True
+        app = AnalysisPage(image_path=image_path, view_only=True)
+        app.root.mainloop()
 
     def __init__(self):
         super().__init__()
@@ -91,12 +109,30 @@ class MyDashboard(SC):
             self.crops_button.number_frame = frame
         
         # Recent Disease Button
+        # 1. Get the most recent detection data using the new preview function
+        disease_name, timestamp, image_path = recent_disease_preview()
+                
+        if timestamp and image_path:
+            # 2. Format the data for the button
+            # (Timestamp now includes date and time as requested)
+            dynamic_text = f"{disease_name}\n{timestamp}"
+            
+            # 3. Set the command
+            btn_command = lambda path=image_path: self.open_analysis_view(path)
+        else:
+            dynamic_text = disease_name # This is "No Recent\nDetections"
+
+        # 4. Combine dynamic text with the constant footer
+        btn_text = f"{dynamic_text}\n\n\nRecent Disease\nDetected"
+
+
+        # 4. Create the button with the new text and command
         self.create_button(
-            text="Recent Disease\nDetected",
+            text=btn_text,
             x=270, y=75,
-            width=140, height=140, # Added width/height for consistency
+            width=140, height=140,
             anchor="s",
-            command=None
+            command=btn_command # Set the command here
         )
 
         # Manage Files Button with Image
@@ -181,7 +217,7 @@ class MyDashboard(SC):
             expand=True,
             padx=self._scale_value(5, 'x'),
             # Add top padding (e.g., 10px scaled) to push the list down
-            pady=(self._scale_value(30, 'y'), self._scale_value(5, 'y')) # <-- This is the NEW line
+            pady=(self._scale_value(50, 'y'), self._scale_value(5, 'y')) # <-- This is the NEW line
         )
         
         # Dock Mode Button
@@ -196,12 +232,12 @@ class MyDashboard(SC):
         
         # Diseases Button
         self.create_button(
-            text="Diseases",
+            text="Diseases", 
             x=572, y=414,
             width=217, height=37,
             anchor="center",
             font=tuple(custom_font_bold), 
-            command=None
+            command=lambda: self.open_report_viewer("_diseases_", "Diseases") 
         )
 
         # Help Button (rounded)

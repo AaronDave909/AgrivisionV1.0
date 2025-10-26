@@ -3,6 +3,104 @@ import os
 import json
 from datetime import datetime
 
+# --- Standalone Helper Function ---
+def _format_disease_name(name_str):
+    """Converts snake_case names into formatted Title Case."""
+    if name_str == "Downy_mildew_on_lettuce":
+        return "Downy Mildew"
+    if name_str == "Powdery_mildew_on_lettuce":
+        return "Powdery Mildew"
+    
+    # General rule
+    return name_str.replace("_", " ").title()
+
+# --- Standalone Function for Dashboard (Internal) ---
+def get_most_recent_detection():
+    """
+    Loads the master JSON, finds the most recent entry,
+    and returns its filename and data.
+    """
+    gallery_path = "Page_files/gallery_files"
+    single_json_path = os.path.join(gallery_path, "gallery_data.json")
+    
+    try:
+        # 1. Load the master dictionary
+        if not os.path.exists(single_json_path):
+            return None, None
+        
+        with open(single_json_path, 'r') as f:
+            content = f.read()
+            if not content:
+                return None, None
+            master_data = json.loads(content)
+        
+        if not master_data:
+            return None, None
+
+        # 2. Get all items (filename, data)
+        all_entries = list(master_data.items())
+
+        # 3. Define timestamp format
+        timestamp_format = "%b %d, %Y %I:%M %p"
+
+        # 4. Sort the list
+        def get_date(item_tuple):
+            # item_tuple is (filename, data_dict)
+            data_dict = item_tuple[1]
+            try:
+                return datetime.strptime(data_dict.get('timestamp', ''), timestamp_format)
+            except ValueError:
+                return datetime.min
+
+        all_entries.sort(key=get_date, reverse=True)
+        
+        # 5. Return the most recent item (filename, data)
+        if all_entries:
+            return all_entries[0] # Returns (filename, data_dict)
+        else:
+            return None, None
+
+    except Exception as e:
+        print(f"❌ Error in get_most_recent_detection: {e}")
+        return None, None
+
+# --- NEW: Standalone PREVIEW Function for Dashboard ---
+def recent_disease_preview():
+    """
+    Gets the most recent disease detection and formats the data
+    for the dashboard preview button.
+    
+    Returns:
+        - disease_name (str): Formatted name, e.g., "Bacterial Leaf Spot" or "No Recent Detections"
+        - timestamp (str or None): Full timestamp string, e.g., "Oct 25, 2025 05:37 PM"
+        - image_path (str or None): Full path to the associated image.
+    """
+    gallery_path = "Page_files/gallery_files"
+    filename, data = get_most_recent_detection()
+    
+    if not filename or not data:
+        return "No Recent\nDetections", None, None
+        
+    try:
+        # Format disease name
+        disease_name = _format_disease_name(data.get("disease", "Unknown"))
+        
+        # Get timestamp
+        timestamp = data.get("timestamp", None)
+        
+        # Get image path
+        image_path = os.path.join(gallery_path, filename)
+        if not os.path.exists(image_path):
+            # Data exists but image is missing
+            return "Data Error\nMissing Image", None, None
+            
+        return disease_name, timestamp, image_path
+
+    except Exception as e:
+        print(f"❌ Error in recent_disease_preview: {e}")
+        return "Error", None, None
+
+
 class RecentDiseaseList(ctk.CTkFrame):
     """
     A custom scrollable widget that loads data from the master JSON,
@@ -38,11 +136,6 @@ class RecentDiseaseList(ctk.CTkFrame):
         # Link canvas and scrollbar
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
         
-        # --- MODIFIED: THIS IS THE KEY FIX ---
-        
-        # BINDING 1: 
-        # When the inner frame's content changes (making it taller/shorter),
-        # tell the canvas to update its scrollable area.
         self.scrollable_frame.bind(
             "<Configure>",
             lambda e: self.canvas.configure(
@@ -50,15 +143,10 @@ class RecentDiseaseList(ctk.CTkFrame):
             )
         )
 
-        # Place the inner frame inside the canvas
         self.canvas_window = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
 
-        # BINDING 2:
-        # When the *canvas* is resized (or first drawn),
-        # force the inner frame's width to match the canvas's width.
         self.canvas.bind("<Configure>", self._on_canvas_configure)
         
-        # --- END OF MODIFIED SECTION ---
 
         # --- Place Components ---
         self.scrollbar.pack(side="right", fill="y")
@@ -73,7 +161,6 @@ class RecentDiseaseList(ctk.CTkFrame):
         # --- Load and Display Data ---
         self._populate_list()
 
-    # MODIFIED: This function is now simpler
     def _on_canvas_configure(self, event):
         """
         Updates the inner frame's width to match the canvas's width.
@@ -100,19 +187,19 @@ class RecentDiseaseList(ctk.CTkFrame):
             else:
                 return [] # Return empty list if file doesn't exist
 
-            # 2. Get all analysis entries (the values of the dict)
-            all_entries = list(master_data.values())
+            # 2. MODIFIED: Get all items (filename, data)
+            all_entries = list(master_data.items())
 
             # 3. Define the timestamp format
             # Example: "Oct 19, 2025 09:50 PM"
             timestamp_format = "%b %d, %Y %I:%M %p"
 
             # 4. Sort the list
-            # We use strptime to convert the string timestamp into a real
-            # datetime object, which can be sorted correctly.
-            def get_date(item):
+            def get_date(item_tuple):
+                # item_tuple is (filename, data_dict)
+                data_dict = item_tuple[1]
                 try:
-                    return datetime.strptime(item.get('timestamp', ''), timestamp_format)
+                    return datetime.strptime(data_dict.get('timestamp', ''), timestamp_format)
                 except ValueError:
                     # Handle any malformed data by placing it at the bottom
                     return datetime.min
@@ -120,23 +207,13 @@ class RecentDiseaseList(ctk.CTkFrame):
             # sort(key=..., reverse=True) puts the newest items at the top
             all_entries.sort(key=get_date, reverse=True)
             
-            return all_entries
+            return all_entries # Returns list of (filename, data_dict)
 
         except Exception as e:
             print(f"❌ Error loading or sorting recent data: {e}")
             return []
             
-    # NEW: Helper function to format disease names
-    def _format_disease_name(self, name_str):
-        """Converts snake_case names into formatted Title Case."""
-        # Specific overrides
-        if name_str == "Downy_mildew_on_lettuce":
-            return "Downy Mildew"
-        if name_str == "Powdery_mildew_on_lettuce":
-            return "Powdery Mildew"
-        
-        # General rule
-        return name_str.replace("_", " ").title()
+    # _format_disease_name was removed from class, it is standalone now
 
     def _populate_list(self):
         """Creates the label widgets for each disease entry."""
@@ -155,10 +232,11 @@ class RecentDiseaseList(ctk.CTkFrame):
         disease_font = ctk.CTkFont(family="Arial", size=14, weight="bold")
         date_font = ctk.CTkFont(family="Arial", size=12)
 
-        for item in sorted_data:
-            # MODIFIED: Get the raw name and format it
+        # MODIFIED: Loop now gets filename and item
+        for filename, item in sorted_data:
+            # MODIFIED: Use standalone formatter
             raw_disease = item.get("disease", "Unknown Disease")
-            disease = self._format_disease_name(raw_disease) # <-- Use the formatter
+            disease = _format_disease_name(raw_disease) # <-- Use standalone
             
             timestamp = item.get("timestamp", "Unknown Date")
             
@@ -171,10 +249,9 @@ class RecentDiseaseList(ctk.CTkFrame):
                 text=disease,
                 font=disease_font,
                 text_color="white",
-                anchor="w"
+                anchor="w" # Anchor to the West (left)
             )
-            # MODIFIED: Pack to the left, expand, and add consistent padding
-            disease_label.pack(side="left", pady=5, padx=10, fill="x", expand=True)
+            disease_label.pack(pady=(5, 0), padx=10, fill="x")
 
             # Timestamp Label
             date_label = ctk.CTkLabel(
@@ -182,17 +259,16 @@ class RecentDiseaseList(ctk.CTkFrame):
                 text=timestamp,
                 font=date_font,
                 text_color="#BCBCBC", # A lighter gray
-                anchor="e" # Anchor text to the East (right)
+                anchor="w" # Anchor to the West (left)
             )
-            # MODIFIED: Pack to the right and add consistent padding
-            date_label.pack(side="right", pady=5, padx=10)
+            # MODIFIED: Use vertical packing (default) and fill="x"
+            date_label.pack(pady=(0, 5), padx=10, fill="x")
 
             # Pack the item frame into the scrollable list
-            # MODIFIED: Removed padx to allow the frame to fill the width
-            item_frame.pack(fill="x", expand=True, pady=(0, 5))
+            # We still need fill="x" and expand=True here to make the item_frame fill the panel width
+            item_frame.pack(fill="x", expand=True, pady=(0, 5)) 
 
             # --- Bind Drag Events to ALL new widgets ---
-            # This is crucial so dragging works on top of the labels
             item_frame.bind("<ButtonPress-1>", self._on_press)
             item_frame.bind("<B1-Motion>", self._on_motion)
             disease_label.bind("<ButtonPress-1>", self._on_press)
@@ -200,18 +276,12 @@ class RecentDiseaseList(ctk.CTkFrame):
             date_label.bind("<ButtonPress-1>", self._on_press)
             date_label.bind("<B1-Motion>", self._on_motion)
 
-        # --- THIS IS STILL NEEDED ---
-        # Add an empty frame at the bottom to act as padding.
-        # This makes the inner_frame *taller*, which triggers its <Configure>
-        # event, which in turn updates the scrollregion to include this padding.
         bottom_padding = ctk.CTkFrame(self.scrollable_frame, height=20, fg_color="transparent")
         bottom_padding.pack()
         
         # Bind drag events to the padding as well
         bottom_padding.bind("<ButtonPress-1>", self._on_press)
         bottom_padding.bind("<B1-Motion>", self._on_motion)
-        # --- END OF PADDING SECTION ---
-
 
     # --- Drag-to-Scroll Methods ---
     

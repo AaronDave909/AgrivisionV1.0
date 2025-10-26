@@ -76,5 +76,17 @@
         "accuracy": "41.35%",
         "count": "2",
         "timestamp": "Oct 23, 2025 08:49 PM"
+    },
+    "capture_20251025_115428.jpg": {
+        "disease": "Bacterial",
+        "accuracy": "82.47%",
+        "count": "1",
+        "timestamp": "Oct 25, 2025 11:54 AM"
+    },
+    "capture_20251025_115533.jpg": {
+        "disease": "Bacterial",
+        "accuracy": "64.96%",
+        "count": "1",
+        "timestamp": "Oct 25, 2025 11:55 AM"
     }
 }
