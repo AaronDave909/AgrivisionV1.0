@@ -17,7 +17,7 @@ def _format_disease_name(name_str):
 # --- Standalone Function for Dashboard (Internal) ---
 def get_most_recent_detection():
     """
-    Loads the master JSON, finds the most recent entry,
+    Loads the master JSON, finds the most recent *disease* entry,
     and returns its filename and data.
     """
     gallery_path = "Page_files/gallery_files"
@@ -39,6 +39,15 @@ def get_most_recent_detection():
 
         # 2. Get all items (filename, data)
         all_entries = list(master_data.items())
+        
+        # --- NEW: Filter for diseases only ---
+        # Only keep items where the data dict has the "disease" key
+        disease_entries = [item for item in all_entries if "disease" in item[1]]
+        
+        if not disease_entries:
+            print("[recents.py] No disease entries found.")
+            return None, None
+        # --- END FILTER ---
 
         # 3. Define timestamp format
         timestamp_format = "%b %d, %Y %I:%M %p"
@@ -52,25 +61,22 @@ def get_most_recent_detection():
             except ValueError:
                 return datetime.min
 
-        all_entries.sort(key=get_date, reverse=True)
+        # MODIFIED: Sort the filtered disease_entries list
+        disease_entries.sort(key=get_date, reverse=True)
         
-        # 5. Return the most recent item (filename, data)
-        if all_entries:
-            return all_entries[0] # Returns (filename, data_dict)
-        else:
-            return None, None
+        # 5. Return the most recent *disease* item
+        return disease_entries[0] # Returns (filename, data_dict)
 
     except Exception as e:
         print(f"❌ Error in get_most_recent_detection: {e}")
         return None, None
 
-# --- NEW: Standalone PREVIEW Function for Dashboard ---
-# --- NEW: Standalone PREVIEW Function for Dashboard ---
+# --- Standalone PREVIEW Function for Dashboard ---
 def recent_disease_preview():
     """
-    Gets the most recent disease detection and formats the data
+    Gets the most recent *disease* detection and formats the data
     for the dashboard preview button.
-
+    
     Returns:
         - disease_name (str): Formatted name, e.g., "Bacterial Leaf Spot" or "No Recent Detections"
         - date_str (str or None): Formatted date string, e.g., "Oct 26, 2025"
@@ -78,16 +84,17 @@ def recent_disease_preview():
         - image_path (str or None): Full path to the associated image.
     """
     gallery_path = "Page_files/gallery_files"
-    filename, data = get_most_recent_detection() # This still uses the original timestamp format for sorting
+    # This function now correctly gets the most recent *disease*
+    filename, data = get_most_recent_detection() 
 
     if not filename or not data:
         return "No Recent\nDetections", None, None, None
 
     try:
-        # Format disease name
+        # Format disease name (this is safe as we know it's a disease)
         disease_name = _format_disease_name(data.get("disease", "Unknown"))
 
-        # --- MODIFIED: Parse and format timestamp ---
+        # --- Parse and format timestamp ---
         timestamp_str = data.get("timestamp", None)
         date_str = None
         time_str = None
@@ -122,7 +129,7 @@ def recent_disease_preview():
 class RecentDiseaseList(ctk.CTkFrame):
     """
     A custom scrollable widget that loads data from the master JSON,
-    sorts it by date, and displays it in a list.
+    sorts it by date, and displays *only disease* entries.
     
     Includes "drag-to-scroll" functionality.
     """
@@ -193,7 +200,7 @@ class RecentDiseaseList(ctk.CTkFrame):
         self.canvas.itemconfig(self.canvas_window, width=canvas_width)
 
     def _load_and_sort_data(self):
-        """Loads master JSON and sorts entries by timestamp, newest first."""
+        """Loads master JSON and sorts *only disease* entries by timestamp, newest first."""
         try:
             # 1. Load the master dictionary
             if os.path.exists(self.single_json_path):
@@ -207,6 +214,13 @@ class RecentDiseaseList(ctk.CTkFrame):
 
             # 2. MODIFIED: Get all items (filename, data)
             all_entries = list(master_data.items())
+            
+            # --- NEW: Filter for diseases only ---
+            disease_entries = [item for item in all_entries if "disease" in item[1]]
+            
+            if not disease_entries:
+                return []
+            # --- END FILTER ---
 
             # 3. Define the timestamp format
             # Example: "Oct 19, 2025 09:50 PM"
@@ -222,10 +236,10 @@ class RecentDiseaseList(ctk.CTkFrame):
                     # Handle any malformed data by placing it at the bottom
                     return datetime.min
 
-            # sort(key=..., reverse=True) puts the newest items at the top
-            all_entries.sort(key=get_date, reverse=True)
+            # MODIFIED: Sort the filtered disease_entries list
+            disease_entries.sort(key=get_date, reverse=True)
             
-            return all_entries # Returns list of (filename, data_dict)
+            return disease_entries # Returns list of (filename, data_dict)
 
         except Exception as e:
             print(f"❌ Error loading or sorting recent data: {e}")
@@ -236,10 +250,11 @@ class RecentDiseaseList(ctk.CTkFrame):
     def _populate_list(self):
         """Creates the label widgets for each disease entry."""
         
+        # This now receives only disease entries
         sorted_data = self._load_and_sort_data()
         
         if not sorted_data:
-            label = ctk.CTkLabel(self.scrollable_frame, text="No records found.", text_color="gray")
+            label = ctk.CTkLabel(self.scrollable_frame, text="No disease records found.", text_color="gray")
             label.pack(pady=10)
             # Bind drag events even to the "empty" label
             label.bind("<ButtonPress-1>", self._on_press)
@@ -252,7 +267,7 @@ class RecentDiseaseList(ctk.CTkFrame):
 
         # MODIFIED: Loop now gets filename and item
         for filename, item in sorted_data:
-            # MODIFIED: Use standalone formatter
+            # This code is now safe because we know "item" is a disease entry
             raw_disease = item.get("disease", "Unknown Disease")
             disease = _format_disease_name(raw_disease) # <-- Use standalone
             

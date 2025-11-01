@@ -7,6 +7,7 @@ from Pages.recents import RecentDiseaseList
 from Pages.recents import recent_disease_preview
 from Pages.records import ReportViewerPage 
 from Pages.analysis_page import AnalysisPage
+from Pages.pest_monitor import PestMonitorPage
 import customtkinter as ctk
 import os
 from shared_components import custom_font_bold, custom_font_title, custom_font_regular, ORIGINAL_WIDTH, ORIGINAL_HEIGHT
@@ -27,6 +28,12 @@ class MyDashboard(SC):
         self.root.destroy()
         capture_page = CapturePage()
         capture_page.root.mainloop()
+    
+    def open_pest_monitor(self):
+        self.root.destroy()
+        monitor_page = PestMonitorPage()
+        # Use mainloop() for the new page
+        monitor_page.root.mainloop()
 
     def open_report_viewer(self, folder_name, title):
         """Destroys dashboard and opens the report viewer page."""
@@ -226,7 +233,7 @@ class MyDashboard(SC):
             width=217, height=37,
             anchor="center",
             font=tuple(custom_font_bold),
-            command=None
+            command=self.open_pest_monitor
         )
         
         # Diseases Button

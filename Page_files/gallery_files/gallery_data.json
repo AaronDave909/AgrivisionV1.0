@@ -88,5 +88,17 @@
         "accuracy": "64.96%",
         "count": "1",
         "timestamp": "Oct 25, 2025 11:55 AM"
+    },
+    "pest_20251101_215645.jpg": {
+        "pest": "slug",
+        "accuracy": "81.61%",
+        "count": "1",
+        "timestamp": "Nov 01, 2025 09:56 PM"
+    },
+    "pest_20251101_215717.jpg": {
+        "pest": "caterpillar",
+        "accuracy": "86.96%",
+        "count": "2",
+        "timestamp": "Nov 01, 2025 09:57 PM"
     }
 }
