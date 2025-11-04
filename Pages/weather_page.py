@@ -189,7 +189,7 @@ class WeatherPage(SC):
             self.avg_frame = ctk.CTkFrame(self.chart_frame, fg_color="transparent")
             self.avg_frame.pack(side=ctk.TOP, fill="x", padx=20, pady=(5, 10))
 
-            font_style = ("Arial", 40, "bold")
+            font_style = ("Arial", 20, "bold")
             text_color = "#FFFFFF"
             
             # Create labels with placeholder text
@@ -423,7 +423,7 @@ class WeatherPage(SC):
             self.ax3.set_xlabel('Time', color='white')
             plt.setp(self.ax3.get_xticklabels(), rotation=45, ha="right", color='white')
             
-            self.fig_stacked.suptitle('BME280 Sensor Data (All)', fontsize=16, color='white')
+            self.fig_stacked.suptitle('BME280 Sensor Data (All)', fontsize=14, color='white')
             self.fig_stacked.tight_layout(rect=[0, 0.03, 1, 0.95])
 
             # --- 4. Redraw SINGLE Plot (ax_single) based on current view ---
@@ -468,7 +468,7 @@ class WeatherPage(SC):
             self.ax_single.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p'))
             self.ax_single.set_xlabel('Time', color='white')
             plt.setp(self.ax_single.get_xticklabels(), rotation=45, ha="right", color='white')
-            self.fig_single.suptitle(title, fontsize=16, color='white')
+            self.fig_single.suptitle(title, fontsize=14, color='white')
             self.fig_single.tight_layout(rect=[0, 0.03, 1, 0.95])
             
             # --- 5. Update both canvases ---
