@@ -8,6 +8,47 @@ import os
 import datetime 
 from PIL import Image # Import Image
 
+def get_latest_weather_averages(csv_path="Page_files/weather.csv"):
+    """
+    Reads the weather CSV and calculates the 10-minute average 
+    for Temp, Humidity, and Pressure.
+    Returns: (avg_temp, avg_hum, avg_pres)
+    """
+    try:
+        if not os.path.exists(csv_path):
+            print(f"Weather CSV not found at: {csv_path}")
+            return None, None, None
+
+        df = pd.read_csv(csv_path, parse_dates=[['Date', 'Time']])
+        if df.empty:
+            print("Weather CSV is empty.")
+            return None, None, None
+
+        df = df.rename(columns={'Date_Time': 'Timestamp'}).set_index('Timestamp')
+        
+        latest_time = df.index.max()
+        ten_mins_ago = latest_time - pd.Timedelta(minutes=10)
+        recent_df = df[df.index >= ten_mins_ago]
+        
+        if recent_df.empty:
+            print("No recent weather data in the last 10 minutes.")
+            return None, None, None
+
+        avg_temp = recent_df['Temperature'].mean()
+        avg_hum = recent_df['Humidity'].mean()
+        avg_pres = recent_df['Pressure'].mean()
+        
+        # Return None for any value that couldn't be calculated
+        return (
+            avg_temp if not pd.isna(avg_temp) else None,
+            avg_hum if not pd.isna(avg_hum) else None,
+            avg_pres if not pd.isna(avg_pres) else None
+        )
+
+    except Exception as e:
+        print(f"Error reading or processing weather CSV: {e}")
+        return None, None, None
+
 class WeatherPage(SC):
     
     CSV_FILE_PATH = "Page_files/weather.csv"

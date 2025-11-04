@@ -283,7 +283,8 @@ class SharedComponents:
     def create_button(self, text="Button", x=100, y=100, 
                       width=140, height=140, anchor="sw", 
                       command=None, image=None, compound="top",
-                      fg_color=BUTTON_COLOR, font=custom_font_bold, corner_radius=8):
+                      fg_color=BUTTON_COLOR, font=custom_font_bold, corner_radius=8,
+                      handle_hover=True, hover_color=BUTTON_HOVER): # <-- 1. ADD hover_color PARAM
         # Scale all geometry parameters
         scaled_x = self._scale_value(x, 'x')
         scaled_y = self._scale_value(y, 'y')
@@ -300,7 +301,7 @@ class SharedComponents:
             anchor=anchor,
             font=tuple(font), # FIX: Convert list to tuple
             fg_color=fg_color,
-            hover_color=BUTTON_HOVER,
+            hover_color=hover_color, # <-- 2. USE THE PARAMETER HERE
             corner_radius=scaled_corner_radius,
             command=command,
             image=image,
@@ -308,13 +309,16 @@ class SharedComponents:
         )
         button.place(x=scaled_x, y=scaled_y)
 
-        def on_enter(event):
-            button.place_configure(y=scaled_y - scaled_hover_offset)
-        def on_leave(event):
-            button.place_configure(y=scaled_y)
+        # --- MODIFICATION: Make hover optional ---
+        if handle_hover:
+            def on_enter(event):
+                button.place_configure(y=scaled_y - scaled_hover_offset)
+            def on_leave(event):
+                button.place_configure(y=scaled_y)
 
-        button.bind("<Enter>", on_enter)
-        button.bind("<Leave>", on_leave)
+            button.bind("<Enter>", on_enter)
+            button.bind("<Leave>", on_leave)
+            
         return button
 
     def create_panel(self, text="", x=100, y=100, 
@@ -349,3 +353,118 @@ class SharedComponents:
             label.place(relx=0.5, rely=0, anchor="n")
 
         return panel
+# --- NEW FUNCTION ADDED HERE ---
+    def create_weather_analytics_panel(self, x, y, width, height, anchor, command):
+        """
+        Creates the composite weather analytics button.
+        This button contains multiple labels and icons but acts as a single button.
+        """
+        
+        # --- ADDED: Re-calculate scaled values for hover logic ---
+        scaled_y = self._scale_value(y, 'y')
+        scaled_hover_offset = self._scale_value(5, 'y')
+        
+        # 1. Create the main button
+        weather_button = self.create_button(
+            text="", # Text will be added inside
+            x=x, y=y,
+            width=width, height=height,
+            anchor=anchor,
+            command=command, # This makes the main button clickable
+            handle_hover=False, # <-- Disable default raise
+            hover_color=BUTTON_COLOR # <-- Disable default hover color
+        )
+        # Prevent the button from shrinking
+        weather_button.pack_propagate(False) 
+
+        # 2. Load Icons
+        try:
+            # Note: 'Image' is imported at the top of this file
+            icon_size = (self._scale_value(40, 'x'), self._scale_value(40, 'y'))
+            self.temp_icon = ctk.CTkImage(light_image=Image.open("_image_assets/temperature.png"), size=icon_size)
+            self.hum_icon = ctk.CTkImage(light_image=Image.open("_image_assets/humidity.png"), size=icon_size)
+            self.pres_icon = ctk.CTkImage(light_image=Image.open("_image_assets/pressure.png"), size=icon_size)
+        except Exception as e:
+            print(f"Error loading weather icons: {e}")
+            self.temp_icon = self.hum_icon = self.pres_icon = None
+
+        # 3. Create Title Label
+        shared_button_font = tuple(custom_font_bold)
+        
+        title_label = ctk.CTkLabel(
+            weather_button, 
+            text="Weather Analytics", 
+            font=shared_button_font, # Use shared font
+            text_color="white",
+            fg_color="transparent" # <-- Ensure title_label has a background we can change
+        )
+        # --- FIX: Removed invalid 'hover_color' parameter from title_label ---
+        title_label.pack(pady=self._scale_value(10, 'y'))
+
+        # 4. Create Data Frames
+        
+        # --- Temperature Row ---
+        temp_frame = ctk.CTkFrame(weather_button, fg_color="#2A2E3F")
+        temp_icon_label = ctk.CTkLabel(temp_frame, text="", image=self.temp_icon)
+        temp_icon_label.pack(side="left", padx=10)
+        self.temp_label = ctk.CTkLabel(temp_frame, text="-- °C", font=shared_button_font, text_color="white")
+        self.temp_label.pack(side="left", padx=10)
+        temp_frame.pack(fill="x", pady=self._scale_value(5, 'y'))
+        
+        # --- Humidity Row ---
+        hum_frame = ctk.CTkFrame(weather_button, fg_color="#2A2E3F")
+        hum_icon_label = ctk.CTkLabel(hum_frame, text="", image=self.hum_icon)
+        hum_icon_label.pack(side="left", padx=10)
+        self.hum_label = ctk.CTkLabel(hum_frame, text="-- %", font=shared_button_font, text_color="white")
+        self.hum_label.pack(side="left", padx=10)
+        hum_frame.pack(fill="x", pady=self._scale_value(5, 'y'))
+        
+        # --- Pressure Row ---
+        pres_frame = ctk.CTkFrame(weather_button, fg_color="transparent")
+        pres_icon_label = ctk.CTkLabel(pres_frame, text="", image=self.pres_icon)
+        pres_icon_label.pack(side="left", padx=10)
+        self.pres_label = ctk.CTkLabel(pres_frame, text="-- hPa", font=shared_button_font, text_color="white")
+        self.pres_label.pack(side="left", padx=10)
+        pres_frame.pack(fill="x", pady=self._scale_value(5, 'y'))
+
+        # --- 5. UPDATED: Hover logic controls all colors ---
+        def on_composite_enter(event):
+            weather_button.place_configure(y=scaled_y - scaled_hover_offset)
+            weather_button.configure(fg_color=BUTTON_HOVER) 
+            
+            # Change colors for all child elements that need it
+            title_label.configure(fg_color=BUTTON_HOVER) # <-- NOW HIGHLIGHTS TITLE BACKGROUND
+            temp_frame.configure(fg_color=BUTTON_HOVER)
+            hum_frame.configure(fg_color=BUTTON_HOVER)
+            pres_frame.configure(fg_color=BUTTON_HOVER)
+
+        def on_composite_leave(event):
+            weather_button.place_configure(y=scaled_y)
+            weather_button.configure(fg_color=BUTTON_COLOR) 
+            
+            # Revert colors for all child elements
+            title_label.configure(fg_color="transparent") # <-- Revert title
+            temp_frame.configure(fg_color=BUTTON_COLOR)
+            hum_frame.configure(fg_color=BUTTON_COLOR)
+            pres_frame.configure(fg_color="transparent") 
+
+        # 6. Make all inner widgets clickable and hoverable
+        # Store all widgets that need to be bound
+        widgets_to_bind = [
+            weather_button, 
+            title_label, 
+            temp_frame, temp_icon_label, self.temp_label,
+            hum_frame, hum_icon_label, self.hum_label,
+            pres_frame, pres_icon_label, self.pres_label
+        ]
+        
+        # Bind all widgets to the main button's command and new hover logic
+        for widget in widgets_to_bind:
+             # Use <Button-1> for left-click
+             widget.bind("<Button-1>", lambda e, cmd=command: cmd() if cmd else None)
+             
+             # --- Bind the NEW composite hover functions ---
+             widget.bind("<Enter>", on_composite_enter)
+             widget.bind("<Leave>", on_composite_leave)
+
+        return weather_button
