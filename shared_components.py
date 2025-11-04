@@ -158,6 +158,7 @@ class SharedComponents:
             command=command,
             fg_color="#2A2E3F",
             hover_color="#2A2E3F",
+            corner_radius=0
         )
         btn.place(x=scaled_x, y=scaled_y, anchor="center")
 
