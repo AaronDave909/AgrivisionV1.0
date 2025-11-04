@@ -9,13 +9,13 @@ from Pages.records import ReportViewerPage
 from Pages.analysis_page import AnalysisPage
 from Pages.pest_monitor import PestMonitorPage
 from Pages.weather_page import WeatherPage
-# --- ADDED THIS IMPORT ---
 from Pages.weather_page import get_latest_weather_averages 
-
 import customtkinter as ctk
 import os
-from shared_components import custom_font_bold, custom_font_title, custom_font_regular, ORIGINAL_WIDTH, ORIGINAL_HEIGHT
-# Note: No 'from PIL import Image' is needed here anymore
+from shared_components import (
+    custom_font_bold, custom_font_title, custom_font_regular, 
+    BUTTON_COLOR, BUTTON_HOVER
+)
 
 class MyDashboard(SC):
 
@@ -88,9 +88,9 @@ class MyDashboard(SC):
         # 2. Update the labels (checking if data is valid)
         # These labels (self.temp_label) were created in create_weather_analytics_panel
         if avg_temp is not None:
-            self.temp_label.configure(text=f"{avg_temp:.1f} °C")
+            self.temp_label.configure(text=f"{avg_temp:.1f} Â°C")
         else:
-            self.temp_label.configure(text="-- °C")
+            self.temp_label.configure(text="-- Â°C")
 
         if avg_hum is not None:
             self.hum_label.configure(text=f"{avg_hum:.1f} %")
@@ -208,29 +208,105 @@ class MyDashboard(SC):
         # Get Gallery Preview data
         gallery_photo, file_label = gallery_preview(self.root)
 
-        # Capture Gallery Button
+        # === UPDATED: Capture Gallery Button ===
+        # Rebuilt as a composite widget to match the Weather Analytics panel layout
+        # 1. Get scaled values for hover logic
+        gallery_scaled_y = self._scale_value(232, 'y')
+        gallery_scaled_hover_offset = self._scale_value(5, 'y')
+
+        # 2. Create the base button (acts as a frame)
         self.gallery_button = self.create_button(
-            text="Capture Gallery",
+            text="", # Title will be added manually
             x=340, y=232,
             width=222, height=220,
             anchor="n",
-            image=gallery_photo,
-            compound="bottom",
-            command=self.open_gallery
+            command=self.open_gallery,
+            handle_hover=False, # Disable default hover
+            hover_color=BUTTON_COLOR, # <-- FIX: Use variable
         )
-        
+        self.gallery_button.pack_propagate(False) # Prevent shrinking
+
+        # 3. Create the Title Label
+        gallery_title_label = ctk.CTkLabel(
+            self.gallery_button,
+            text="Capture Gallery",
+            font=tuple(custom_font_bold), # Use same font as weather panel
+            text_color="white",
+            fg_color="transparent"
+        )
+        # Use the same padding as the weather panel's title to align them
+        gallery_title_label.pack(pady=(self._scale_value(10, 'y'), 0))
+
+        # 4. Create the Image Label (if an image exists)
+        gallery_image_label = None
+        if gallery_photo:
+            gallery_image_label = ctk.CTkLabel(
+                self.gallery_button,
+                text="",
+                image=gallery_photo,
+                fg_color="transparent"
+            )
+            # Pack it below the title, expanding to fill space
+            gallery_image_label.pack(pady=(0, self._scale_value(5, 'y')), fill="both", expand=True)
+        # 5. Create the file_label frame (if file exists)
+        gallery_file_frame = None
+        gallery_file_label_widget = None
         if file_label not in ("Gallery Empty", "No Images"):
-            frame_corner_radius = self._scale_value(8, 'x')
-            file_frame = ctk.CTkFrame(self.gallery_button, fg_color="#2A2E3F", corner_radius=frame_corner_radius)
-            file_frame.place(relx=0.5, rely=1.0, anchor="s")
-            label = ctk.CTkLabel(
-                file_frame,
+            gallery_file_frame = ctk.CTkFrame(
+                self.gallery_button, 
+                fg_color=BUTTON_COLOR, # <-- FIX: Use variable 
+                corner_radius = 0
+            )
+            
+            # --- FIX: Use .pack() instead of .place() ---
+            gallery_file_frame.pack(side="bottom", pady=(0, self._scale_value(5, 'y'))) 
+
+            gallery_file_label_widget = ctk.CTkLabel(
+                gallery_file_frame,
                 text=f"{file_label}",
                 justify="center",
-                font=tuple(custom_font_regular), 
+                font=tuple(custom_font_regular),
                 text_color="white",
             )
-            label.pack(padx=self._scale_value(5, 'x'), pady=self._scale_value(1, 'y')) 
+            gallery_file_label_widget.pack(padx=self._scale_value(5, 'x'), pady=self._scale_value(1, 'y'))
+
+        # 6. Define composite hover logic for the gallery button
+        def on_gallery_enter(event):
+            self.gallery_button.place_configure(y=gallery_scaled_y - gallery_scaled_hover_offset)
+            self.gallery_button.configure(fg_color=BUTTON_HOVER)
+            gallery_title_label.configure(fg_color=BUTTON_HOVER)
+            if gallery_image_label:
+                gallery_image_label.configure(fg_color=BUTTON_HOVER) # <-- FIX: Use variable
+            if gallery_file_frame:
+                gallery_file_frame.configure(fg_color=BUTTON_HOVER) # <-- FIX: Use variable
+
+        def on_gallery_leave(event):
+            self.gallery_button.place_configure(y=gallery_scaled_y)
+            self.gallery_button.configure(fg_color=BUTTON_COLOR)
+            gallery_title_label.configure(fg_color="transparent")
+            if gallery_image_label:
+                gallery_image_label.configure(fg_color="transparent")
+            if gallery_file_frame:
+                # Revert frame to normal color
+                gallery_file_frame.configure(fg_color=BUTTON_COLOR) # <-- FIX: Use variable
+
+        # 7. Bind all child widgets to pass clicks/hovers to the parent button
+        gallery_widgets_to_bind = [self.gallery_button, gallery_title_label]
+        
+        if gallery_image_label:
+            gallery_widgets_to_bind.append(gallery_image_label)
+        if gallery_file_frame:
+            gallery_widgets_to_bind.append(gallery_file_frame)
+        if gallery_file_label_widget:
+            gallery_widgets_to_bind.append(gallery_file_label_widget)
+
+        for widget in gallery_widgets_to_bind:
+             if widget is None: continue # Skip if a widget wasn't created
+             widget.bind("<Button-1>", lambda e, cmd=self.open_gallery: cmd() if cmd else None)
+             widget.bind("<Enter>", on_gallery_enter)
+             widget.bind("<Leave>", on_gallery_leave)
+
+        # --- End of Updated Section ---
 
         # Disease Record Panel
         disease_panel = self.create_panel(
