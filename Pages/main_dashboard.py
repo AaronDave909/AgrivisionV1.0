@@ -16,8 +16,17 @@ from shared_components import (
     custom_font_bold, custom_font_title, custom_font_regular, 
     BUTTON_COLOR, BUTTON_HOVER
 )
+import matplotlib.dates as mdates
+from collections import deque
+import matplotlib.ticker as ticker
+import pandas as pd
+import numpy as np                    # For creating the gradient
+import matplotlib.colors as mcolors
 
 class MyDashboard(SC):
+
+    CSV_FILE_PATH = "Page_files/weather.csv"
+    UPDATE_INTERVAL = 10000
 
     # --- MODIFIED: Added is_running flag ---
     def open_gallery(self):
@@ -72,46 +81,154 @@ class MyDashboard(SC):
         self.root.destroy()
         app = WeatherPage()
         app.root.mainloop()
+    
+    def _update_temp_chart(self):
+        """Helper function to redraw the temperature chart with new data."""
+        if not hasattr(self, 'chart_ax'):
+            return # Chart not initialized yet
+
+        ax = self.chart_ax
+        ax.clear() 
+        
+        # Get the current background color (handles hover state)
+        bg_color = self.chart_fig.get_facecolor()
+        ax.set_facecolor(bg_color)
+
+        # --- 1. Set Y-axis limits based on data ---
+        # (We do this first so the gradient knows where to stop)
+        if not self.chart_y_data or all(v == 0 for v in self.chart_y_data):
+             ax.set_ylim(0, 1) # Default for empty data
+        else:
+            non_zero_data = [v for v in self.chart_y_data if v != 0]
+            if non_zero_data:
+                min_val = min(non_zero_data)
+                max_val = max(non_zero_data)
+                padding = (max_val - min_val) * 0.1 if (max_val - min_val) > 0 else 0.5
+                ax.set_ylim(min_val - padding - 1, max_val + padding + 1)
+            else:
+                ax.set_ylim(0, 1) # Handle case where data is just [0, 0, 0]
+
+        # --- 2. Plot the data (X and Y) ---
+        if self.chart_x_data:
+            plot_color = '#FF5733' # Bright Red
+            x_data, y_data = self.chart_x_data, self.chart_y_data
+            
+            # Plot the main line
+            ax.plot(x_data, y_data, color=plot_color, linewidth=self._scale_value(2, 'y'), zorder=3)
+            
+            # --- 3. ADD GRADIENT FILL (User Request) ---
+            try:
+                # Create a transparent fill polygon that follows the line
+                fill = ax.fill_between(x_data, y_data, color='none', zorder=2)
+                
+                # Get the path of that polygon
+                clip_path = fill.get_paths()[0]
+                
+                # Get the plot boundaries
+                xmin, xmax = mdates.date2num(x_data[0]), mdates.date2num(x_data[-1])
+                ymin, ymax = ax.get_ylim()
+
+                # Define the gradient (fading from 0.4 alpha to 0.0 alpha)
+                line_color_rgb = mcolors.to_rgb(plot_color)
+                colors = [(*line_color_rgb, 0.4), (*line_color_rgb, 0.0)]
+                cmap = mcolors.LinearSegmentedColormap.from_list('my_gradient', colors, N=256)
+                
+                # Create a vertical gradient image
+                gradient = np.linspace(1, 0, 256).reshape(-1, 1)
+                gradient_img = np.repeat(gradient, 2, axis=1) # Make it 2D
+                
+                # Draw the gradient image over the plot area
+                img = ax.imshow(gradient_img, cmap=cmap, aspect='auto', origin='lower', 
+                                extent=[xmin, xmax, ymin, ymax], zorder=1)
+                
+                # Clip the gradient image to the shape of the line chart
+                img.set_clip_path(clip_path, transform=ax.transData)
+            except Exception as e:
+                print(f"Failed to create gradient: {e}") # Failsafe
+
+        # --- 4. Add the grid (User Request) ---
+        ax.grid(True, linestyle='--', alpha=0.3, color='gray') # Subtle grid
+
+        # --- 5. Re-apply all styling ---
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_color('white')
+        ax.spines['bottom'].set_color('white')
+        
+        # --- 6. Format the Ticks ---
+        
+        # Y-Ticks (Vertical) - FONT SIZE REDUCED
+        ax.tick_params(axis='y', colors='white', labelsize=self._scale_value(5, 'y'))
+        ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3, prune='both'))
+        
+        # X-Ticks (Horizontal) - FONT SIZE REDUCED
+        ax.tick_params(axis='x', colors='white', labelsize=self._scale_value(5, 'y'), rotation=30)
+        
+        # Smart Tick Locator and Formatter
+        ax.xaxis.set_major_locator(mdates.AutoDateLocator(minticks=2, maxticks=4)) 
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p')) 
+        
+        # Redraw the canvas
+        self.chart_canvas.draw()
 
     # --- ADDED: New function to update weather labels ---
     def update_weather_data(self):
         """
-        Fetches the latest weather data and updates the dashboard labels.
+        Fetches latest average for the label, and CSV data for the chart.
         This function will reschedule itself.
         """
         if not self.is_running:
-            return # Stop the loop if we've navigated away
+            return 
 
-        # 1. Get the data using the imported function
-        avg_temp, avg_hum, avg_pres = get_latest_weather_averages()
+        # --- 1. Get 10-min average for the LABEL (Unchanged) ---
+        avg_temp, _, _ = get_latest_weather_averages()
 
-        # 2. Update the labels (checking if data is valid)
-        # These labels (self.temp_label) were created in create_weather_analytics_panel
         if avg_temp is not None:
-            self.temp_label.configure(text=f"{avg_temp:.1f} Â°C")
+            self.temp_label.configure(text=f"{avg_temp:.1f} °C")
         else:
-            self.temp_label.configure(text="-- Â°C")
+            self.temp_label.configure(text="-- °C")
 
-        if avg_hum is not None:
-            self.hum_label.configure(text=f"{avg_hum:.1f} %")
-        else:
-            self.hum_label.configure(text="-- %")
+        # --- 2. Get LAST 20 READINGS from CSV for the CHART ---
+        try:
+            if not os.path.exists(self.CSV_FILE_PATH):
+                raise FileNotFoundError("weather.csv not found")
 
-        if avg_pres is not None:
-            self.pres_label.configure(text=f"{avg_pres:.1f} hPa")
-        else:
-            self.pres_label.configure(text="-- hPa")
+            # --- Read CSV and parse dates (the *correct* way) ---
+            df = pd.read_csv(self.CSV_FILE_PATH)
+            if df.empty or 'Date' not in df.columns or 'Time' not in df.columns:
+                 raise ValueError("CSV empty or missing Date/Time columns")
+            
+            # --- Ensure 'Time' is a string and handle potential float conversion ---
+            df['Time'] = df['Time'].astype(str)
+            
+            df['Timestamp'] = pd.to_datetime(df['Date'] + ' ' + df['Time'])
+            
+            # --- Get the last 20 readings for BOTH columns ---
+            num_readings = 20 # How many points to show on the chart
+            df_tail = df.tail(num_readings)
+            
+            self.chart_x_data = df_tail['Timestamp'].tolist()
+            self.chart_y_data = df_tail['Temperature'].tolist()
+        
+        except Exception as e:
+            print(f"Error reading CSV for dashboard chart: {e}")
+            # On error, plot empty data
+            self.chart_x_data = []
+            self.chart_y_data = []
 
-        # 3. Reschedule this function to run again
-        # Runs every 10 seconds (10000 milliseconds)
-        self.root.after(10000, self.update_weather_data)
+        # 3. Update the chart (now plots the CSV data)
+        self._update_temp_chart()
+
+        # 4. Reschedule
+        self.root.after(self.UPDATE_INTERVAL, self.update_weather_data)
 
     def __init__(self):
         super().__init__()
         
         # --- ADDED: Flag to control the update loop ---
         self.is_running = True 
-        
+        self.chart_x_data = []
+        self.chart_y_data = []
         self.root.update_idletasks()
         
         self.create_title()
@@ -370,4 +487,5 @@ class MyDashboard(SC):
         self.root.after(1000, self.update_weather_data) 
 
     def run(self):
+        self.root.after(100, self.update_weather_data)
         self.root.mainloop()

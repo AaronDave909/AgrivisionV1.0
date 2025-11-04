@@ -3,6 +3,9 @@ import tkinter as tk
 from tkinter import font as tkfont
 from PIL import Image, ImageTk
 import cv2
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+import matplotlib.ticker as ticker
 
 # Layout and color constant defaults (These now define the ORIGINAL design size)
 ORIGINAL_WIDTH = 800
@@ -353,40 +356,35 @@ class SharedComponents:
             label.place(relx=0.5, rely=0, anchor="n")
 
         return panel
-# --- NEW FUNCTION ADDED HERE ---
+
     def create_weather_analytics_panel(self, x, y, width, height, anchor, command):
         """
         Creates the composite weather analytics button.
-        This button contains multiple labels and icons but acts as a single button.
+        This button contains the temp average and a line chart.
         """
         
-        # --- ADDED: Re-calculate scaled values for hover logic ---
         scaled_y = self._scale_value(y, 'y')
         scaled_hover_offset = self._scale_value(5, 'y')
         
         # 1. Create the main button
         weather_button = self.create_button(
-            text="", # Text will be added inside
+            text="", 
             x=x, y=y,
             width=width, height=height,
             anchor=anchor,
-            command=command, # This makes the main button clickable
-            handle_hover=False, # <-- Disable default raise
-            hover_color=BUTTON_COLOR # <-- Disable default hover color
+            command=command, 
+            handle_hover=False, 
+            hover_color=BUTTON_COLOR 
         )
-        # Prevent the button from shrinking
         weather_button.pack_propagate(False) 
 
-        # 2. Load Icons
+        # 2. Load Icon
         try:
-            # Note: 'Image' is imported at the top of this file
             icon_size = (self._scale_value(40, 'x'), self._scale_value(40, 'y'))
             self.temp_icon = ctk.CTkImage(light_image=Image.open("_image_assets/temperature.png"), size=icon_size)
-            self.hum_icon = ctk.CTkImage(light_image=Image.open("_image_assets/humidity.png"), size=icon_size)
-            self.pres_icon = ctk.CTkImage(light_image=Image.open("_image_assets/pressure.png"), size=icon_size)
         except Exception as e:
-            print(f"Error loading weather icons: {e}")
-            self.temp_icon = self.hum_icon = self.pres_icon = None
+            print(f"Error loading temperature icon: {e}")
+            self.temp_icon = None
 
         # 3. Create Title Label
         shared_button_font = tuple(custom_font_bold)
@@ -394,76 +392,74 @@ class SharedComponents:
         title_label = ctk.CTkLabel(
             weather_button, 
             text="Weather Analytics", 
-            font=shared_button_font, # Use shared font
+            font=shared_button_font, 
             text_color="white",
-            fg_color="transparent" # <-- Ensure title_label has a background we can change
+            fg_color="transparent" 
         )
-        # --- FIX: Removed invalid 'hover_color' parameter from title_label ---
-        title_label.pack(pady=self._scale_value(10, 'y'))
+        title_label.pack(pady=(self._scale_value(10, 'y'), 0)) # Padding only at top
 
         # 4. Create Data Frames
         
-        # --- Temperature Row ---
-        temp_frame = ctk.CTkFrame(weather_button, fg_color="#2A2E3F")
+        # --- Temperature Row (Average) ---
+        temp_frame = ctk.CTkFrame(weather_button, fg_color=BUTTON_COLOR)
         temp_icon_label = ctk.CTkLabel(temp_frame, text="", image=self.temp_icon)
         temp_icon_label.pack(side="left", padx=10)
         self.temp_label = ctk.CTkLabel(temp_frame, text="-- °C", font=shared_button_font, text_color="white")
         self.temp_label.pack(side="left", padx=10)
         temp_frame.pack(fill="x", pady=self._scale_value(5, 'y'))
         
-        # --- Humidity Row ---
-        hum_frame = ctk.CTkFrame(weather_button, fg_color="#2A2E3F")
-        hum_icon_label = ctk.CTkLabel(hum_frame, text="", image=self.hum_icon)
-        hum_icon_label.pack(side="left", padx=10)
-        self.hum_label = ctk.CTkLabel(hum_frame, text="-- %", font=shared_button_font, text_color="white")
-        self.hum_label.pack(side="left", padx=10)
-        hum_frame.pack(fill="x", pady=self._scale_value(5, 'y'))
+        # --- 5. Create Chart Frame and Canvas ---
+        # This frame will hold the matplotlib chart
+        chart_frame = ctk.CTkFrame(weather_button, fg_color="transparent")
+        chart_frame.pack(fill="both", expand=True, padx=self._scale_value(5, 'x'), pady=(0, self._scale_value(5, 'y')))
         
-        # --- Pressure Row ---
-        pres_frame = ctk.CTkFrame(weather_button, fg_color="transparent")
-        pres_icon_label = ctk.CTkLabel(pres_frame, text="", image=self.pres_icon)
-        pres_icon_label.pack(side="left", padx=10)
-        self.pres_label = ctk.CTkLabel(pres_frame, text="-- hPa", font=shared_button_font, text_color="white")
-        self.pres_label.pack(side="left", padx=10)
-        pres_frame.pack(fill="x", pady=self._scale_value(5, 'y'))
+        # Create the matplotlib Figure and Axes
+        self.chart_fig = Figure(facecolor=BUTTON_COLOR, dpi=100)
+        
+        # --- MODIFIED: Adjust subplot to make room for x-axis labels ---
+        self.chart_ax = self.chart_fig.add_subplot(111, facecolor=BUTTON_COLOR)
+        self.chart_fig.subplots_adjust(left=0.18, right=0.95, bottom=0.2, top=0.95) # Make margins tight
+        
+        # Style the chart to match the UI
+        self.chart_ax.spines['top'].set_visible(False)
+        self.chart_ax.spines['right'].set_visible(False)
+        self.chart_ax.spines['left'].set_color('white')
+        self.chart_ax.spines['bottom'].set_color('white')
 
-        # --- 5. UPDATED: Hover logic controls all colors ---
+        # Create the Tkinter canvas
+        self.chart_canvas = FigureCanvasTkAgg(self.chart_fig, master=chart_frame)
+        self.chart_canvas_widget = self.chart_canvas.get_tk_widget()
+        self.chart_canvas_widget.pack(fill="both", expand=True)
+
+        # --- 6. UPDATED: Hover logic ---
         def on_composite_enter(event):
             weather_button.place_configure(y=scaled_y - scaled_hover_offset)
             weather_button.configure(fg_color=BUTTON_HOVER) 
-            
-            # Change colors for all child elements that need it
-            title_label.configure(fg_color=BUTTON_HOVER) # <-- NOW HIGHLIGHTS TITLE BACKGROUND
+            title_label.configure(fg_color=BUTTON_HOVER) 
             temp_frame.configure(fg_color=BUTTON_HOVER)
-            hum_frame.configure(fg_color=BUTTON_HOVER)
-            pres_frame.configure(fg_color=BUTTON_HOVER)
+            self.chart_fig.set_facecolor(BUTTON_HOVER)
+            self.chart_ax.set_facecolor(BUTTON_HOVER)
+            self.chart_canvas.draw_idle() 
 
         def on_composite_leave(event):
             weather_button.place_configure(y=scaled_y)
             weather_button.configure(fg_color=BUTTON_COLOR) 
-            
-            # Revert colors for all child elements
-            title_label.configure(fg_color="transparent") # <-- Revert title
+            title_label.configure(fg_color="transparent")
             temp_frame.configure(fg_color=BUTTON_COLOR)
-            hum_frame.configure(fg_color=BUTTON_COLOR)
-            pres_frame.configure(fg_color="transparent") 
+            self.chart_fig.set_facecolor(BUTTON_COLOR)
+            self.chart_ax.set_facecolor(BUTTON_COLOR)
+            self.chart_canvas.draw_idle()
 
-        # 6. Make all inner widgets clickable and hoverable
-        # Store all widgets that need to be bound
+        # 7. Make all inner widgets clickable and hoverable
         widgets_to_bind = [
             weather_button, 
             title_label, 
             temp_frame, temp_icon_label, self.temp_label,
-            hum_frame, hum_icon_label, self.hum_label,
-            pres_frame, pres_icon_label, self.pres_label
+            chart_frame, self.chart_canvas_widget # Add chart widgets
         ]
         
-        # Bind all widgets to the main button's command and new hover logic
         for widget in widgets_to_bind:
-             # Use <Button-1> for left-click
              widget.bind("<Button-1>", lambda e, cmd=command: cmd() if cmd else None)
-             
-             # --- Bind the NEW composite hover functions ---
              widget.bind("<Enter>", on_composite_enter)
              widget.bind("<Leave>", on_composite_leave)
 

@@ -8,6 +8,11 @@ import os
 import datetime 
 from PIL import Image # Import Image
 
+# --- ADDED IMPORTS FOR GRADIENT ---
+import numpy as np
+import matplotlib.colors as mcolors
+# ------------------------------------
+
 def get_latest_weather_averages(csv_path="Page_files/weather.csv"):
     """
     Reads the weather CSV and calculates the 10-minute average 
@@ -19,12 +24,23 @@ def get_latest_weather_averages(csv_path="Page_files/weather.csv"):
             print(f"Weather CSV not found at: {csv_path}")
             return None, None, None
 
-        df = pd.read_csv(csv_path, parse_dates=[['Date', 'Time']])
+        # --- FIX: Load CSV without parse_dates ---
+        df = pd.read_csv(csv_path)
         if df.empty:
             print("Weather CSV is empty.")
             return None, None, None
-
-        df = df.rename(columns={'Date_Time': 'Timestamp'}).set_index('Timestamp')
+        
+        # --- FIX: Combine 'Date' and 'Time' columns manually ---
+        # Ensure columns exist before trying to combine
+        if 'Date' not in df.columns or 'Time' not in df.columns:
+            print("CSV is missing 'Date' or 'Time' columns.")
+            return None, None, None
+            
+        # --- Ensure 'Time' is a string ---
+        df['Time'] = df['Time'].astype(str)
+        df['Timestamp'] = pd.to_datetime(df['Date'] + ' ' + df['Time'])
+        df = df.set_index('Timestamp')
+        # We no longer need to rename 'Date_Time'
         
         latest_time = df.index.max()
         ten_mins_ago = latest_time - pd.Timedelta(minutes=10)
@@ -32,6 +48,10 @@ def get_latest_weather_averages(csv_path="Page_files/weather.csv"):
         
         if recent_df.empty:
             print("No recent weather data in the last 10 minutes.")
+            # Try to get the last known temp as a fallback
+            if not df.empty:
+                last_temp = df['Temperature'].iloc[-1]
+                return (last_temp if not pd.isna(last_temp) else None, None, None)
             return None, None, None
 
         avg_temp = recent_df['Temperature'].mean()
@@ -57,6 +77,7 @@ class WeatherPage(SC):
     def __init__(self):
         super().__init__()
         
+        # ... (rest of __init__ is unchanged) ...
         self.is_running = True # Flag to control the update loop
         self.current_view = "all" # Default view is "all"
         
@@ -152,10 +173,7 @@ class WeatherPage(SC):
         self.root.after(100, self.setup_plot)
 
     def setup_plot(self):
-        """
-        Creates *both* Matplotlib Figures (stacked and single) and Canvases.
-        This function only runs one time.
-        """
+        # ... (This function is unchanged) ...
         try:
             plt.style.use('dark_background') 
             
@@ -201,9 +219,8 @@ class WeatherPage(SC):
             self.status_label.configure(text=f"An error occurred during setup:\n{e}", text_color="red")
             self.status_label.pack(expand=True)
 
-    # --- THIS METHOD IS NOW MODIFIED ---
     def show_view(self, view_name):
-        """Swaps the visible chart canvas AND the average labels."""
+        # ... (This function is unchanged) ...
         self.current_view = view_name
         
         # --- 1. Manage Chart Canvas Visibility ---
@@ -241,6 +258,61 @@ class WeatherPage(SC):
         if self.canvas_stacked: 
             self.root.after(10, self._update_plot_data, True) 
 
+    def _set_dynamic_ylim(self, ax, data_series):
+        """Calculates and sets dynamic Y-limits with padding."""
+        if data_series.empty:
+            ax.set_ylim(0, 1) # Default for no data
+            return
+        
+        min_val = data_series.min()
+        max_val = data_series.max()
+        
+        # Calculate padding (10% of the range, or a minimum of 0.5)
+        data_range = max_val - min_val
+        padding = data_range * 0.1
+        
+        # Set a minimum padding if data is flat or range is small
+        if padding < 0.5:
+            padding = 0.5
+            
+        ax.set_ylim(min_val - padding, max_val + padding)
+
+    # --- ADD THIS NEW HELPER FUNCTION ---
+    def _apply_gradient(self, ax, x_data, y_data, color_hex):
+        """Applies a vertical gradient fill underneath a line plot."""
+        try:
+            # 1. Create the invisible fill
+            fill = ax.fill_between(x_data, y_data, color='none', zorder=2)
+            
+            # 2. Get the clipping path
+            clip_path = fill.get_paths()[0]
+            
+            # 3. Get plot boundaries
+            # Convert pandas index (datetime) to matplotlib numbers
+            x_data_num = mdates.date2num(x_data)
+            xmin, xmax = x_data_num[0], x_data_num[-1]
+            ymin, ymax = ax.get_ylim()
+
+            # 4. Define the gradient
+            line_color_rgb = mcolors.to_rgb(color_hex)
+            colors = [(*line_color_rgb, 0.4), (*line_color_rgb, 0.0)] # Fades from 0.4 alpha to 0.0
+            cmap = mcolors.LinearSegmentedColormap.from_list('my_gradient', colors, N=256)
+            
+            # 5. Create the gradient image
+            gradient = np.linspace(1, 0, 256).reshape(-1, 1)
+            gradient_img = np.repeat(gradient, 2, axis=1) # Make it 2D
+            
+            # 6. Draw the gradient image
+            img = ax.imshow(gradient_img, cmap=cmap, aspect='auto', origin='lower', 
+                            extent=[xmin, xmax, ymin, ymax], zorder=1)
+            
+            # 7. Clip the image to the line chart's path
+            img.set_clip_path(clip_path, transform=ax.transData)
+        except Exception as e:
+            print(f"Failed to create gradient: {e}") # Failsafe
+
+
+    # --- MODIFIED THIS FUNCTION ---
     def _update_plot_data(self, force_update=False):
         """
         Runs on a loop. Clears all axes, re-reads CSV, and redraws data on *both* charts.
@@ -259,10 +331,26 @@ class WeatherPage(SC):
                 return
             
             self.status_label.pack_forget()
-            df = pd.read_csv(self.CSV_FILE_PATH, parse_dates=[['Date', 'Time']])
-            df = df.rename(columns={'Date_Time': 'Timestamp'}).set_index('Timestamp')
             
-            # --- Calculate and display 10-minute averages ---
+            # --- FIX: Load CSV and parse dates correctly ---
+            df = pd.read_csv(self.CSV_FILE_PATH)
+            if df.empty or 'Date' not in df.columns or 'Time' not in df.columns:
+                 # Clear axes if file is empty
+                 self.ax1.clear()
+                 self.ax2.clear()
+                 self.ax3.clear()
+                 self.ax_single.clear()
+                 self.canvas_stacked.draw()
+                 self.canvas_single.draw()
+                 if self.is_running and not force_update: 
+                     self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
+                 return
+            
+            df['Time'] = df['Time'].astype(str)
+            df['Timestamp'] = pd.to_datetime(df['Date'] + ' ' + df['Time'])
+            df = df.set_index('Timestamp')
+            
+            # --- Calculate and display 10-minute averages (Unchanged) ---
             try:
                 if not df.empty:
                     latest_time = df.index.max()
@@ -298,26 +386,38 @@ class WeatherPage(SC):
             # --- 3. Redraw STACKED Plot (ax1, ax2, ax3) ---
             ax_color = "#2A2E3F"
             
-            self.ax1.plot(df.index, df['Temperature'], color='red')
-            self.ax1.set_ylabel('Temperature (°C)', color='white')
+            # --- Plot Temp ---
+            self.ax1.plot(df.index, df['Temperature'], color='red', zorder=3)
+            self.ax1.set_ylabel('Temperature (°C)', color='white', fontsize=5)
             self.ax1.grid(True, linestyle='--', alpha=0.3)
             self.ax1.tick_params(axis='y', colors='white')
             self.ax1.tick_params(axis='x', colors='white')
             self.ax1.set_facecolor(ax_color)
+            if not df.empty:
+                self._set_dynamic_ylim(self.ax1, df['Temperature']) # <-- ADDED
+                self._apply_gradient(self.ax1, df.index, df['Temperature'], 'red')
 
-            self.ax2.plot(df.index, df['Humidity'], color='blue')
-            self.ax2.set_ylabel('Humidity (%)', color='white')
+            # --- Plot Humidity ---
+            self.ax2.plot(df.index, df['Humidity'], color='blue', zorder=3)
+            self.ax2.set_ylabel('Humidity (%)', color='white', fontsize=5)
             self.ax2.grid(True, linestyle='--', alpha=0.3)
             self.ax2.tick_params(axis='y', colors='white')
             self.ax2.tick_params(axis='x', colors='white')
             self.ax2.set_facecolor(ax_color)
+            if not df.empty:
+                self._set_dynamic_ylim(self.ax2, df['Humidity']) # <-- ADDED
+                self._apply_gradient(self.ax2, df.index, df['Humidity'], 'blue')
 
-            self.ax3.plot(df.index, df['Pressure'], color='green')
-            self.ax3.set_ylabel('Pressure (hPa)', color='white')
+            # --- Plot Pressure ---
+            self.ax3.plot(df.index, df['Pressure'], color='green', zorder=3)
+            self.ax3.set_ylabel('Pressure (hPa)', color='white', fontsize=5)
             self.ax3.grid(True, linestyle='--', alpha=0.3)
             self.ax3.tick_params(axis='y', colors='white')
             self.ax3.tick_params(axis='x', colors='white')
             self.ax3.set_facecolor(ax_color)
+            if not df.empty:
+                self._set_dynamic_ylim(self.ax3, df['Pressure']) # <-- ADDED
+                self._apply_gradient(self.ax3, df.index, df['Pressure'], 'green')
 
             self.ax3.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p'))
             self.ax3.set_xlabel('Time', color='white')
@@ -330,23 +430,35 @@ class WeatherPage(SC):
             title = 'Sensor Data'
             if self.current_view == "temp":
                 title = "Temperature Over Time"
-                self.ax_single.plot(df.index, df['Temperature'], color='red')
+                self.ax_single.plot(df.index, df['Temperature'], color='red', zorder=3)
                 self.ax_single.set_ylabel('Temperature (°C)', color='white')
+                if not df.empty:
+                    self._set_dynamic_ylim(self.ax_single, df['Temperature']) # <-- ADDED
+                    self._apply_gradient(self.ax_single, df.index, df['Temperature'], 'red')
             
             elif self.current_view == "hum":
                 title = "Humidity Over Time"
-                self.ax_single.plot(df.index, df['Humidity'], color='blue')
+                self.ax_single.plot(df.index, df['Humidity'], color='blue', zorder=3)
                 self.ax_single.set_ylabel('Humidity (%)', color='white')
+                if not df.empty:
+                    self._set_dynamic_ylim(self.ax_single, df['Humidity']) # <-- ADDED
+                    self._apply_gradient(self.ax_single, df.index, df['Humidity'], 'blue')
                 
             elif self.current_view == "pres":
                 title = "Pressure Over Time"
-                self.ax_single.plot(df.index, df['Pressure'], color='green')
+                self.ax_single.plot(df.index, df['Pressure'], color='green', zorder=3)
                 self.ax_single.set_ylabel('Pressure (hPa)', color='white')
+                if not df.empty:
+                    self._set_dynamic_ylim(self.ax_single, df['Pressure']) # <-- ADDED
+                    self._apply_gradient(self.ax_single, df.index, df['Pressure'], 'green')
             
             else: # "all" view is active, but we should plot *something* in the hidden chart
                 title = "Temperature Over Time"
-                self.ax_single.plot(df.index, df['Temperature'], color='red')
+                self.ax_single.plot(df.index, df['Temperature'], color='red', zorder=3)
                 self.ax_single.set_ylabel('Temperature (°C)', color='white')
+                if not df.empty:
+                    self._set_dynamic_ylim(self.ax_single, df['Temperature']) # <-- ADDED
+                    self._apply_gradient(self.ax_single, df.index, df['Temperature'], 'red')
             
             # Apply formatting to the single chart
             self.ax_single.grid(True, linestyle='--', alpha=0.3)
@@ -368,13 +480,15 @@ class WeatherPage(SC):
 
         except Exception as e:
             print(f"An error occurred during plot update: {e}")
+            import traceback
+            traceback.print_exc()
         
         # --- 6. Schedule the next update (if not a forced update) ---
         if self.is_running and not force_update: 
             self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
 
     def navigate_to_dashboard(self):
-        """Stops the update loop and returns to dashboard."""
+        # ... (This function is unchanged) ...
         print("Stopping plot update loop...")
         self.is_running = False # This is CRITICAL
         
