@@ -388,7 +388,7 @@ class WeatherPage(SC):
             
             # --- Plot Temp ---
             self.ax1.plot(df.index, df['Temperature'], color='red', zorder=3)
-            self.ax1.set_ylabel('Temperature (°C)', color='white', fontsize=5)
+            self.ax1.set_ylabel('Temperature (°C)', color='white')
             self.ax1.grid(True, linestyle='--', alpha=0.3)
             self.ax1.tick_params(axis='y', colors='white')
             self.ax1.tick_params(axis='x', colors='white')

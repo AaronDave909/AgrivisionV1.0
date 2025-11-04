@@ -411,7 +411,7 @@ class SharedComponents:
         # --- 5. Create Chart Frame and Canvas ---
         # This frame will hold the matplotlib chart
         chart_frame = ctk.CTkFrame(weather_button, fg_color="transparent")
-        chart_frame.pack(fill="both", expand=True, padx=self._scale_value(5, 'x'), pady=(0, self._scale_value(5, 'y')))
+        chart_frame.pack(fill="none", expand=True, padx=self._scale_value(5, 'x'), pady=(0, self._scale_value(5, 'y')))
         
         # Create the matplotlib Figure and Axes
         self.chart_fig = Figure(facecolor=BUTTON_COLOR, dpi=100)
