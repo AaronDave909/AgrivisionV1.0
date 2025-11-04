@@ -1,13 +1,14 @@
 import customtkinter as ctk
 from shared_components import SharedComponents as SC, LEFT_PANEL_WIDTH
-# REMOVED: No longer need PestAnalytics
 import cv2
 from PIL import Image
 from ultralytics import YOLO
 import time
 import datetime
 import os
-import json # NEW: Import json
+import json
+# NEW: Import Picamera2
+from picamera2 import Picamera2
 
 class PestMonitorPage(SC):
     
@@ -23,16 +24,17 @@ class PestMonitorPage(SC):
         self.is_running = True # Flag to stop the update loop on exit
         
         # --- Helpers & Model ---
-        # MODIFIED: Define paths directly
         self.gallery_path = "Page_files/gallery_files"
         self.json_path = os.path.join(self.gallery_path, "gallery_data.json")
         
         try:
             model_path = "Page_files/yolov11_models/pests.pt"
             self.model = YOLO(model_path)
-            print(f"✅ Successfully loaded pest model from {model_path}")
+            # MODIFIED: Removed emoji
+            print(f"Successfully loaded pest model from {model_path}")
         except Exception as e:
-            print(f"❌ CRITICAL ERROR: Could not load pest model: {e}")
+            # MODIFIED: Removed emoji
+            print(f"CRITICAL ERROR: Could not load pest model: {e}")
             self.model = None
 
         # --- Standard Page Setup ---
@@ -42,15 +44,11 @@ class PestMonitorPage(SC):
         self.undo_button(command=self.navigate_to_dashboard) 
 
         # --- Camera & Display Setup ---
-        try:
-            self.cap = cv2.VideoCapture(0) 
-            if not self.cap.isOpened():
-                raise IOError("Cannot open webcam")
-            print("✅ Camera initialized.")
-        except Exception as e:
-            print(f"❌ CRITICAL ERROR: Could not open camera: {e}")
-            self.cap = None
-
+        
+        # MODIFIED: Initialize Picamera2
+        self.picam2 = None # Will be initialized in setup_picamera
+        
+        # Calculate dimensions for the camera feed
         self.cam_x = self._scale_value(LEFT_PANEL_WIDTH, 'x')
         self.cam_y = 0 
         
@@ -64,13 +62,42 @@ class PestMonitorPage(SC):
         
         self.cam_label.place(x=self.cam_x, y=self.cam_y)
 
-        if not self.cap:
-            self.cam_label.configure(text="Error: Camera not found.\nCheck connection.")
+        # MODIFIED: Start camera setup and then the loop
+        self.setup_picamera()
+
+    # --- NEW: Picamera2 Setup (from your CapturePage) ---
+    def setup_picamera(self):
+        """Initializes and starts the Picamera2 feed."""
+        if self.model is None:
+             self.cam_label.configure(text="Error: Pest Model not found.\nCannot start monitor.")
+             return
+            
+        try:
+            self.picam2 = Picamera2()
+            
+            # Configure for BGR888, which is native for OpenCV and YOLO
+            config = self.picam2.create_video_configuration(main={"size": (1280, 720), "format": "BGR888"})
+            self.picam2.configure(config)
+            
+            # Apply focus fix
+            self.picam2.set_controls({"AfMode": 0, "LensPosition": 1/0.05}) 
+            
+            self.picam2.start()
+            self.is_running = True
+            # MODIFIED: Removed emoji
+            print("Picamera2 initialized and started.")
+            
+            # Start the update loop *after* camera is confirmed working
+            self.root.after(100, self._update_frame)
+            
+        except Exception as e:
+            # MODIFIED: Removed emoji
+            print(f"CRITICAL ERROR: Could not open Picamera2: {e}")
+            self.cam_label.configure(text=f"Error: Camera not found.\nCheck connection.\n{e}", text_color="red")
+            self.picam2 = None
             return
 
-        self.root.after(100, self._update_frame)
-
-    # --- NEW: JSON Helper Functions ---
+    # --- JSON Helper Functions (Unchanged) ---
     def _load_master_json(self):
         """Loads the master JSON. Returns an empty dict if it doesn't exist or is empty."""
         try:
@@ -83,7 +110,7 @@ class PestMonitorPage(SC):
             else:
                 return {}
         except (json.JSONDecodeError, Exception) as e:
-            print(f"❌ Error reading master JSON: {e}. Returning empty dict.")
+            print(f"Error reading master JSON: {e}. Returning empty dict.")
             return {}
 
     def _save_master_json(self, data):
@@ -92,50 +119,51 @@ class PestMonitorPage(SC):
             with open(self.json_path, 'w') as f:
                 json.dump(data, f, indent=4)
         except Exception as e:
-            print(f"❌ Error writing master JSON: {e}")
+            print(f"Error writing master JSON: {e}")
 
     # --- Main Update Loop ---
     def _update_frame(self):
         """Continuously grabs frames, runs analysis, and updates the UI."""
-        if not self.is_running or not self.cap:
+        if not self.is_running or not self.picam2:
             return
 
         try:
-            ret, frame = self.cap.read()
-            if not ret:
-                print("⚠️ Warning: Could not read frame from camera.")
-                if self.is_running:
-                    self.root.after(100, self._update_frame)
-                return
-
+            # MODIFIED: Get frame from Picamera2
+            # This frame is BGR because we set the format to "BGR888"
+            frame = self.picam2.capture_array()
+            
+            # Run YOLO model (YOLO natively handles BGR frames)
             results = self.model(frame)
-            annotated_frame = frame 
+            annotated_frame = frame # Default to raw frame
             
             is_cooldown = time.time() < (self.last_capture_time + self.capture_cooldown)
 
-            # --- Detection Logic ---
+            # --- Detection Logic (Unchanged) ---
             if len(results[0].boxes) > 0 and not is_cooldown:
                 top_detection = results[0].boxes[0]
                 pest_name_raw = results[0].names[int(top_detection.cls)]
                 pest_name = pest_name_raw.replace("_", " ").title()
                 
+                # results[0].plot() returns a BGR frame
                 annotated_frame = results[0].plot()
 
                 if self.detection_start_time is None or self.last_detected_pest != pest_name:
                     self.detection_start_time = time.time()
                     self.last_detected_pest = pest_name
-                    print(f"👀 New pest detected: {pest_name}. Starting 5s timer...")
+                    # MODIFIED: Removed emoji
+                    print(f"New pest detected: {pest_name}. Starting 5s timer...")
                 else:
                     elapsed = time.time() - self.detection_start_time
                     if elapsed >= self.monitoring_duration:
-                        print(f"✅ Pest {pest_name} detected for {self.monitoring_duration}s. Capturing...")
-                        # MODIFIED: Pass the full results object
+                        # MODIFIED: Removed emoji
+                        print(f"Pest {pest_name} detected for {self.monitoring_duration}s. Capturing...")
                         self._save_pest_capture(annotated_frame, results)
                         
                         self.detection_start_time = None
                         self.last_detected_pest = None
                         self.last_capture_time = time.time()
-                        print(f"📸 Capture complete. Starting {self.capture_cooldown}s cooldown.")
+                        # MODIFIED: Removed emoji
+                        print(f"Capture complete. Starting {self.capture_cooldown}s cooldown.")
             
             elif is_cooldown:
                 if len(results[0].boxes) > 0:
@@ -148,7 +176,10 @@ class PestMonitorPage(SC):
                 self.last_detected_pest = None
 
             # --- Display the frame ---
+            
+            # MODIFIED: Convert BGR frame to RGB for PIL/CTk display
             frame_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
+            
             pil_img = Image.fromarray(frame_rgb)
             pil_img_resized = pil_img.resize((self.cam_w, self.cam_h), Image.Resampling.BILINEAR)
             ctk_img = ctk.CTkImage(light_image=pil_img_resized, size=(self.cam_w, self.cam_h))
@@ -160,11 +191,12 @@ class PestMonitorPage(SC):
                 self.root.after(30, self._update_frame) 
 
         except Exception as e:
-            print(f"❌ Error in update loop: {e}")
+            # MODIFIED: Removed emoji
+            print(f"Error in update loop: {e}")
             if self.is_running:
                 self.root.after(1000, self._update_frame) 
 
-    # --- MODIFIED: Save function now saves to gallery_data.json ---
+    # --- Save Capture (Unchanged) ---
     def _save_pest_capture(self, annotated_frame, results):
         """Saves the captured frame and records analytics to gallery_data.json."""
         try:
@@ -175,10 +207,12 @@ class PestMonitorPage(SC):
             img_save_path = os.path.join(self.gallery_path, img_filename)
             
             os.makedirs(self.gallery_path, exist_ok=True)
+            # annotated_frame is BGR, which cv2.imwrite expects
             cv2.imwrite(img_save_path, annotated_frame)
-            print(f"🖼️  Image saved to {img_save_path}")
+            # MODIFIED: Removed emoji
+            print(f"Image saved to {img_save_path}")
 
-            # 2. Prepare Analytics Data (similar to analysis_page)
+            # 2. Prepare Analytics Data
             if len(results[0].boxes) > 0:
                 top_detection = results[0].boxes[0]
                 pest_name_raw = results[0].names[int(top_detection.cls)]
@@ -204,19 +238,29 @@ class PestMonitorPage(SC):
             master_data[img_filename] = new_detection_data
             self._save_master_json(master_data)
             
-            print(f"✅ Pest detection saved to gallery_data.json: {pest_name_raw} -> {img_filename}")
+            # MODIFIED: Removed emoji
+            print(f"Pest detection saved to gallery_data.json: {pest_name_raw} -> {img_filename}")
 
         except Exception as e:
-            print(f"❌ Error during capture save: {e}")
+            # MODIFIED: Removed emoji
+            print(f"Error during capture save: {e}")
 
+    # --- MODIFIED: Cleanup for Picamera2 ---
     def cleanup_camera(self):
         """Stops the loop and releases the camera resource."""
         print("Cleaning up camera...")
         self.is_running = False
-        if self.cap:
-            self.cap.release()
-            print("Camera released.")
+        if self.picam2:
+            try:
+                self.picam2.stop()
+                self.picam2.close()
+                # MODIFIED: Removed emoji
+                print("Picamera2 released.")
+            except Exception as e:
+                # MODIFIED: Removed emoji
+                print(f"Error closing picam2: {e}")
 
+    # --- Navigation (Unchanged) ---
     def navigate_to_dashboard(self):
         """Cleans up camera resources and then navigates to the main dashboard."""
         self.cleanup_camera() 

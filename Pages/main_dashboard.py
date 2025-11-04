@@ -8,6 +8,7 @@ from Pages.recents import recent_disease_preview
 from Pages.records import ReportViewerPage 
 from Pages.analysis_page import AnalysisPage
 from Pages.pest_monitor import PestMonitorPage
+from Pages.weather_page import WeatherPage
 import customtkinter as ctk
 import os
 from shared_components import custom_font_bold, custom_font_title, custom_font_regular, ORIGINAL_WIDTH, ORIGINAL_HEIGHT
@@ -49,6 +50,12 @@ class MyDashboard(SC):
         self.root.destroy()
         # Pass the path to the image and set view_only=True
         app = AnalysisPage(image_path=image_path, view_only=True)
+        app.root.mainloop()
+    
+    def open_weather_page(self):
+        """Destroys the dashboard and opens the WeatherPage."""
+        self.root.destroy()
+        app = WeatherPage()
         app.root.mainloop()
 
     def __init__(self):
@@ -156,11 +163,11 @@ class MyDashboard(SC):
         
         # Analytics Button
         self.create_button(
-            text="Analytics",
+            text="Weather Analytics",
             x=121, y=232,
             width=205, height=220,
             anchor="n",
-            command=None
+            command=self.open_weather_page
         )
         
         # Get Gallery Preview data

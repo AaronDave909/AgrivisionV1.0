@@ -100,5 +100,59 @@
         "accuracy": "86.96%",
         "count": "2",
         "timestamp": "Nov 01, 2025 09:57 PM"
+    },
+    "capture_20251103_172337.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "69.75%",
+        "count": "3",
+        "timestamp": "Nov 03, 2025 05:23 PM"
+    },
+    "capture_20251103_172500.jpg": {
+        "disease": "Bacterial",
+        "accuracy": "39.73%",
+        "count": "1",
+        "timestamp": "Nov 03, 2025 05:25 PM"
+    },
+    "capture_20251103_172522.jpg": {
+        "disease": "Bacterial",
+        "accuracy": "83.74%",
+        "count": "1",
+        "timestamp": "Nov 03, 2025 05:25 PM"
+    },
+    "capture_20251103_172528.jpg": {
+        "disease": "No Disease Detected",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Nov 03, 2025 05:25 PM"
+    },
+    "capture_20251103_172602.jpg": {
+        "disease": "Downy_mildew_on_lettuce",
+        "accuracy": "34.68%",
+        "count": "2",
+        "timestamp": "Nov 03, 2025 05:26 PM"
+    },
+    "capture_20251103_172610.jpg": {
+        "disease": "Downy_mildew_on_lettuce",
+        "accuracy": "84.16%",
+        "count": "1",
+        "timestamp": "Nov 03, 2025 05:26 PM"
+    },
+    "capture_20251103_172626.jpg": {
+        "disease": "Downy_mildew_on_lettuce",
+        "accuracy": "57.73%",
+        "count": "1",
+        "timestamp": "Nov 03, 2025 05:26 PM"
+    },
+    "pest_20251103_172649.jpg": {
+        "pest": "slug",
+        "accuracy": "92.36%",
+        "count": "1",
+        "timestamp": "Nov 03, 2025 05:26 PM"
+    },
+    "pest_20251103_172740.jpg": {
+        "pest": "slug",
+        "accuracy": "77.61%",
+        "count": "1",
+        "timestamp": "Nov 03, 2025 05:27 PM"
     }
 }

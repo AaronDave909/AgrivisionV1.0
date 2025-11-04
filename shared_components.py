@@ -137,8 +137,8 @@ class SharedComponents:
         # Scale position, width, height, and image size
         scaled_x = self._scale_value(x, 'x')
         scaled_y = self._scale_value(y, 'y')
-        scaled_width = self._scale_value(90, 'x')
-        scaled_height = self._scale_value(90, 'y')
+        scaled_width = self._scale_value(80, 'x')
+        scaled_height = self._scale_value(80, 'y')
         scaled_img_size = (self._scale_value(80, 'x'), self._scale_value(80, 'y'))
         scaled_hover_offset = self._scale_value(5, 'y')
 
