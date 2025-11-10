@@ -409,6 +409,21 @@ class SharedComponents:
         self.temp_label.pack(side="left", padx=10)
         temp_frame.pack(fill="x", pady=self._scale_value(5, 'y'))
         
+        # This label is packed *after* the chart frame to appear at the bottom.
+        self.recent_date_label = ctk.CTkLabel(
+            weather_button,
+            text="Date: --",
+            font=shared_button_font,
+            text_color="white",
+            fg_color="transparent"
+        )
+        self.recent_date_label.pack(
+            side="bottom", 
+            anchor="w", # Anchor to the West (left)
+            padx=self._scale_value(10, 'x'), 
+            pady=(0, self._scale_value(5, 'y'))
+        )
+
         # --- 5. Create Chart Frame and Canvas ---
         # This frame will hold the matplotlib chart
         chart_frame = ctk.CTkFrame(weather_button, fg_color="transparent")
@@ -456,7 +471,7 @@ class SharedComponents:
             weather_button, 
             title_label, 
             temp_frame, temp_icon_label, self.temp_label,
-            chart_frame, self.chart_canvas_widget # Add chart widgets
+            chart_frame, self.chart_canvas_widget, self.recent_date_label # Add chart widgets
         ]
         
         for widget in widgets_to_bind:

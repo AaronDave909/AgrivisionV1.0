@@ -6,7 +6,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from shared_components import SharedComponents as SC, LEFT_PANEL_WIDTH
 import os
 import datetime 
-from PIL import Image # Import Image
+from PIL import Image
 
 # --- ADDED IMPORTS FOR GRADIENT ---
 import numpy as np
@@ -24,23 +24,18 @@ def get_latest_weather_averages(csv_path="Page_files/weather.csv"):
             print(f"Weather CSV not found at: {csv_path}")
             return None, None, None
 
-        # --- FIX: Load CSV without parse_dates ---
         df = pd.read_csv(csv_path)
         if df.empty:
             print("Weather CSV is empty.")
             return None, None, None
         
-        # --- FIX: Combine 'Date' and 'Time' columns manually ---
-        # Ensure columns exist before trying to combine
         if 'Date' not in df.columns or 'Time' not in df.columns:
             print("CSV is missing 'Date' or 'Time' columns.")
             return None, None, None
             
-        # --- Ensure 'Time' is a string ---
         df['Time'] = df['Time'].astype(str)
         df['Timestamp'] = pd.to_datetime(df['Date'] + ' ' + df['Time'])
         df = df.set_index('Timestamp')
-        # We no longer need to rename 'Date_Time'
         
         latest_time = df.index.max()
         ten_mins_ago = latest_time - pd.Timedelta(minutes=10)
@@ -48,7 +43,6 @@ def get_latest_weather_averages(csv_path="Page_files/weather.csv"):
         
         if recent_df.empty:
             print("No recent weather data in the last 10 minutes.")
-            # Try to get the last known temp as a fallback
             if not df.empty:
                 last_temp = df['Temperature'].iloc[-1]
                 return (last_temp if not pd.isna(last_temp) else None, None, None)
@@ -58,7 +52,6 @@ def get_latest_weather_averages(csv_path="Page_files/weather.csv"):
         avg_hum = recent_df['Humidity'].mean()
         avg_pres = recent_df['Pressure'].mean()
         
-        # Return None for any value that couldn't be calculated
         return (
             avg_temp if not pd.isna(avg_temp) else None,
             avg_hum if not pd.isna(avg_hum) else None,
@@ -73,27 +66,125 @@ class WeatherPage(SC):
     
     CSV_FILE_PATH = "Page_files/weather.csv"
     UPDATE_INTERVAL = 10000 # 10 seconds
+
+    def on_date_selected(self, selected_date: str):
+        self.selected_date = selected_date
+        
+        if selected_date == "Today":
+            if not self.is_running:
+                print("Restarting live update loop...")
+                self.is_running = True
+                self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
+        else:
+            if self.is_running:
+                print(f"Stopping live updates. Showing data for {selected_date}.")
+                self.is_running = False
+                if self.after_id:
+                    self.root.after_cancel(self.after_id)
+                    self.after_id = None
+        
+        self._update_plot_data(force_update=True)
+
+    def _update_date_selector(self, df_full: pd.DataFrame):
+        if self.date_selector is None:
+            return
+
+        try:
+            if df_full.empty or 'Date' not in df_full.columns:
+                self.date_selector.configure(values=["Today"])
+                self.date_selector.set("Today")
+                return
+
+            df_full['Date_Only'] = pd.to_datetime(df_full['Date']).dt.date
+            today = datetime.date.today()
+            unique_dates = sorted(df_full['Date_Only'].unique(), reverse=True)
+            
+            dropdown_options = []
+            
+            if today in unique_dates:
+                dropdown_options.append("Today")
+                past_dates = [d.strftime('%Y-%m-%d') for d in unique_dates if d != today]
+                dropdown_options.extend(past_dates)
+            else:
+                dropdown_options = [d.strftime('%Y-%m-%d') for d in unique_dates]
+
+            current_selection = self.selected_date
+            self.date_selector.configure(values=dropdown_options)
+            
+            if current_selection in dropdown_options:
+                self.date_selector.set(current_selection)
+            elif dropdown_options:
+                self.date_selector.set(dropdown_options[0])
+                self.selected_date = dropdown_options[0]
+            else:
+                self.date_selector.configure(values=["Today"])
+                self.date_selector.set("Today")
+                self.selected_date = "Today"
+
+        except Exception as e:
+            print(f"Error updating date selector: {e}")
+            self.date_selector.configure(values=["Today"])
+            self.date_selector.set("Today")
     
     def __init__(self):
         super().__init__()
         
-        # ... (rest of __init__ is unchanged) ...
-        self.is_running = True # Flag to control the update loop
-        self.current_view = "all" # Default view is "all"
+        self.is_running = True
+        self.current_view = "all" 
+        
+        self.selected_date = "Today"
+        self.date_selector = None
+        self.after_id = None
         
         # --- Standard Page Setup ---
         self.create_left_panel() 
         self.create_leaf_image() 
         self.create_title(text="Weather Analytics", x=119, y=0)
-        self.undo_button(command=self.navigate_to_dashboard) # This is the inherited button
+        self.undo_button(command=self.navigate_to_dashboard)
+
+        # --- NEW: Create Date Filter Frame (Top-Right) ---
+        self.date_filter_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.date_filter_frame.place(
+            relx=0.98, 
+            y=self._scale_value(25, 'y'), 
+            anchor="ne"
+        )
+
+        date_label = ctk.CTkLabel(
+            self.date_filter_frame, 
+            text="Select Date:",
+            font=("Arial", self._scale_value(14, 'y')),
+            text_color="white" # FIX: Set text color to white
+        )
+        date_label.pack(side="left", padx=(5, 5))
+
+        self.date_selector = ctk.CTkOptionMenu(
+            self.date_filter_frame, 
+            values=["Today"], 
+            command=self.on_date_selected,
+            font=("Arial", self._scale_value(14, 'y')),
+            dropdown_font=("Arial", self._scale_value(20, 'y')), # FIX: Increased for spacing
+            # Colors for the main button
+            fg_color="#2A2E3F",
+            text_color="#FFFFFF",
+            button_color="#383C4E",
+            button_hover_color="#50556b",
+            
+            # Colors for the dropdown menu
+            dropdown_fg_color="#2A2E3F",
+            dropdown_hover_color="#383C4E",
+            dropdown_text_color="#FFFFFF"
+        )
+        self.date_selector.set("Today")
+        self.date_selector.pack(side="left", padx=(0, 10))
 
         # --- Button Setup (Unchanged) ---
         
-        scaled_button_width = self._scale_value(100, 'x') # Wider
-        scaled_button_height = self._scale_value(40, 'y') # Shorter
-        scaled_img_size = (self._scale_value(30, 'x'), self._scale_value(30, 'y')) # Smaller icons
+        scaled_button_width = self._scale_value(100, 'x')
+        scaled_button_height = self._scale_value(40, 'y')
+        scaled_img_size = (self._scale_value(30, 'x'), self._scale_value(30, 'y'))
         scaled_hover_offset = self._scale_value(5, 'y')
-        scaled_padding = self._scale_value(10, 'y') # Padding between buttons
+        scaled_padding = self._scale_value(10, 'y')
         
         try:
             self.all_icon = ctk.CTkImage(light_image=Image.open("_image_assets/all_data.png"), size=scaled_img_size)
@@ -104,33 +195,46 @@ class WeatherPage(SC):
             print(f"Error loading button icons: {e}. Please check _image_assets folder.")
             self.all_icon = self.temp_icon = self.hum_icon = self.pres_icon = None
         
-        def create_hover_bindings(button, base_y, hover_offset):
-            def on_enter(event): button.place_configure(y=base_y - hover_offset)
-            def on_leave(event): button.place_configure(y=base_y)
-            button.bind("<Enter>", on_enter)
-            button.bind("<Leave>", on_leave)
 
-        y_all = self._scale_value(120, 'y')
+        y_all = self._scale_value(150, 'y')
         y_temp = y_all + scaled_button_height + scaled_padding
         y_hum = y_temp + scaled_button_height + scaled_padding
         y_pres = y_hum + scaled_button_height + scaled_padding
         x_pos = self._scale_value(LEFT_PANEL_WIDTH / 2, 'x')
 
-        self.all_button = ctk.CTkButton(self.left_panel, text=" All Data", width=scaled_button_width, height=scaled_button_height, image=self.all_icon, command=lambda: self.show_view("all"), fg_color="#2A2E3F", hover_color="#2A2E3F", corner_radius=0, text_color="white", font=("Arial", 14), anchor="w")
+        # MODIFIED: Changed hover_color from "#2A2E3F" to "#50556b"
+        self.all_button = ctk.CTkButton(self.left_panel, text=" All Data", width=scaled_button_width, height=scaled_button_height, image=self.all_icon, command=lambda: self.show_view("all"), 
+                                        fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
+                                        text_color="white", font=("Arial", 14), anchor="w")
         self.all_button.place(x=x_pos, y=y_all, anchor="center")
-        create_hover_bindings(self.all_button, y_all, scaled_hover_offset)
+        # DELETE THIS: create_hover_bindings(self.all_button, y_all, scaled_hover_offset)
 
-        self.temp_button = ctk.CTkButton(self.left_panel, text=" Temperature", width=scaled_button_width, height=scaled_button_height, image=self.temp_icon, command=lambda: self.show_view("temp"), fg_color="#2A2E3F", hover_color="#2A2E3F", corner_radius=0, text_color="white", font=("Arial", 14), anchor="w")
+        # MODIFIED: Changed hover_color from "#2A2E3F" to "#50556b"
+        self.temp_button = ctk.CTkButton(self.left_panel, text=" Temperature", 
+                                         width=scaled_button_width, height=scaled_button_height, 
+                                         image=self.temp_icon, command=lambda: self.show_view("temp"), 
+                                         fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
+                                         text_color="white", font=("Arial", 14), anchor="w")
         self.temp_button.place(x=x_pos, y=y_temp, anchor="center")
-        create_hover_bindings(self.temp_button, y_temp, scaled_hover_offset)
+        # DELETE THIS: create_hover_bindings(self.temp_button, y_temp, scaled_hover_offset)
 
-        self.hum_button = ctk.CTkButton(self.left_panel, text=" Humidity", width=scaled_button_width, height=scaled_button_height, image=self.hum_icon, command=lambda: self.show_view("hum"), fg_color="#2A2E3F", hover_color="#2A2E3F", corner_radius=0, text_color="white", font=("Arial", 14), anchor="w")
+        # MODIFIED: Changed hover_color from "#2A2E3F" to "#50556b"
+        self.hum_button = ctk.CTkButton(self.left_panel, text=" Humidity", 
+                                        width=scaled_button_width, height=scaled_button_height, 
+                                        image=self.hum_icon, command=lambda: self.show_view("hum"), 
+                                        fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
+                                        text_color="white", font=("Arial", 14), anchor="w")
         self.hum_button.place(x=x_pos, y=y_hum, anchor="center")
-        create_hover_bindings(self.hum_button, y_hum, scaled_hover_offset)
+        # DELETE THIS: create_hover_bindings(self.hum_button, y_hum, scaled_hover_offset)
         
-        self.pres_button = ctk.CTkButton(self.left_panel, text=" Pressure", width=scaled_button_width, height=scaled_button_height, image=self.pres_icon, command=lambda: self.show_view("pres"), fg_color="#2A2E3F", hover_color="#2A2E3F", corner_radius=0, text_color="white", font=("Arial", 14), anchor="w")
+        # MODIFIED: Changed hover_color from "#2A2E3F" to "#50556b"
+        self.pres_button = ctk.CTkButton(self.left_panel, text=" Pressure", 
+                                         width=scaled_button_width, height=scaled_button_height, 
+                                         image=self.pres_icon, command=lambda: self.show_view("pres"), 
+                                         fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
+                                         text_color="white", font=("Arial", 14), anchor="w")
         self.pres_button.place(x=x_pos, y=y_pres, anchor="center")
-        create_hover_bindings(self.pres_button, y_pres, scaled_hover_offset)
+        # DELETE THIS: create_hover_bindings(self.pres_button, y_pres, scaled_hover_offset)
 
         self.chart_buttons = [self.all_button, self.temp_button, self.hum_button, self.pres_button]
 
@@ -173,15 +277,20 @@ class WeatherPage(SC):
         self.root.after(100, self.setup_plot)
 
     def setup_plot(self):
-        # ... (This function is unchanged) ...
         try:
             plt.style.use('dark_background') 
             
             self.fig_stacked, (self.ax1, self.ax2, self.ax3) = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
             self.fig_stacked.patch.set_facecolor("#202332")
             
+            # FIX: Manually adjust subplot spacing to prevent shrinking
+            self.fig_stacked.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.15)
+            
             self.fig_single, self.ax_single = plt.subplots(1, 1, figsize=(12, 8))
             self.fig_single.patch.set_facecolor("#202332")
+
+            # FIX: Add spacing for single plot too
+            self.fig_single.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.15)
             
             self.status_label.pack_forget()
             
@@ -200,7 +309,6 @@ class WeatherPage(SC):
             # Create Tide labels
             self.high_tide_label = ctk.CTkLabel(self.avg_frame, text="High Tide: N/A", font=font_style, text_color=text_color)
             self.low_tide_label = ctk.CTkLabel(self.avg_frame, text="Low Tide: N/A", font=font_style, text_color=text_color)
-            # Do not pack them yet
 
             # --- Create Stacked Canvas ---
             self.canvas_stacked = FigureCanvasTkAgg(self.fig_stacked, master=self.chart_frame)
@@ -208,7 +316,7 @@ class WeatherPage(SC):
 
             # --- Create Single Canvas (but hide it) ---
             self.canvas_single = FigureCanvasTkAgg(self.fig_single, master=self.chart_frame)
-            self.canvas_single.get_tk_widget().pack_forget() # Hide this one
+            self.canvas_single.get_tk_widget().pack_forget()
             
             self.show_view(self.current_view) 
             
@@ -220,7 +328,23 @@ class WeatherPage(SC):
             self.status_label.pack(expand=True)
 
     def show_view(self, view_name):
-        # ... (This function is unchanged) ...
+        default_color = "#2A2E3F"   # Unselected button color
+        selected_color = "#202332"  # Selected button color (matches chart bg)
+        
+        # 1. Reset all buttons to the default color
+        for button in self.chart_buttons:
+            button.configure(fg_color=default_color)
+            
+        # 2. Set the clicked button to the selected color
+        if view_name == "all":
+            self.all_button.configure(fg_color=selected_color)
+        elif view_name == "temp":
+            self.temp_button.configure(fg_color=selected_color)
+        elif view_name == "hum":
+            self.hum_button.configure(fg_color=selected_color)
+        elif view_name == "pres":
+            self.pres_button.configure(fg_color=selected_color)
+
         self.current_view = view_name
         
         # --- 1. Manage Chart Canvas Visibility ---
@@ -232,16 +356,13 @@ class WeatherPage(SC):
             self.canvas_single.get_tk_widget().pack(side=ctk.TOP, fill=ctk.BOTH, expand=True)
             
         # --- 2. Manage Average Label Visibility ---
-        # First, hide all labels
         self.temp_avg_label.pack_forget()
         self.hum_avg_label.pack_forget()
         self.pres_avg_label.pack_forget()
         self.high_tide_label.pack_forget()
         self.low_tide_label.pack_forget()
         
-        # Second, re-pack only the ones we want to see
         if self.current_view == "all":
-            # --- MODIFIED: Only show tide placeholders ---
             self.high_tide_label.pack(side=ctk.LEFT, padx=10)
             self.low_tide_label.pack(side=ctk.LEFT, padx=10)
             
@@ -261,62 +382,44 @@ class WeatherPage(SC):
     def _set_dynamic_ylim(self, ax, data_series):
         """Calculates and sets dynamic Y-limits with padding."""
         if data_series.empty:
-            ax.set_ylim(0, 1) # Default for no data
+            ax.set_ylim(0, 1)
             return
         
         min_val = data_series.min()
         max_val = data_series.max()
         
-        # Calculate padding (10% of the range, or a minimum of 0.5)
         data_range = max_val - min_val
         padding = data_range * 0.1
         
-        # Set a minimum padding if data is flat or range is small
         if padding < 0.5:
             padding = 0.5
             
         ax.set_ylim(min_val - padding, max_val + padding)
 
-    # --- ADD THIS NEW HELPER FUNCTION ---
     def _apply_gradient(self, ax, x_data, y_data, color_hex):
         """Applies a vertical gradient fill underneath a line plot."""
         try:
-            # 1. Create the invisible fill
             fill = ax.fill_between(x_data, y_data, color='none', zorder=2)
-            
-            # 2. Get the clipping path
             clip_path = fill.get_paths()[0]
-            
-            # 3. Get plot boundaries
-            # Convert pandas index (datetime) to matplotlib numbers
             x_data_num = mdates.date2num(x_data)
             xmin, xmax = x_data_num[0], x_data_num[-1]
             ymin, ymax = ax.get_ylim()
 
-            # 4. Define the gradient
             line_color_rgb = mcolors.to_rgb(color_hex)
-            colors = [(*line_color_rgb, 0.4), (*line_color_rgb, 0.0)] # Fades from 0.4 alpha to 0.0
+            colors = [(*line_color_rgb, 0.4), (*line_color_rgb, 0.0)]
             cmap = mcolors.LinearSegmentedColormap.from_list('my_gradient', colors, N=256)
             
-            # 5. Create the gradient image
             gradient = np.linspace(1, 0, 256).reshape(-1, 1)
-            gradient_img = np.repeat(gradient, 2, axis=1) # Make it 2D
+            gradient_img = np.repeat(gradient, 2, axis=1)
             
-            # 6. Draw the gradient image
             img = ax.imshow(gradient_img, cmap=cmap, aspect='auto', origin='lower', 
                             extent=[xmin, xmax, ymin, ymax], zorder=1)
             
-            # 7. Clip the image to the line chart's path
             img.set_clip_path(clip_path, transform=ax.transData)
         except Exception as e:
-            print(f"Failed to create gradient: {e}") # Failsafe
+            print(f"Failed to create gradient: {e}")
 
-
-    # --- MODIFIED THIS FUNCTION ---
     def _update_plot_data(self, force_update=False):
-        """
-        Runs on a loop. Clears all axes, re-reads CSV, and redraws data on *both* charts.
-        """
         if not force_update and not self.is_running:
             return 
             
@@ -332,10 +435,11 @@ class WeatherPage(SC):
             
             self.status_label.pack_forget()
             
-            # --- FIX: Load CSV and parse dates correctly ---
-            df = pd.read_csv(self.CSV_FILE_PATH)
-            if df.empty or 'Date' not in df.columns or 'Time' not in df.columns:
-                 # Clear axes if file is empty
+            df_full = pd.read_csv(self.CSV_FILE_PATH)
+            
+            self._update_date_selector(df_full.copy())
+            
+            if df_full.empty or 'Date' not in df_full.columns or 'Time' not in df_full.columns:
                  self.ax1.clear()
                  self.ax2.clear()
                  self.ax3.clear()
@@ -346,31 +450,52 @@ class WeatherPage(SC):
                      self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
                  return
             
-            df['Time'] = df['Time'].astype(str)
-            df['Timestamp'] = pd.to_datetime(df['Date'] + ' ' + df['Time'])
-            df = df.set_index('Timestamp')
+            df_full['Time'] = df_full['Time'].astype(str)
+            df_full['Timestamp'] = pd.to_datetime(df_full['Date'] + ' ' + df_full['Time'])
+            df = df_full.set_index('Timestamp')
             
-            # --- Calculate and display 10-minute averages (Unchanged) ---
+            # --- NEW: Filter the DataFrame based on the date selector ---
             try:
-                if not df.empty:
-                    latest_time = df.index.max()
-                    ten_mins_ago = latest_time - pd.Timedelta(minutes=10)
-                    recent_df = df[df.index >= ten_mins_ago]
-                    
-                    if not recent_df.empty:
-                        avg_temp = recent_df['Temperature'].mean()
-                        avg_hum = recent_df['Humidity'].mean()
-                        avg_pres = recent_df['Pressure'].mean()
-                        
-                        self.temp_avg_label.configure(text=f"Feels like: {avg_temp:.1f} °C")
-                        self.hum_avg_label.configure(text=f"Humidity Avg: {avg_hum:.1f} %")
-                        self.pres_avg_label.configure(text=f"Pressure Avg: {avg_pres:.1f} hPa")
-                    else:
-                        self.temp_avg_label.configure(text="Temperature Avg: N/A")
-                        self.hum_avg_label.configure(text="Humidity Avg: N/A")
-                        self.pres_avg_label.configure(text="Pressure Avg: N/A")
+                if self.selected_date == "Today":
+                    target_date = datetime.date.today()
+                    avg_label_prefix = "Feels like: "
                 else:
-                    raise ValueError("DataFrame is empty")
+                    target_date = datetime.datetime.strptime(self.selected_date, '%Y-%m-%d').date()
+                    avg_label_prefix = "Day Avg: "
+                
+                filtered_df = df[df.index.date == target_date]
+            
+            except Exception as e:
+                print(f"Error filtering date: {e}. Defaulting to today.")
+                target_date = datetime.date.today()
+                filtered_df = df[df.index.date == target_date]
+                avg_label_prefix = "Feels like: "
+            
+            # --- MODIFIED: Calculate and display averages based on view ---
+            try:
+                avg_temp = np.nan
+                avg_hum = np.nan
+                avg_pres = np.nan
+
+                if not filtered_df.empty:
+                    if self.selected_date == "Today":
+                        latest_time = filtered_df.index.max()
+                        ten_mins_ago = latest_time - pd.Timedelta(minutes=10)
+                        recent_df = filtered_df[filtered_df.index >= ten_mins_ago]
+                        
+                        if not recent_df.empty:
+                            avg_temp = recent_df['Temperature'].mean()
+                            avg_hum = recent_df['Humidity'].mean()
+                            avg_pres = recent_df['Pressure'].mean()
+                    else:
+                        avg_temp = filtered_df['Temperature'].mean()
+                        avg_hum = filtered_df['Humidity'].mean()
+                        avg_pres = filtered_df['Pressure'].mean()
+
+                self.temp_avg_label.configure(text=f"{avg_label_prefix}{avg_temp:.1f} °C" if not pd.isna(avg_temp) else "Temperature Avg: N/A")
+                self.hum_avg_label.configure(text=f"Humidity Avg: {avg_hum:.1f} %" if not pd.isna(avg_hum) else "Humidity Avg: N/A")
+                self.pres_avg_label.configure(text=f"Pressure Avg: {avg_pres:.1f} hPa" if not pd.isna(avg_pres) else "Pressure Avg: N/A")
+            
             except Exception as e:
                 print(f"Error calculating averages: {e}")
                 self.temp_avg_label.configure(text="Temperature Avg: Error")
@@ -387,78 +512,86 @@ class WeatherPage(SC):
             ax_color = "#2A2E3F"
             
             # --- Plot Temp ---
-            self.ax1.plot(df.index, df['Temperature'], color='red', zorder=3)
-            self.ax1.set_ylabel('Temperature (°C)', color='white')
+            self.ax1.plot(filtered_df.index, filtered_df['Temperature'], color='red', zorder=3)
+            # FIX: Added labelpad=15
+            self.ax1.set_ylabel('Temperature (°C)', color='white', labelpad=15)
             self.ax1.grid(True, linestyle='--', alpha=0.3)
             self.ax1.tick_params(axis='y', colors='white')
             self.ax1.tick_params(axis='x', colors='white')
             self.ax1.set_facecolor(ax_color)
-            if not df.empty:
-                self._set_dynamic_ylim(self.ax1, df['Temperature']) # <-- ADDED
-                self._apply_gradient(self.ax1, df.index, df['Temperature'], 'red')
+            if not filtered_df.empty:
+                self._set_dynamic_ylim(self.ax1, filtered_df['Temperature'])
+                self._apply_gradient(self.ax1, filtered_df.index, filtered_df['Temperature'], 'red')
 
             # --- Plot Humidity ---
-            self.ax2.plot(df.index, df['Humidity'], color='blue', zorder=3)
-            self.ax2.set_ylabel('Humidity (%)', color='white', fontsize=5)
+            self.ax2.plot(filtered_df.index, filtered_df['Humidity'], color='blue', zorder=3)
+            # FIX: Removed fontsize=5 and added labelpad=15
+            self.ax2.set_ylabel('Humidity (%)', color='white', labelpad=15)
             self.ax2.grid(True, linestyle='--', alpha=0.3)
             self.ax2.tick_params(axis='y', colors='white')
             self.ax2.tick_params(axis='x', colors='white')
             self.ax2.set_facecolor(ax_color)
-            if not df.empty:
-                self._set_dynamic_ylim(self.ax2, df['Humidity']) # <-- ADDED
-                self._apply_gradient(self.ax2, df.index, df['Humidity'], 'blue')
+            if not filtered_df.empty:
+                self._set_dynamic_ylim(self.ax2, filtered_df['Humidity'])
+                self._apply_gradient(self.ax2, filtered_df.index, filtered_df['Humidity'], 'blue')
 
             # --- Plot Pressure ---
-            self.ax3.plot(df.index, df['Pressure'], color='green', zorder=3)
-            self.ax3.set_ylabel('Pressure (hPa)', color='white', fontsize=5)
+            self.ax3.plot(filtered_df.index, filtered_df['Pressure'], color='green', zorder=3)
+            # FIX: Removed \n and added labelpad=15
+            self.ax3.set_ylabel('Pressure (hPa)', color='white', labelpad=15)
             self.ax3.grid(True, linestyle='--', alpha=0.3)
             self.ax3.tick_params(axis='y', colors='white')
             self.ax3.tick_params(axis='x', colors='white')
             self.ax3.set_facecolor(ax_color)
-            if not df.empty:
-                self._set_dynamic_ylim(self.ax3, df['Pressure']) # <-- ADDED
-                self._apply_gradient(self.ax3, df.index, df['Pressure'], 'green')
+            if not filtered_df.empty:
+                self._set_dynamic_ylim(self.ax3, filtered_df['Pressure'])
+                self._apply_gradient(self.ax3, filtered_df.index, filtered_df['Pressure'], 'green')
 
             self.ax3.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p'))
             self.ax3.set_xlabel('Time', color='white')
-            plt.setp(self.ax3.get_xticklabels(), rotation=45, ha="right", color='white')
+            # FIX: Set rotation=0 (horizontal)
+            plt.setp(self.ax3.get_xticklabels(), rotation=0, ha="center", color='white')
             
-            self.fig_stacked.suptitle('BME280 Sensor Data (All)', fontsize=14, color='white')
-            self.fig_stacked.tight_layout(rect=[0, 0.03, 1, 0.95])
-
+            self.fig_stacked.suptitle(f"BME280 Sensor Data ({self.selected_date})", fontsize=14, color='white')
+            # REMOVED tight_layout to prevent shrinking
+            
             # --- 4. Redraw SINGLE Plot (ax_single) based on current view ---
             title = 'Sensor Data'
             if self.current_view == "temp":
-                title = "Temperature Over Time"
-                self.ax_single.plot(df.index, df['Temperature'], color='red', zorder=3)
-                self.ax_single.set_ylabel('Temperature (°C)', color='white')
-                if not df.empty:
-                    self._set_dynamic_ylim(self.ax_single, df['Temperature']) # <-- ADDED
-                    self._apply_gradient(self.ax_single, df.index, df['Temperature'], 'red')
+                title = f"Temperature ({self.selected_date})"
+                self.ax_single.plot(filtered_df.index, filtered_df['Temperature'], color='red', zorder=3)
+                # FIX: Added labelpad=15
+                self.ax_single.set_ylabel('Temperature (°C)', color='white', labelpad=15)
+                if not filtered_df.empty:
+                    self._set_dynamic_ylim(self.ax_single, filtered_df['Temperature'])
+                    self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Temperature'], 'red')
             
             elif self.current_view == "hum":
-                title = "Humidity Over Time"
-                self.ax_single.plot(df.index, df['Humidity'], color='blue', zorder=3)
-                self.ax_single.set_ylabel('Humidity (%)', color='white')
-                if not df.empty:
-                    self._set_dynamic_ylim(self.ax_single, df['Humidity']) # <-- ADDED
-                    self._apply_gradient(self.ax_single, df.index, df['Humidity'], 'blue')
+                title = f"Humidity ({self.selected_date})"
+                self.ax_single.plot(filtered_df.index, filtered_df['Humidity'], color='blue', zorder=3)
+                # FIX: Added labelpad=15
+                self.ax_single.set_ylabel('Humidity (%)', color='white', labelpad=15)
+                if not filtered_df.empty:
+                    self._set_dynamic_ylim(self.ax_single, filtered_df['Humidity'])
+                    self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Humidity'], 'blue')
                 
             elif self.current_view == "pres":
-                title = "Pressure Over Time"
-                self.ax_single.plot(df.index, df['Pressure'], color='green', zorder=3)
-                self.ax_single.set_ylabel('Pressure (hPa)', color='white')
-                if not df.empty:
-                    self._set_dynamic_ylim(self.ax_single, df['Pressure']) # <-- ADDED
-                    self._apply_gradient(self.ax_single, df.index, df['Pressure'], 'green')
+                title = f"Pressure ({self.selected_date})"
+                self.ax_single.plot(filtered_df.index, filtered_df['Pressure'], color='green', zorder=3)
+                # FIX: Added labelpad=15
+                self.ax_single.set_ylabel('Pressure (hPa)', color='white', labelpad=15)
+                if not filtered_df.empty:
+                    self._set_dynamic_ylim(self.ax_single, filtered_df['Pressure'])
+                    self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Pressure'], 'green')
             
-            else: # "all" view is active, but we should plot *something* in the hidden chart
-                title = "Temperature Over Time"
-                self.ax_single.plot(df.index, df['Temperature'], color='red', zorder=3)
-                self.ax_single.set_ylabel('Temperature (°C)', color='white')
-                if not df.empty:
-                    self._set_dynamic_ylim(self.ax_single, df['Temperature']) # <-- ADDED
-                    self._apply_gradient(self.ax_single, df.index, df['Temperature'], 'red')
+            else: # "all" view
+                title = f"Temperature ({self.selected_date})"
+                self.ax_single.plot(filtered_df.index, filtered_df['Temperature'], color='red', zorder=3)
+                # FIX: Added labelpad=15
+                self.ax_single.set_ylabel('Temperature (°C)', color='white', labelpad=15)
+                if not filtered_df.empty:
+                    self._set_dynamic_ylim(self.ax_single, filtered_df['Temperature'])
+                    self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Temperature'], 'red')
             
             # Apply formatting to the single chart
             self.ax_single.grid(True, linestyle='--', alpha=0.3)
@@ -467,15 +600,16 @@ class WeatherPage(SC):
             self.ax_single.set_facecolor(ax_color)
             self.ax_single.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p'))
             self.ax_single.set_xlabel('Time', color='white')
-            plt.setp(self.ax_single.get_xticklabels(), rotation=45, ha="right", color='white')
+            # FIX: Set rotation=0 (horizontal)
+            plt.setp(self.ax_single.get_xticklabels(), rotation=0, ha="center", color='white')
             self.fig_single.suptitle(title, fontsize=14, color='white')
-            self.fig_single.tight_layout(rect=[0, 0.03, 1, 0.95])
+            # REMOVED tight_layout to prevent shrinking
             
             # --- 5. Update both canvases ---
             self.canvas_stacked.draw()
             self.canvas_single.draw()
             
-            if not force_update:
+            if not force_update and self.is_running:
                 print(f"Plot updated at {datetime.datetime.now().strftime('%H:%M:%S')}")
 
         except Exception as e:
@@ -483,14 +617,16 @@ class WeatherPage(SC):
             import traceback
             traceback.print_exc()
         
-        # --- 6. Schedule the next update (if not a forced update) ---
+        # --- 6. Schedule the next update (if not a forced update AND is_running) ---
         if self.is_running and not force_update: 
-            self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
+            self.after_id = self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
 
     def navigate_to_dashboard(self):
-        # ... (This function is unchanged) ...
         print("Stopping plot update loop...")
-        self.is_running = False # This is CRITICAL
+        self.is_running = False
+
+        if self.after_id:
+            self.root.after_cancel(self.after_id)
+            self.after_id = None
         
-        # Call the inherited go_back_to_dashboard
         super().go_back_to_dashboard()

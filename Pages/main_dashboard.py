@@ -162,7 +162,7 @@ class MyDashboard(SC):
         ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3, prune='both'))
         
         # X-Ticks (Horizontal) - FONT SIZE REDUCED
-        ax.tick_params(axis='x', colors='white', labelsize=self._scale_value(5, 'y'), rotation=30)
+        ax.tick_params(axis='x', colors='white', labelsize=self._scale_value(5, 'y'), rotation=0)
         
         # Smart Tick Locator and Formatter
         ax.xaxis.set_major_locator(mdates.AutoDateLocator(minticks=2, maxticks=4)) 
@@ -209,12 +209,24 @@ class MyDashboard(SC):
             
             self.chart_x_data = df_tail['Timestamp'].tolist()
             self.chart_y_data = df_tail['Temperature'].tolist()
+            
+            if self.chart_x_data:
+                # Get the last timestamp from our list
+                most_recent_timestamp = self.chart_x_data[-1] 
+                # Format it into a clean string (e.g., "Nov 05")
+                date_str = most_recent_timestamp.strftime('%b %d')
+                # Update the label
+                self.recent_date_label.configure(text=f"Date: {date_str}")
+            else:
+                self.recent_date_label.configure(text="Date: --")
         
         except Exception as e:
             print(f"Error reading CSV for dashboard chart: {e}")
             # On error, plot empty data
             self.chart_x_data = []
             self.chart_y_data = []
+            # --- ALSO ADD THIS LINE TO THE ERROR CASE ---
+            self.recent_date_label.configure(text="Date: --")
 
         # 3. Update the chart (now plots the CSV data)
         self._update_temp_chart()
