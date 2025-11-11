@@ -3,11 +3,10 @@ from PIL import Image
 from shared_components import SharedComponents as SC, custom_font_regular
 import os
 import random
-import json  # NEW: Import json
-# NEW: Import the analysis page to switch to it
+import json
 from Pages.analysis_page import AnalysisPage 
 
-# ... (No changes to gallery_preview function) ...
+# --- No changes to gallery_preview function ---
 def gallery_preview(root):
     
     if hasattr(root, 'scale_x') and hasattr(root, 'scale_y'):
@@ -33,21 +32,18 @@ def gallery_preview(root):
             random_image = random.choice(jpg_files)
             img_path = os.path.join(gallery_folder, random_image)
 
-            # Scale image size
             scaled_img_size = scale_val(ORIGINAL_IMG_SIZE, 'x')
             
-            # Load & resize the image
             img = Image.open(img_path)
             img = img.resize((scaled_img_size, scaled_img_size))
             gallery_photo = ctk.CTkImage(light_image=img, dark_image=img, size=(scaled_img_size, scaled_img_size))
 
-            # Extract filename (without extension)
             file_label = os.path.splitext(random_image)[0]
         else:
-            file_label = "No Images" # Show label if folder exists but no images
+            file_label = "No Images" 
             print("No JPG images found in Page_files/gallery_files.")
     else:
-        file_label = "Gallery Empty" # Show label if folder not found
+        file_label = "Gallery Empty" 
         print(f"Folder '{gallery_folder}' not found.")
 
     return gallery_photo, file_label
@@ -65,15 +61,100 @@ class GalleryPage(SC):
         self.scale_x_val = lambda val: self._scale_value(val, 'x')
         self.scale_y_val = lambda val: self._scale_value(val, 'y')
 
+        # --- MODIFIED: Setup state variables ---
+        self.current_filter = "All Captures" # Default filter
+        self.gallery_folder_path = "Page_files/gallery_files"
+        self.master_json_path = os.path.join(self.gallery_folder_path, "gallery_data.json")
+
+        # --- MODIFIED: Create top-right filter dropdown ---
+        filter_options = self._get_available_filters()
+        
+        self.filter_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.filter_frame.place(
+            relx=0.90, 
+            y=self._scale_value(25, 'y'), 
+            anchor="ne" # Top-right anchor
+        )
+        
+        self.filter_label = ctk.CTkLabel(
+            self.filter_frame, 
+            text="Filter by:",
+            font=("Arial", self._scale_value(14, 'y')),
+            text_color="white"
+        )
+        self.filter_label.pack(side="left", padx=(5, 5))
+
+        self.filter_selector = ctk.CTkOptionMenu(
+            self.filter_frame,
+            values=filter_options, 
+            command=self.on_filter_selected,
+            font=("Arial", self._scale_value(14, 'y')),
+            dropdown_font=("Arial", self._scale_value(20, 'y')),
+            fg_color="#2A2E3F",
+            text_color="#FFFFFF",
+            button_color="#383C4E",
+            button_hover_color="#50556b",
+            dropdown_fg_color="#2A2E3F",
+            dropdown_hover_color="#383C4E",
+            dropdown_text_color="#FFFFFF"
+        )
+        self.filter_selector.set(self.current_filter)
+        self.filter_selector.pack(side="left", padx=(0, 10))
+        # --- End of new dropdown code ---
+        
         self.create_scrollable_gallery()
         
-    # ... (No changes to create_scrollable_gallery) ...
+    def _format_name(self, name_str):
+        """Converts snake_case names into formatted Title Case."""
+        if name_str is None:
+            return ""
+        if name_str == "Downy_mildew_on_lettuce":
+            return "Downy Mildew"
+        if name_str == "Powdery_mildew_on_lettuce":
+            return "Powdery Mildew"
+        
+        return name_str.replace("_", " ").title()
+
+    # --- NEW: Function to get all filter names for the dropdown ---
+    def _get_available_filters(self):
+        """Loads all unique disease/pest types for the filter dropdown."""
+        
+        master_data = self._load_master_json(self.master_json_path)
+        all_names = set()
+        for item_data in master_data.values():
+            name = item_data.get("disease") or item_data.get("pest")
+            if name and name != "No Disease Detected":
+                all_names.add(self._format_name(name))
+        
+        sorted_names = sorted(list(all_names))
+        
+        # Create the final list, starting with "All Captures"
+        filter_list = ["All Captures"]
+        filter_list.extend(sorted_names)
+        
+        return filter_list
+
+    # --- NEW: Function called by the dropdown ---
+    def on_filter_selected(self, selected_name: str):
+        """Sets the current filter and rebuilds the gallery."""
+        self.current_filter = selected_name
+        self.apply_filter()
+
+    # --- NEW: Refactored filter logic ---
+    def apply_filter(self):
+        """Clears and rebuilds the gallery based on self.current_filter."""
+        # 1. Clear the existing gallery
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+            
+        # 2. Re-load images with the new filter
+        self.load_gallery_images(self.gallery_folder_path)
+
     def create_scrollable_gallery(self):
         
         scaled_x_start = self.scale_x_val(120)
         scaled_scrollbar_width = self.scale_x_val(40)
         
-
         self.canvas = ctk.CTkCanvas(
             self.root,
             bg="#202332",
@@ -103,26 +184,25 @@ class GalleryPage(SC):
 
         self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
 
-        # Load the gallery images
-        self.load_gallery_images()
+        # Load the gallery images (will now use the default "All Captures" filter)
+        self.load_gallery_images(self.gallery_folder_path)
 
-    # NEW: Add the helper function to load the master JSON
     def _load_master_json(self, json_path):
         """Loads the master JSON file. Returns an empty dict if it doesn't exist."""
         try:
             if os.path.exists(json_path):
                 with open(json_path, 'r') as f:
-                    # Handle empty file case
                     content = f.read()
                     if not content:
                         return {}
                     return json.loads(content)
             else:
-                return {} # Return an empty dictionary if file doesn't exist
+                return {} 
         except (json.JSONDecodeError, Exception) as e:
             print(f"❌ Error reading master JSON or file is empty: {e}. Returning empty dict.")
             return {}
 
+    # --- MODIFIED: This function now uses self.current_filter ---
     def load_gallery_images(self, folder_path="Page_files/gallery_files"):
         
         ORIGINAL_PANEL_WIDTH = 197.33
@@ -143,16 +223,11 @@ class GalleryPage(SC):
             print(f"Folder '{folder_path}' not found.")
             return
 
-        # --- MODIFIED: JSON Loading Logic ---
-        
-        # 1. Define and load the master JSON file
-        master_json_path = os.path.join(folder_path, "gallery_data.json")
-        master_data = self._load_master_json(master_json_path)
+        # 1. Load the master JSON file
+        master_data = self._load_master_json(self.master_json_path)
 
         if not master_data:
             print("⚠️ Warning: gallery_data.json is empty or not found. No items will be loaded.")
-            # We can just return here, as no images should be shown
-            # if their data doesn't exist.
             return
             
         # 2. Get all .jpg files
@@ -164,26 +239,36 @@ class GalleryPage(SC):
         scaled_name_font = tuple(custom_font_regular)
 
         # 3. We need a new index variable to handle grid placement
-        #    since some images might be skipped.
         valid_image_index = 0
 
-        # MODIFIED: Loop through all .jpg files found
+        # Loop through all .jpg files found
         for filename in jpg_files:
             file_path = os.path.join(folder_path, filename)
             
-            # 4. MODIFIED: Check if the image filename is a key in the master JSON
+            # 4. Check if the image filename is a key in the master JSON
             if filename not in master_data:
                 print(f"⚠️ Warning: No data for {filename} in master JSON. Skipping.")
-                continue # Skip this file as it has no data
+                continue 
 
-            # --- End of modifications ---
+            # --- 5. MODIFIED: Apply the filter ---
+            item_data = master_data[filename]
+            
+            if self.current_filter != "All Captures":
+                # Get the formatted name from the JSON data
+                raw_name = item_data.get("disease") or item_data.get("pest")
+                formatted_name = self._format_name(raw_name)
+                
+                # If it doesn't match the filter, skip this image
+                if formatted_name != self.current_filter:
+                    continue
+            # --- End of filter logic ---
 
             # Load and resize image
             img = Image.open(file_path)
             img = img.resize((image_width, image_height))
             ctk_img = ctk.CTkImage(light_image=img, dark_image=img, size=(image_width, image_height))
 
-            # MODIFIED: Use the new valid_image_index for grid placement
+            # Use the new valid_image_index for grid placement
             col = valid_image_index % max_per_row
             row = valid_image_index // max_per_row
             
@@ -207,7 +292,6 @@ class GalleryPage(SC):
                 height=image_height,
                 fg_color="transparent",
                 hover_color="#3B3F51",
-                # This command is still correct
                 command=lambda path=file_path: self.open_analysis_view(path)
             )
             img_button.image = ctk_img
@@ -223,10 +307,13 @@ class GalleryPage(SC):
             )
             name_label.place(relx=0.5, rely=0.9, anchor="center")
 
-    # NEW: Function to switch from Gallery to Analysis page
     def open_analysis_view(self, image_path):
         """Destroys the gallery and opens the analysis page in view-only mode."""
         self.root.destroy()
-        # Pass the path to the image and set view_only=True
         app = AnalysisPage(image_path=image_path, view_only=True)
         app.root.mainloop()
+
+# --- To run this page directly for testing (if needed) ---
+if __name__ == "__main__":
+    app = GalleryPage()
+    app.root.mainloop()

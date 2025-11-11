@@ -537,7 +537,7 @@ class MyDashboard(SC):
             text_color="white"
         )
         # --- Adjust these x/y coordinates to be above your temp label ---
-        self.season_label.place(x=100, y=50)
+        self.season_label.place(x=80, y=75)
         self._update_season_indicator()
 
     def run(self):

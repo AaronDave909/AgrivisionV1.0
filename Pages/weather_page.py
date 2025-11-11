@@ -8,10 +8,12 @@ import os
 import datetime 
 from PIL import Image
 
-# --- ADDED IMPORTS FOR GRADIENT ---
+# --- ADDED IMPORTS ---
+import json
+from collections import defaultdict
 import numpy as np
 import matplotlib.colors as mcolors
-# ------------------------------------
+# ---------------------
 
 def get_latest_weather_averages(csv_path="Page_files/weather.csv"):
     """
@@ -65,34 +67,30 @@ def get_latest_weather_averages(csv_path="Page_files/weather.csv"):
 class WeatherPage(SC):
     
     CSV_FILE_PATH = "Page_files/weather.csv"
-    UPDATE_INTERVAL = 10000 # 10 seconds
+    GALLERY_JSON_PATH = "Page_files/gallery_files/gallery_data.json"
+    UPDATE_INTERVAL = 10000 
 
-    def on_date_selected(self, selected_date: str):
-        self.selected_date = selected_date
-        
-        if selected_date == "Today":
-            if not self.is_running:
-                print("Restarting live update loop...")
-                self.is_running = True
-                self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
-        else:
-            if self.is_running:
-                print(f"Stopping live updates. Showing data for {selected_date}.")
-                self.is_running = False
-                if self.after_id:
-                    self.root.after_cancel(self.after_id)
-                    self.after_id = None
+    def on_filter_selected(self, selected_item: str):
+        """
+        Called when an item is selected from the filter dropdown.
+        This item can be a date (e.g., "Today") or a month (e.g., "November 2025").
+        """
+        self.selected_filter = selected_item
         
         self._update_plot_data(force_update=True)
 
-    def _update_date_selector(self, df_full: pd.DataFrame):
-        if self.date_selector is None:
+    def _update_weather_date_selector(self, df_full: pd.DataFrame):
+        """Updates the filter dropdown with available DATES for weather."""
+        
+        if self.filter_selector is None or self.current_view not in ["all", "temp", "hum", "pres"]:
             return
+        
+        self.filter_selector.configure(state="normal") 
 
         try:
             if df_full.empty or 'Date' not in df_full.columns:
-                self.date_selector.configure(values=["Today"])
-                self.date_selector.set("Today")
+                self.filter_selector.configure(values=["Today"])
+                self.filter_selector.set("Today")
                 return
 
             df_full['Date_Only'] = pd.to_datetime(df_full['Date']).dt.date
@@ -108,25 +106,24 @@ class WeatherPage(SC):
             else:
                 dropdown_options = [d.strftime('%Y-%m-%d') for d in unique_dates]
 
-            current_selection = self.selected_date
-            self.date_selector.configure(values=dropdown_options)
+            current_selection = self.selected_filter
+            self.filter_selector.configure(values=dropdown_options)
             
             if current_selection in dropdown_options:
-                self.date_selector.set(current_selection)
+                self.filter_selector.set(current_selection)
             elif dropdown_options:
-                self.date_selector.set(dropdown_options[0])
-                self.selected_date = dropdown_options[0]
+                self.filter_selector.set(dropdown_options[0])
+                self.selected_filter = dropdown_options[0]
             else:
-                self.date_selector.configure(values=["Today"])
-                self.date_selector.set("Today")
-                self.selected_date = "Today"
+                self.filter_selector.configure(values=["Today"])
+                self.filter_selector.set("Today")
+                self.selected_filter = "Today"
 
         except Exception as e:
             print(f"Error updating date selector: {e}")
-            self.date_selector.configure(values=["Today"])
-            self.date_selector.set("Today")
+            self.filter_selector.configure(values=["Today"])
+            self.filter_selector.set("Today")
             
-    # --- NEW: Method to check current date and update season labels ---
     def _update_season_indicator(self):
         """
         Checks today's date and updates the season labels
@@ -134,24 +131,24 @@ class WeatherPage(SC):
         """
         try:
             today = datetime.date.today()
-            current_month = today.month # 1 (Jan) to 12 (Dec)
+            current_month = today.month 
 
             season = ""
             sub_text = ""
-            color = "#FFFFFF" # Default white
+            color = "#FFFFFF" 
 
             if current_month in [11, 12, 1, 2]: # November - February
                 season = "Dry Season (Cool)"
                 sub_text = "Expect rainy and hot sunny days!"
-                color = "#A9DFFF" # Light blue
+                color = "#A9DFFF" 
             elif current_month in [3, 4, 5]: # March - May
                 season = "Dry Season (Hot)"
                 sub_text = "Expect extreme hot temperatures!"
-                color = "#FFD1A9" # Light orange
+                color = "#FFD1A9" 
             elif current_month in [6, 7, 8, 9, 10]: # June - October
                 season = "Wet Season"
                 sub_text = "Expect frequent or heavy rains!"
-                color = "#C8D3D5" # Light gray-blue
+                color = "#C8D3D5" 
 
             self.season_label.configure(text=season, text_color=color)
             self.season_sub_label.configure(text=sub_text, text_color=color)
@@ -161,46 +158,191 @@ class WeatherPage(SC):
             self.season_label.configure(text="Season: Error", text_color="red")
             self.season_sub_label.configure(text="")
     
+    def _get_available_json_months(self):
+        """
+        Scans the entire gallery_data.json to find all unique months
+        that have data.
+        Returns: A list of strings, e.g., ["All Detections", "November 2025", ...]
+        """
+        all_months = set()
+        
+        final_options = ["All Detections"]
+
+        try:
+            if not os.path.exists(self.GALLERY_JSON_PATH):
+                print(f"Warning: {self.GALLERY_JSON_PATH} not found. Only 'All Detections' will be available.")
+                return final_options 
+
+            with open(self.GALLERY_JSON_PATH, 'r') as f:
+                data = json.load(f)
+
+            for item_data in data.values():
+                timestamp_str = item_data.get("timestamp")
+                if not timestamp_str:
+                    continue
+                
+                try:
+                    item_date = datetime.datetime.strptime(timestamp_str, '%b %d, %Y %I:%M %p')
+                    all_months.add((item_date.year, item_date.month))
+                except ValueError:
+                    continue
+            
+            if not all_months:
+                return final_options 
+
+            sorted_months = sorted(list(all_months), reverse=True)
+            
+            formatted_months = [
+                datetime.date(year, month, 1).strftime('%B %Y') 
+                for year, month in sorted_months
+            ]
+            
+            final_options.extend(formatted_months)
+            return final_options
+
+        except Exception as e:
+            print(f"Error scanning JSON for months: {e}")
+            return final_options 
+    
+    def _load_and_process_json_data(self, selected_filter_str: str):
+        """
+        Loads gallery_data.json and counts diseases/pests for the
+        *specified filter* (either "All Detections" or a specific month).
+        """
+        disease_counts = defaultdict(int)
+        pest_counts = defaultdict(int)
+        
+        filter_by_month = True
+        if selected_filter_str == "All Detections":
+            filter_by_month = False
+        else:
+            try:
+                target_date = datetime.datetime.strptime(selected_filter_str, '%B %Y')
+                target_month = target_date.month
+                target_year = target_date.year
+            except ValueError:
+                print(f"Error: Could not parse month string '{selected_filter_str}'")
+                return disease_counts, pest_counts 
+            
+        try:
+            if not os.path.exists(self.GALLERY_JSON_PATH):
+                print(f"Error: {self.GALLERY_JSON_PATH} not found.")
+                return disease_counts, pest_counts
+
+            with open(self.GALLERY_JSON_PATH, 'r') as f:
+                data = json.load(f)
+
+            for item_data in data.values():
+                timestamp_str = item_data.get("timestamp")
+                if not timestamp_str:
+                    continue
+                
+                try:
+                    item_date = datetime.datetime.strptime(timestamp_str, '%b %d, %Y %I:%M %p')
+                except ValueError:
+                    print(f"Could not parse timestamp: {timestamp_str}")
+                    continue
+
+                process_this_item = False
+                
+                if not filter_by_month:
+                    process_this_item = True
+                else:
+                    if item_date.month == target_month and item_date.year == target_year:
+                        process_this_item = True
+
+                if process_this_item:
+                    count = int(item_data.get("count", 0))
+                    
+                    if "disease" in item_data:
+                        disease_name = item_data["disease"]
+                        if disease_name != "No Disease Detected" and count > 0:
+                            formatted_name = self._format_name(disease_name)
+                            disease_counts[formatted_name] += count
+                            
+                    elif "pest" in item_data:
+                        pest_name = item_data["pest"]
+                        if count > 0:
+                            formatted_name = self._format_name(pest_name)
+                            pest_counts[formatted_name] += count
+            
+            return disease_counts, pest_counts
+
+        except Exception as e:
+            print(f"Error processing {self.GALLERY_JSON_PATH}: {e}")
+            return disease_counts, pest_counts
+
+    def _format_name(self, name_str):
+        """Converts snake_case names into formatted Title Case."""
+        if name_str == "Downy_mildew_on_lettuce":
+            return "Downy Mildew"
+        if name_str == "Powdery_mildew_on_lettuce":
+            return "Powdery Mildew"
+        
+        # General rule for all others (pests and diseases)
+        return name_str.replace("_", " ").title()
+
+    # --- NEW: Function to lift the dropdown menu ---
+    def on_dropdown_open(self, event=None):
+        """
+        Called when the filter dropdown button is clicked.
+        Waits 50ms for the menu to be created, then lifts it
+        to the top of the stacking order.
+        """
+        # We wait a short moment for the dropdown Toplevel to be created
+        self.root.after(50, self.lift_dropdown_menu)
+
+    # --- NEW: Helper function to lift the menu ---
+    def lift_dropdown_menu(self):
+        try:
+            # Access the internal _dropdown_menu attribute
+            if self.filter_selector._dropdown_menu:
+                self.filter_selector._dropdown_menu.lift()
+                print("Dropdown menu lifted.") # For debugging
+        except AttributeError:
+            print("Could not access _dropdown_menu, maybe it's not open?")
+        except Exception as e:
+            print(f"Error lifting dropdown: {e}")
+
     def __init__(self):
         super().__init__()
         
         self.is_running = True
         self.current_view = "all" 
         
-        self.selected_date = "Today"
-        self.date_selector = None
+        self.selected_filter = "Today" 
+        self.filter_selector = None      
+        self.filter_label = None         
         self.after_id = None
         
         # --- Standard Page Setup ---
         self.create_left_panel() 
         self.create_leaf_image() 
         self.create_title(text="Weather Analytics", x=119, y=0)
-        self.undo_button(command=self.navigate_to_dashboard)
 
-        # --- MODIFIED: Create Date Filter Frame (Top-Right) ---
+        # --- Filter Frame (Top-Right) ---
         self.date_filter_frame = ctk.CTkFrame(self.root, fg_color="transparent")
         self.date_filter_frame.place(
             relx=0.98, 
             y=self._scale_value(25, 'y'), 
-            anchor="ne" # Top-right anchor
+            anchor="ne" 
         )
         
-        # --- NEW: Create a sub-frame for the date selector row ---
         selector_row_frame = ctk.CTkFrame(self.date_filter_frame, fg_color="transparent")
-        selector_row_frame.pack(side="top", anchor="e", pady=(0, 5)) # anchor="e" to right-align
+        selector_row_frame.pack(side="top", anchor="e", pady=(0, 5)) 
 
-        date_label = ctk.CTkLabel(
+        self.filter_label = ctk.CTkLabel(
             selector_row_frame, 
             text="Select Date:",
             font=("Arial", self._scale_value(14, 'y')),
             text_color="white"
         )
-        date_label.pack(side="left", padx=(5, 5))
+        self.filter_label.pack(side="left", padx=(5, 5))
 
-        self.date_selector = ctk.CTkOptionMenu(
+        self.filter_selector = ctk.CTkOptionMenu(
             selector_row_frame,
             values=["Today"], 
-            command=self.on_date_selected,
+            command=self.on_filter_selected,
             font=("Arial", self._scale_value(14, 'y')),
             dropdown_font=("Arial", self._scale_value(20, 'y')),
             fg_color="#2A2E3F",
@@ -211,33 +353,39 @@ class WeatherPage(SC):
             dropdown_hover_color="#383C4E",
             dropdown_text_color="#FFFFFF"
         )
-        self.date_selector.set("Today")
-        self.date_selector.pack(side="left", padx=(0, 10))
+        self.filter_selector.set("Today")
+        self.filter_selector.pack(side="left", padx=(0, 10))
 
-        # --- MODIFIED: Add Season Indicator Labels with strict font size ---
+        # --- NEW: Bind to the button click event ---
+        # We access the internal button to bind to its click
+        if hasattr(self.filter_selector, '_button'):
+            self.filter_selector._button.bind("<Button-1>", self.on_dropdown_open, add="+")
+        else:
+            print("Warning: Could not bind to dropdown button. Touch focus might fail.")
+        # -------------------------------------------
+
+        # --- Season Indicator Labels ---
         self.season_label = ctk.CTkLabel(
-            self.date_filter_frame, # Parent is the main filter frame
-            text="", # Will be set by _update_season_indicator
-            font=("Arial", 12, "bold"), # MODIFIED: Set to strict size 12
+            self.date_filter_frame, 
+            text="", 
+            font=("Arial", 12, "bold"), 
             text_color="white" 
         )
         self.season_label.pack(side="top", anchor="e", padx=(0, 10)) 
 
         self.season_sub_label = ctk.CTkLabel(
-            self.date_filter_frame, # Parent is the main filter frame
-            text="", # Will be set by _update_season_indicator
-            font=("Arial", 12), # MODIFIED: Set to strict size 12
+            self.date_filter_frame, 
+            text="", 
+            font=("Arial", 12), 
             text_color="white" 
         )
         self.season_sub_label.pack(side="top", anchor="e", padx=(0, 10))
-        # -----------------------------------------------
 
-        # --- Button Setup (Unchanged) ---
+        # --- Button Setup ---
         
         scaled_button_width = self._scale_value(100, 'x')
         scaled_button_height = self._scale_value(40, 'y')
         scaled_img_size = (self._scale_value(30, 'x'), self._scale_value(30, 'y'))
-        scaled_hover_offset = self._scale_value(5, 'y')
         scaled_padding = self._scale_value(10, 'y')
         
         try:
@@ -245,46 +393,80 @@ class WeatherPage(SC):
             self.temp_icon = ctk.CTkImage(light_image=Image.open("_image_assets/temperature.png"), size=scaled_img_size)
             self.hum_icon = ctk.CTkImage(light_image=Image.open("_image_assets/humidity.png"), size=scaled_img_size)
             self.pres_icon = ctk.CTkImage(light_image=Image.open("_image_assets/pressure.png"), size=scaled_img_size)
+            self.disease_icon = ctk.CTkImage(light_image=Image.open("_image_assets/disease_icon.png"), size=scaled_img_size) 
+            self.pest_icon = ctk.CTkImage(light_image=Image.open("_image_assets/pest_icon.png"), size=scaled_img_size)
+            self.undo_icon = ctk.CTkImage(light_image=Image.open("_image_assets/Undo.png"), size=scaled_img_size)
+       
         except Exception as e:
             print(f"Error loading button icons: {e}. Please check _image_assets folder.")
-            self.all_icon = self.temp_icon = self.hum_icon = self.pres_icon = None
+            self.all_icon = self.temp_icon = self.hum_icon = self.pres_icon = self.disease_icon = self.pest_icon = self.undo_icon = None
         
-
         y_all = self._scale_value(150, 'y')
         y_temp = y_all + scaled_button_height + scaled_padding
         y_hum = y_temp + scaled_button_height + scaled_padding
         y_pres = y_hum + scaled_button_height + scaled_padding
+        y_disease = y_pres + scaled_button_height + scaled_padding
+        y_pest = y_disease + scaled_button_height + scaled_padding
+        y_undo = y_pest + scaled_button_height + scaled_padding
+        
         x_pos = self._scale_value(LEFT_PANEL_WIDTH / 2, 'x')
+        
+        btn_font = ("Arial", 12) 
+        btn_anchor = "w"
 
         self.all_button = ctk.CTkButton(self.left_panel, text=" All Data", width=scaled_button_width, height=scaled_button_height, image=self.all_icon, command=lambda: self.show_view("all"), 
                                         fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
-                                        text_color="white", font=("Arial", 14), anchor="w")
+                                        text_color="white", font=btn_font, anchor=btn_anchor)
         self.all_button.place(x=x_pos, y=y_all, anchor="center")
 
         self.temp_button = ctk.CTkButton(self.left_panel, text=" Temperature", 
                                          width=scaled_button_width, height=scaled_button_height, 
                                          image=self.temp_icon, command=lambda: self.show_view("temp"), 
                                          fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
-                                         text_color="white", font=("Arial", 14), anchor="w")
+                                         text_color="white", font=btn_font, anchor=btn_anchor)
         self.temp_button.place(x=x_pos, y=y_temp, anchor="center")
 
         self.hum_button = ctk.CTkButton(self.left_panel, text=" Humidity", 
                                         width=scaled_button_width, height=scaled_button_height, 
                                         image=self.hum_icon, command=lambda: self.show_view("hum"), 
                                         fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
-                                        text_color="white", font=("Arial", 14), anchor="w")
+                                        text_color="white", font=btn_font, anchor=btn_anchor)
         self.hum_button.place(x=x_pos, y=y_hum, anchor="center")
         
         self.pres_button = ctk.CTkButton(self.left_panel, text=" Pressure", 
                                          width=scaled_button_width, height=scaled_button_height, 
                                          image=self.pres_icon, command=lambda: self.show_view("pres"), 
                                          fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
-                                         text_color="white", font=("Arial", 14), anchor="w")
+                                         text_color="white", font=btn_font, anchor=btn_anchor)
         self.pres_button.place(x=x_pos, y=y_pres, anchor="center")
 
-        self.chart_buttons = [self.all_button, self.temp_button, self.hum_button, self.pres_button]
+        self.disease_button = ctk.CTkButton(self.left_panel, text=" Diseases", 
+                                         width=scaled_button_width, height=scaled_button_height, 
+                                         image=self.disease_icon, command=lambda: self.show_view("disease"), 
+                                         fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
+                                         text_color="white", font=btn_font, anchor=btn_anchor)
+        self.disease_button.place(x=x_pos, y=y_disease, anchor="center")
+        
+        self.pest_button = ctk.CTkButton(self.left_panel, text=" Pests", 
+                                         width=scaled_button_width, height=scaled_button_height, 
+                                         image=self.pest_icon, command=lambda: self.show_view("pest"), 
+                                         fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
+                                         text_color="white", font=btn_font, anchor=btn_anchor)
+        self.pest_button.place(x=x_pos, y=y_pest, anchor="center")
+        
+        self.undo_button = ctk.CTkButton(self.left_panel, text=" Return", 
+                                         width=scaled_button_width, height=scaled_button_height, 
+                                         image=self.undo_icon, command=self.navigate_to_dashboard, 
+                                         fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
+                                         text_color="white", font=btn_font, anchor=btn_anchor)
+        self.undo_button.place(x=x_pos, y=y_undo, anchor="center")
 
-        # --- Chart Frame (Unchanged) ---
+        self.chart_buttons = [
+            self.all_button, self.temp_button, self.hum_button, self.pres_button,
+            self.disease_button, self.pest_button
+        ]
+
+        # --- Chart Frame ---
         chart_frame_x = self._scale_value(LEFT_PANEL_WIDTH, 'x')
         chart_frame_y = self._scale_value(60, 'y') 
         
@@ -300,7 +482,7 @@ class WeatherPage(SC):
                                           font=("Arial", 18))
         self.status_label.pack(expand=True)
 
-        # --- Matplotlib Objects (Unchanged) ---
+        # --- Matplotlib Objects ---
         self.fig_stacked = None
         self.ax1, self.ax2, self.ax3 = None, None, None
         self.canvas_stacked = None
@@ -314,18 +496,13 @@ class WeatherPage(SC):
         self.temp_avg_label = None
         self.hum_avg_label = None
         self.pres_avg_label = None
-        
-        # --- Tide Label Objects ---
         self.high_tide_label = None
         self.low_tide_label = None
+        self.disease_total_label = None
+        self.pest_total_label = None
         
-        # --- NEW: Call the season indicator method ---
         self._update_season_indicator()
-        
-        # --- MODIFIED: Lift the filter frame to the front ---
-        self.date_filter_frame.lift()
-
-        # Start the plot setup
+        self.date_filter_frame.lift() # Initial lift
         self.root.after(100, self.setup_plot)
 
     def setup_plot(self):
@@ -334,43 +511,39 @@ class WeatherPage(SC):
             
             self.fig_stacked, (self.ax1, self.ax2, self.ax3) = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
             self.fig_stacked.patch.set_facecolor("#202332")
-            
             self.fig_stacked.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.15)
             
             self.fig_single, self.ax_single = plt.subplots(1, 1, figsize=(12, 8))
             self.fig_single.patch.set_facecolor("#202332")
-
             self.fig_single.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.15)
             
             self.status_label.pack_forget()
             
-            # --- Create a frame for the average labels ---
             self.avg_frame = ctk.CTkFrame(self.chart_frame, fg_color="transparent")
             self.avg_frame.pack(side=ctk.TOP, fill="x", padx=20, pady=(5, 10))
 
             font_style = ("Arial", 20, "bold")
             text_color = "#FFFFFF"
             
-            # Create labels with placeholder text
             self.temp_avg_label = ctk.CTkLabel(self.avg_frame, text="Temperature Avg: -- °C", font=font_style, text_color=text_color)
             self.hum_avg_label = ctk.CTkLabel(self.avg_frame, text="Humidity Avg: -- %", font=font_style, text_color=text_color)
             self.pres_avg_label = ctk.CTkLabel(self.avg_frame, text="Pressure Avg: -- hPa", font=font_style, text_color=text_color)
-            
-            # Create Tide labels
             self.high_tide_label = ctk.CTkLabel(self.avg_frame, text="High Tide: N/A", font=font_style, text_color=text_color)
             self.low_tide_label = ctk.CTkLabel(self.avg_frame, text="Low Tide: N/A", font=font_style, text_color=text_color)
+            self.disease_total_label = ctk.CTkLabel(self.avg_frame, text="Total Detections: --", font=font_style, text_color=text_color)
+            self.pest_total_label = ctk.CTkLabel(self.avg_frame, text="Total Detections: --", font=font_style, text_color=text_color)
 
-            # --- Create Stacked Canvas ---
             self.canvas_stacked = FigureCanvasTkAgg(self.fig_stacked, master=self.chart_frame)
             self.canvas_stacked.get_tk_widget().pack(side=ctk.TOP, fill=ctk.BOTH, expand=True)
 
-            # --- Create Single Canvas (but hide it) ---
             self.canvas_single = FigureCanvasTkAgg(self.fig_single, master=self.chart_frame)
             self.canvas_single.get_tk_widget().pack_forget()
             
             self.show_view(self.current_view) 
-            
             self._update_plot_data()
+
+            # --- Lift the frame after plots are drawn ---
+            self.filter_frame.lift()
 
         except Exception as e:
             print(f"An error occurred during plot setup: {e}")
@@ -378,14 +551,14 @@ class WeatherPage(SC):
             self.status_label.pack(expand=True)
 
     def show_view(self, view_name):
-        default_color = "#2A2E3F"   # Unselected button color
-        selected_color = "#202332"  # Selected button color (matches chart bg)
+        default_color = "#2A2E3F"   
+        selected_color = "#202332"  
         
-        # 1. Reset all buttons to the default color
+        # 1. Reset all chart buttons
         for button in self.chart_buttons:
             button.configure(fg_color=default_color)
             
-        # 2. Set the clicked button to the selected color
+        # 2. Set the clicked button
         if view_name == "all":
             self.all_button.configure(fg_color=selected_color)
         elif view_name == "temp":
@@ -394,10 +567,14 @@ class WeatherPage(SC):
             self.hum_button.configure(fg_color=selected_color)
         elif view_name == "pres":
             self.pres_button.configure(fg_color=selected_color)
+        elif view_name == "disease":
+            self.disease_button.configure(fg_color=selected_color)
+        elif view_name == "pest":
+            self.pest_button.configure(fg_color=selected_color)
 
         self.current_view = view_name
         
-        # --- 1. Manage Chart Canvas Visibility ---
+        # 3. Manage Chart Canvas Visibility
         if self.current_view == "all":
             self.canvas_single.get_tk_widget().pack_forget()
             self.canvas_stacked.get_tk_widget().pack(side=ctk.TOP, fill=ctk.BOTH, expand=True)
@@ -405,29 +582,68 @@ class WeatherPage(SC):
             self.canvas_stacked.get_tk_widget().pack_forget()
             self.canvas_single.get_tk_widget().pack(side=ctk.TOP, fill=ctk.BOTH, expand=True)
             
-        # --- 2. Manage Average Label Visibility ---
+        # 4. Manage Average/Total/Season Label Visibility
         self.temp_avg_label.pack_forget()
         self.hum_avg_label.pack_forget()
         self.pres_avg_label.pack_forget()
         self.high_tide_label.pack_forget()
         self.low_tide_label.pack_forget()
+        self.disease_total_label.pack_forget()
+        self.pest_total_label.pack_forget()
         
         if self.current_view == "all":
             self.high_tide_label.pack(side=ctk.LEFT, padx=10)
             self.low_tide_label.pack(side=ctk.LEFT, padx=10)
-            
         elif self.current_view == "temp":
             self.temp_avg_label.pack(side=ctk.LEFT, padx=10)
-            
         elif self.current_view == "hum":
             self.hum_avg_label.pack(side=ctk.LEFT, padx=10)
-            
         elif self.current_view == "pres":
             self.pres_avg_label.pack(side=ctk.LEFT, padx=10)
+        elif self.current_view == "disease":
+            self.disease_total_label.pack(side=ctk.LEFT, padx=10)
+        elif self.current_view == "pest":
+            self.pest_total_label.pack(side=ctk.LEFT, padx=10)
             
-        # --- 3. Force an immediate update ---
+        # 5. Manage Filter Dropdown and Season Labels
+        if self.current_view in ["disease", "pest"]:
+            self.season_label.pack_forget()
+            self.season_sub_label.pack_forget()
+            
+            self.filter_label.configure(text="Select Month:")
+            available_months = self._get_available_json_months()
+            self.filter_selector.configure(values=available_months, state="normal")
+            
+            new_selection = available_months[0] 
+            self.filter_selector.set(new_selection)
+            self.selected_filter = new_selection
+            
+            if self.is_running:
+                print("Stopping live updates for Disease/Pest view.")
+                self.is_running = False
+                if self.after_id:
+                    self.root.after_cancel(self.after_id)
+                    self.after_id = None
+        else: 
+            self.season_label.pack(side="top", anchor="e", padx=(0, 10))
+            self.season_sub_label.pack(side="top", anchor="e", padx=(0, 10))
+
+            self.filter_label.configure(text="Select Date:")
+            self.filter_selector.configure(state="normal") 
+            self.selected_filter = "Today"
+            self.filter_selector.set("Today") 
+            
+            if not self.is_running:
+                print("Restarting live updates for Weather view.")
+                self.is_running = True
+                self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
+
+        # 6. Force an immediate update
         if self.canvas_stacked: 
             self.root.after(10, self._update_plot_data, True) 
+
+        # --- Lift the frame after view switch ---
+        self.filter_frame.lift()
 
     def _set_dynamic_ylim(self, ax, data_series):
         """Calculates and sets dynamic Y-limits with padding."""
@@ -471,184 +687,190 @@ class WeatherPage(SC):
 
     def _update_plot_data(self, force_update=False):
         if not force_update and not self.is_running:
-            return 
+            if self.current_view not in ["disease", "pest"]: 
+                return 
             
         try:
-            # --- 1. Load Data ---
-            if not os.path.exists(self.CSV_FILE_PATH):
-                self.status_label.configure(text=f"Error: File not found.\n{self.CSV_FILE_PATH}", text_color="red")
-                if not self.canvas_stacked:
-                    self.status_label.pack(expand=True)
-                if not force_update:
-                    self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
-                return
-            
-            self.status_label.pack_forget()
-            
-            df_full = pd.read_csv(self.CSV_FILE_PATH)
-            
-            self._update_date_selector(df_full.copy())
-            
-            if df_full.empty or 'Date' not in df_full.columns or 'Time' not in df_full.columns:
-                 self.ax1.clear()
-                 self.ax2.clear()
-                 self.ax3.clear()
-                 self.ax_single.clear()
-                 self.canvas_stacked.draw()
-                 self.canvas_single.draw()
-                 if self.is_running and not force_update: 
-                     self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
-                 return
-            
-            df_full['Time'] = df_full['Time'].astype(str)
-            df_full['Timestamp'] = pd.to_datetime(df_full['Date'] + ' ' + df_full['Time'])
-            df = df_full.set_index('Timestamp')
-            
-            # --- NEW: Filter the DataFrame based on the date selector ---
-            try:
-                if self.selected_date == "Today":
-                    target_date = datetime.date.today()
-                    avg_label_prefix = "Feels like: "
-                else:
-                    target_date = datetime.datetime.strptime(self.selected_date, '%Y-%m-%d').date()
-                    avg_label_prefix = "Day Avg: "
-                
-                filtered_df = df[df.index.date == target_date]
-            
-            except Exception as e:
-                print(f"Error filtering date: {e}. Defaulting to today.")
-                target_date = datetime.date.today()
-                filtered_df = df[df.index.date == target_date]
-                avg_label_prefix = "Feels like: "
-            
-            # --- MODIFIED: Calculate and display averages based on view ---
-            try:
-                avg_temp = np.nan
-                avg_hum = np.nan
-                avg_pres = np.nan
-
-                if not filtered_df.empty:
-                    if self.selected_date == "Today":
-                        latest_time = filtered_df.index.max()
-                        ten_mins_ago = latest_time - pd.Timedelta(minutes=10)
-                        recent_df = filtered_df[filtered_df.index >= ten_mins_ago]
-                        
-                        if not recent_df.empty:
-                            avg_temp = recent_df['Temperature'].mean()
-                            avg_hum = recent_df['Humidity'].mean()
-                            avg_pres = recent_df['Pressure'].mean()
-                    else:
-                        avg_temp = filtered_df['Temperature'].mean()
-                        avg_hum = filtered_df['Humidity'].mean()
-                        avg_pres = filtered_df['Pressure'].mean()
-
-                self.temp_avg_label.configure(text=f"{avg_label_prefix}{avg_temp:.1f} °C" if not pd.isna(avg_temp) else "Temperature Avg: N/A")
-                self.hum_avg_label.configure(text=f"Humidity Avg: {avg_hum:.1f} %" if not pd.isna(avg_hum) else "Humidity Avg: N/A")
-                self.pres_avg_label.configure(text=f"Pressure Avg: {avg_pres:.1f} hPa" if not pd.isna(avg_pres) else "Pressure Avg: N/A")
-            
-            except Exception as e:
-                print(f"Error calculating averages: {e}")
-                self.temp_avg_label.configure(text="Temperature Avg: Error")
-                self.hum_avg_label.configure(text="Humidity Avg: Error")
-                self.pres_avg_label.configure(text="Pressure Avg: Error")
-            
-            # --- 2. Clear all 4 axes ---
-            self.ax1.clear()
-            self.ax2.clear()
-            self.ax3.clear()
-            self.ax_single.clear()
-
-            # --- 3. Redraw STACKED Plot (ax1, ax2, ax3) ---
             ax_color = "#2A2E3F"
             
-            # --- Plot Temp ---
-            self.ax1.plot(filtered_df.index, filtered_df['Temperature'], color='red', zorder=3)
-            self.ax1.set_ylabel('Temperature (°C)', color='white', labelpad=15)
-            self.ax1.grid(True, linestyle='--', alpha=0.3)
-            self.ax1.tick_params(axis='y', colors='white')
-            self.ax1.tick_params(axis='x', colors='white')
-            self.ax1.set_facecolor(ax_color)
-            if not filtered_df.empty:
-                self._set_dynamic_ylim(self.ax1, filtered_df['Temperature'])
-                self._apply_gradient(self.ax1, filtered_df.index, filtered_df['Temperature'], 'red')
+            if self.ax1: self.ax1.clear()
+            if self.ax2: self.ax2.clear()
+            if self.ax3: self.ax3.clear()
+            if self.ax_single: self.ax_single.clear()
 
-            # --- Plot Humidity ---
-            self.ax2.plot(filtered_df.index, filtered_df['Humidity'], color='blue', zorder=3)
-            self.ax2.set_ylabel('Humidity (%)', color='white', labelpad=15)
-            self.ax2.grid(True, linestyle='--', alpha=0.3)
-            self.ax2.tick_params(axis='y', colors='white')
-            self.ax2.tick_params(axis='x', colors='white')
-            self.ax2.set_facecolor(ax_color)
-            if not filtered_df.empty:
-                self._set_dynamic_ylim(self.ax2, filtered_df['Humidity'])
-                self._apply_gradient(self.ax2, filtered_df.index, filtered_df['Humidity'], 'blue')
-
-            # --- Plot Pressure ---
-            self.ax3.plot(filtered_df.index, filtered_df['Pressure'], color='green', zorder=3)
-            self.ax3.set_ylabel('Pressure (hPa)', color='white', labelpad=15)
-            self.ax3.grid(True, linestyle='--', alpha=0.3)
-            self.ax3.tick_params(axis='y', colors='white')
-            self.ax3.tick_params(axis='x', colors='white')
-            self.ax3.set_facecolor(ax_color)
-            if not filtered_df.empty:
-                self._set_dynamic_ylim(self.ax3, filtered_df['Pressure'])
-                self._apply_gradient(self.ax3, filtered_df.index, filtered_df['Pressure'], 'green')
-
-            self.ax3.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p'))
-            self.ax3.set_xlabel('Time', color='white')
-            plt.setp(self.ax3.get_xticklabels(), rotation=0, ha="center", color='white')
-            
-            self.fig_stacked.suptitle(f"BME280 Sensor Data ({self.selected_date})", fontsize=14, color='white')
-            
-            # --- 4. Redraw SINGLE Plot (ax_single) based on current view ---
-            title = 'Sensor Data'
-            if self.current_view == "temp":
-                title = f"Temperature ({self.selected_date})"
-                self.ax_single.plot(filtered_df.index, filtered_df['Temperature'], color='red', zorder=3)
-                self.ax_single.set_ylabel('Temperature (°C)', color='white', labelpad=15)
-                if not filtered_df.empty:
-                    self._set_dynamic_ylim(self.ax_single, filtered_df['Temperature'])
-                    self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Temperature'], 'red')
-            
-            elif self.current_view == "hum":
-                title = f"Humidity ({self.selected_date})"
-                self.ax_single.plot(filtered_df.index, filtered_df['Humidity'], color='blue', zorder=3)
-                self.ax_single.set_ylabel('Humidity (%)', color='white', labelpad=15)
-                if not filtered_df.empty:
-                    self._set_dynamic_ylim(self.ax_single, filtered_df['Humidity'])
-                    self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Humidity'], 'blue')
+            # --- A) PLOT WEATHER DATA (Line Charts) ---
+            if self.current_view in ["all", "temp", "hum", "pres"]:
                 
-            elif self.current_view == "pres":
-                title = f"Pressure ({self.selected_date})"
-                self.ax_single.plot(filtered_df.index, filtered_df['Pressure'], color='green', zorder=3)
-                # --- FIX: Changed 1S5 to 15 ---
-                self.ax_single.set_ylabel('Pressure (hPa)', color='white', labelpad=15)
+                if not os.path.exists(self.CSV_FILE_PATH):
+                    self.status_label.configure(text=f"Error: File not found.\n{self.CSV_FILE_PATH}", text_color="red")
+                    if not self.canvas_stacked: self.status_label.pack(expand=True)
+                    if not force_update: self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
+                    return
+                
+                self.status_label.pack_forget()
+                df_full = pd.read_csv(self.CSV_FILE_PATH)
+                
+                self._update_weather_date_selector(df_full.copy())
+                
+                if df_full.empty or 'Date' not in df_full.columns or 'Time' not in df_full.columns:
+                     if self.canvas_stacked: self.canvas_stacked.draw()
+                     if self.canvas_single: self.canvas_single.draw()
+                     if self.is_running and not force_update: 
+                         self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
+                     return
+                
+                df_full['Time'] = df_full['Time'].astype(str)
+                df_full['Timestamp'] = pd.to_datetime(df_full['Date'] + ' ' + df_full['Time'])
+                df = df_full.set_index('Timestamp')
+                
+                try:
+                    if self.selected_filter == "Today":
+                        target_date = datetime.date.today()
+                        avg_label_prefix = "Feels like: "
+                    else:
+                        target_date = datetime.datetime.strptime(self.selected_filter, '%Y-%m-%d').date()
+                        avg_label_prefix = "Day Avg: "
+                    filtered_df = df[df.index.date == target_date]
+                except Exception as e:
+                    print(f"Error filtering date: {e}. Defaulting to today.")
+                    target_date = datetime.date.today()
+                    filtered_df = df[df.index.date == target_date]
+                    avg_label_prefix = "Feels like: "
+                
+                try:
+                    avg_temp, avg_hum, avg_pres = np.nan, np.nan, np.nan
+                    if not filtered_df.empty:
+                        if self.selected_filter == "Today":
+                            latest_time = filtered_df.index.max()
+                            ten_mins_ago = latest_time - pd.Timedelta(minutes=10)
+                            recent_df = filtered_df[filtered_df.index >= ten_mins_ago]
+                            if not recent_df.empty:
+                                avg_temp = recent_df['Temperature'].mean()
+                                avg_hum = recent_df['Humidity'].mean()
+                                avg_pres = recent_df['Pressure'].mean()
+                        else:
+                            avg_temp = filtered_df['Temperature'].mean()
+                            avg_hum = filtered_df['Humidity'].mean()
+                            avg_pres = filtered_df['Pressure'].mean()
+
+                    self.temp_avg_label.configure(text=f"{avg_label_prefix}{avg_temp:.1f} °C" if not pd.isna(avg_temp) else "Temperature Avg: N/A")
+                    self.hum_avg_label.configure(text=f"Humidity Avg: {avg_hum:.1f} %" if not pd.isna(avg_hum) else "Humidity Avg: N/A")
+                
+                except Exception as e:
+                    print(f"Error calculating averages: {e}")
+                    self.temp_avg_label.configure(text="Temperature Avg: Error")
+                    self.hum_avg_label.configure(text="Humidity Avg: Error")
+                
                 if not filtered_df.empty:
-                    self._set_dynamic_ylim(self.ax_single, filtered_df['Pressure'])
-                    self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Pressure'], 'green')
-            
-            else: # "all" view
-                title = f"Temperature ({self.selected_date})"
-                self.ax_single.plot(filtered_df.index, filtered_df['Temperature'], color='red', zorder=3)
-                self.ax_single.set_ylabel('Temperature (°C)', color='white', labelpad=15)
+                    self.ax1.plot(filtered_df.index, filtered_df['Temperature'], color='red', zorder=3)
+                    self._set_dynamic_ylim(self.ax1, filtered_df['Temperature'])
+                    self._apply_gradient(self.ax1, filtered_df.index, filtered_df['Temperature'], 'red')
+
+                    self.ax2.plot(filtered_df.index, filtered_df['Humidity'], color='blue', zorder=3)
+                    self._set_dynamic_ylim(self.ax2, filtered_df['Humidity'])
+                    self._apply_gradient(self.ax2, filtered_df.index, filtered_df['Humidity'], 'blue')
+                    
+                    self.ax3.plot(filtered_df.index, filtered_df['Pressure'], color='green', zorder=3)
+                    self._set_dynamic_ylim(self.ax3, filtered_df['Pressure'])
+                    self._apply_gradient(self.ax3, filtered_df.index, filtered_df['Pressure'], 'green')
+                
+                self.ax1.set_ylabel('Temperature (°C)', color='white', labelpad=15); self.ax1.grid(True, linestyle='--', alpha=0.3); self.ax1.tick_params(axis='y', colors='white'); self.ax1.tick_params(axis='x', colors='white'); self.ax1.set_facecolor(ax_color)
+                self.ax2.set_ylabel('Humidity (%)', color='white', labelpad=15); self.ax2.grid(True, linestyle='--', alpha=0.3); self.ax2.tick_params(axis='y', colors='white'); self.ax2.tick_params(axis='x', colors='white'); self.ax2.set_facecolor(ax_color)
+                self.ax3.set_ylabel('Pressure (hPa)', color='white', labelpad=15); self.ax3.grid(True, linestyle='--', alpha=0.3); self.ax3.tick_params(axis='y', colors='white'); self.ax3.tick_params(axis='x', colors='white'); self.ax3.set_facecolor(ax_color)
+                
+                self.ax3.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p')); self.ax3.set_xlabel('Time', color='white'); plt.setp(self.ax3.get_xticklabels(), rotation=0, ha="center", color='white')
+                self.fig_stacked.suptitle(f"BME280 Sensor Data ({self.selected_filter})", fontsize=14, color='white')
+                
+                title = 'Sensor Data'
                 if not filtered_df.empty:
-                    self._set_dynamic_ylim(self.ax_single, filtered_df['Temperature'])
-                    # --- FIX: Changed self.ax_single._apply_gradient to self._apply_gradient ---
-                    self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Temperature'], 'red')
+                    if self.current_view == "temp":
+                        title = f"Temperature ({self.selected_filter})"; self.ax_single.set_ylabel('Temperature (°C)', color='white', labelpad=15)
+                        self.ax_single.plot(filtered_df.index, filtered_df['Temperature'], color='red', zorder=3)
+                        self._set_dynamic_ylim(self.ax_single, filtered_df['Temperature']); self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Temperature'], 'red')
+                    elif self.current_view == "hum":
+                        title = f"Humidity ({self.selected_filter})"; self.ax_single.set_ylabel('Humidity (%)', color='white', labelpad=15)
+                        self.ax_single.plot(filtered_df.index, filtered_df['Humidity'], color='blue', zorder=3)
+                        self._set_dynamic_ylim(self.ax_single, filtered_df['Humidity']); self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Humidity'], 'blue')
+                    elif self.current_view == "pres":
+                        title = f"Pressure ({self.selected_filter})"; self.ax_single.set_ylabel('Pressure (hPa)', color='white', labelpad=15)
+                        self.ax_single.plot(filtered_df.index, filtered_df['Pressure'], color='green', zorder=3)
+                        self._set_dynamic_ylim(self.ax_single, filtered_df['Pressure']); self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Pressure'], 'green')
+                
+                self.ax_single.grid(True, linestyle='--', alpha=0.3); self.ax_single.tick_params(axis='y', colors='white'); self.ax_single.tick_params(axis='x', colors='white'); self.ax_single.set_facecolor(ax_color)
+                self.ax_single.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p')); self.ax_single.set_xlabel('Time', color='white'); plt.setp(self.ax_single.get_xticklabels(), rotation=0, ha="center", color='white')
+                
+                self.ax_single.set_title("") 
+                self.fig_single.suptitle(title, fontsize=14, color='white')
+
+            # --- B) PLOT DISEASE/PEST DATA (Bar Charts) ---
+            else:
+                self.status_label.pack_forget()
+                self._update_weather_date_selector(pd.DataFrame()) 
+                
+                disease_counts, pest_counts = self._load_and_process_json_data(self.selected_filter)
+                
+                data_to_plot = {}
+                title = ""
+                color = "gray"
+                
+                if self.current_view == "disease":
+                    data_to_plot = disease_counts
+                    title = f"Disease Detections ({self.selected_filter})"
+                    color = 'purple'
+                    total = sum(disease_counts.values())
+                    self.disease_total_label.configure(text=f"Total Detections: {total}")
+                
+                elif self.current_view == "pest":
+                    data_to_plot = pest_counts
+                    title = f"Pest Detections ({self.selected_filter})"
+                    color = 'orange'
+                    total = sum(pest_counts.values())
+                    self.pest_total_label.configure(text=f"Total Detections: {total}")
+
+                if data_to_plot:
+                    labels = list(data_to_plot.keys())
+                    counts = list(data_to_plot.values())
+
+                    max_count = max(counts) if counts else 0
+                    if max_count > 0:
+                        self.ax_single.set_ylim(bottom=0, top=max_count * 1.15)
+                    else:
+                        self.ax_single.set_ylim(bottom=0, top=1)
+                    
+                    self.ax_single.bar(labels, counts, color=color)
+                    
+                    for i, count in enumerate(counts):
+                        self.ax_single.text(i, count + (max_count * 0.01), str(count), 
+                                            ha='center', va='bottom',
+                                            color='white', fontsize=12)
+
+                elif self.selected_filter == "All Detections" and not data_to_plot:
+                    self.ax_single.text(0.5, 0.5, "No Detections Recorded Yet", ha='center', va='center', color='gray', fontsize=16, transform=self.ax_single.transAxes)
+                    self.ax_single.set_ylim(bottom=0, top=1) 
+                
+                elif self.selected_filter != "All Detections": 
+                     self.ax_single.text(0.5, 0.5, "No Detections for this month", ha='center', va='center', color='gray', fontsize=16, transform=self.ax_single.transAxes)
+                     self.ax_single.set_ylim(bottom=0, top=1) 
+
+
+                self.ax_single.set_ylabel('Total Count', color='white', labelpad=15)
+                
+                self.ax_single.set_title("") 
+                self.fig_single.suptitle(title, fontsize=14, color='white') 
+
+                self.ax_single.grid(True, linestyle='--', alpha=0.3, axis='y')
+                self.ax_single.tick_params(axis='y', colors='white')
+                self.ax_single.tick_params(axis='x', colors='white')
+                self.ax_single.set_facecolor(ax_color)
+                
+                plt.setp(self.ax_single.get_xticklabels(), rotation=0, ha="center", color='white', fontsize=10)
+
+            # --- 6. Update both canvases ---
+            if self.canvas_stacked: self.canvas_stacked.draw()
+            if self.canvas_single: self.canvas_single.draw()
             
-            # Apply formatting to the single chart
-            self.ax_single.grid(True, linestyle='--', alpha=0.3)
-            self.ax_single.tick_params(axis='y', colors='white')
-            self.ax_single.tick_params(axis='x', colors='white')
-            self.ax_single.set_facecolor(ax_color)
-            self.ax_single.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p'))
-            self.ax_single.set_xlabel('Time', color='white')
-            plt.setp(self.ax_single.get_xticklabels(), rotation=0, ha="center", color='white')
-            self.fig_single.suptitle(title, fontsize=14, color='white')
-            
-            # --- 5. Update both canvases ---
-            self.canvas_stacked.draw()
-            self.canvas_single.draw()
+            # --- Lift frame after plots are drawn ---
+            self.filter_frame.lift()
             
             if not force_update and self.is_running:
                 print(f"Plot updated at {datetime.datetime.now().strftime('%H:%M:%S')}")
@@ -658,7 +880,7 @@ class WeatherPage(SC):
             import traceback
             traceback.print_exc()
         
-        # --- 6. Schedule the next update (if not a forced update AND is_running) ---
+        # --- 7. Schedule the next update (only if in a running state) ---
         if self.is_running and not force_update: 
             self.after_id = self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
 
@@ -671,3 +893,8 @@ class WeatherPage(SC):
             self.after_id = None
         
         super().go_back_to_dashboard()
+
+# --- To run this page directly for testing ---
+if __name__ == "__main__":
+    app = WeatherPage()
+    app.root.mainloop()

@@ -392,7 +392,7 @@ class SharedComponents:
         
         title_label = ctk.CTkLabel(
             weather_button, 
-            text="Weather Analytics", 
+            text="Analytics", 
             font=shared_button_font, 
             text_color="white",
             fg_color="transparent" 
