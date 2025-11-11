@@ -11,6 +11,7 @@ from Pages.pest_monitor import PestMonitorPage
 from Pages.weather_page import WeatherPage
 from Pages.weather_page import get_latest_weather_averages 
 import customtkinter as ctk
+import datetime
 import os
 from shared_components import (
     custom_font_bold, custom_font_title, custom_font_regular, 
@@ -233,6 +234,37 @@ class MyDashboard(SC):
 
         # 4. Reschedule
         self.root.after(self.UPDATE_INTERVAL, self.update_weather_data)
+    
+    def _update_season_indicator(self):
+        """
+        Checks today's date and updates the season label
+        based on Philippine climate patterns.
+        """
+        try:
+            today = datetime.date.today()
+            current_month = today.month # 1 (Jan) to 12 (Dec)
+
+            season = ""
+            color = "#FFFFFF" # Default white
+
+            if current_month in [11, 12, 1, 2]: # November - February
+                season = "Dry Season (Cool)"
+                color = "#A9DFFF" # Light blue
+            elif current_month in [3, 4, 5]: # March - May
+                season = "Dry Season (Hot)"
+                color = "#FFD1A9" # Light orange
+            elif current_month in [6, 7, 8, 9, 10]: # June - October
+                season = "Wet Season"
+                color = "#C8D3D5" # Light gray-blue
+            
+            # This assumes you created 'self.season_label' in your __init__
+            if hasattr(self, 'season_label'):
+                self.season_label.configure(text=season, text_color=color)
+        
+        except Exception as e:
+            print(f"Error updating season indicator: {e}")
+            if hasattr(self, 'season_label'):
+                self.season_label.configure(text="Season: Error", text_color="red")
 
     def __init__(self):
         super().__init__()
@@ -497,6 +529,16 @@ class MyDashboard(SC):
         # --- ADDED: Start the update loop ---
         # Start the loop 1 second after the dashboard loads
         self.root.after(1000, self.update_weather_data) 
+    
+        self.season_label = ctk.CTkLabel(
+            self.weather_button,  # <-- Change this to the frame holding the temp
+            text="Loading Season...",
+            font=("Arial", 12), # You can change the font
+            text_color="white"
+        )
+        # --- Adjust these x/y coordinates to be above your temp label ---
+        self.season_label.place(x=100, y=50)
+        self._update_season_indicator()
 
     def run(self):
         self.root.after(100, self.update_weather_data)

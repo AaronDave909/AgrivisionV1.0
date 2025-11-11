@@ -125,6 +125,41 @@ class WeatherPage(SC):
             print(f"Error updating date selector: {e}")
             self.date_selector.configure(values=["Today"])
             self.date_selector.set("Today")
+            
+    # --- NEW: Method to check current date and update season labels ---
+    def _update_season_indicator(self):
+        """
+        Checks today's date and updates the season labels
+        based on Philippine climate patterns.
+        """
+        try:
+            today = datetime.date.today()
+            current_month = today.month # 1 (Jan) to 12 (Dec)
+
+            season = ""
+            sub_text = ""
+            color = "#FFFFFF" # Default white
+
+            if current_month in [11, 12, 1, 2]: # November - February
+                season = "Dry Season (Cool)"
+                sub_text = "Expect rainy and hot sunny days!"
+                color = "#A9DFFF" # Light blue
+            elif current_month in [3, 4, 5]: # March - May
+                season = "Dry Season (Hot)"
+                sub_text = "Expect extreme hot temperatures!"
+                color = "#FFD1A9" # Light orange
+            elif current_month in [6, 7, 8, 9, 10]: # June - October
+                season = "Wet Season"
+                sub_text = "Expect frequent or heavy rains!"
+                color = "#C8D3D5" # Light gray-blue
+
+            self.season_label.configure(text=season, text_color=color)
+            self.season_sub_label.configure(text=sub_text, text_color=color)
+        
+        except Exception as e:
+            print(f"Error updating season indicator: {e}")
+            self.season_label.configure(text="Season: Error", text_color="red")
+            self.season_sub_label.configure(text="")
     
     def __init__(self):
         super().__init__()
@@ -142,41 +177,60 @@ class WeatherPage(SC):
         self.create_title(text="Weather Analytics", x=119, y=0)
         self.undo_button(command=self.navigate_to_dashboard)
 
-        # --- NEW: Create Date Filter Frame (Top-Right) ---
+        # --- MODIFIED: Create Date Filter Frame (Top-Right) ---
         self.date_filter_frame = ctk.CTkFrame(self.root, fg_color="transparent")
         self.date_filter_frame.place(
             relx=0.98, 
             y=self._scale_value(25, 'y'), 
-            anchor="ne"
+            anchor="ne" # Top-right anchor
         )
+        
+        # --- NEW: Create a sub-frame for the date selector row ---
+        selector_row_frame = ctk.CTkFrame(self.date_filter_frame, fg_color="transparent")
+        selector_row_frame.pack(side="top", anchor="e", pady=(0, 5)) # anchor="e" to right-align
 
         date_label = ctk.CTkLabel(
-            self.date_filter_frame, 
+            selector_row_frame, 
             text="Select Date:",
             font=("Arial", self._scale_value(14, 'y')),
-            text_color="white" # FIX: Set text color to white
+            text_color="white"
         )
         date_label.pack(side="left", padx=(5, 5))
 
         self.date_selector = ctk.CTkOptionMenu(
-            self.date_filter_frame, 
+            selector_row_frame,
             values=["Today"], 
             command=self.on_date_selected,
             font=("Arial", self._scale_value(14, 'y')),
-            dropdown_font=("Arial", self._scale_value(20, 'y')), # FIX: Increased for spacing
-            # Colors for the main button
+            dropdown_font=("Arial", self._scale_value(20, 'y')),
             fg_color="#2A2E3F",
             text_color="#FFFFFF",
             button_color="#383C4E",
             button_hover_color="#50556b",
-            
-            # Colors for the dropdown menu
             dropdown_fg_color="#2A2E3F",
             dropdown_hover_color="#383C4E",
             dropdown_text_color="#FFFFFF"
         )
         self.date_selector.set("Today")
         self.date_selector.pack(side="left", padx=(0, 10))
+
+        # --- MODIFIED: Add Season Indicator Labels with strict font size ---
+        self.season_label = ctk.CTkLabel(
+            self.date_filter_frame, # Parent is the main filter frame
+            text="", # Will be set by _update_season_indicator
+            font=("Arial", 12, "bold"), # MODIFIED: Set to strict size 12
+            text_color="white" 
+        )
+        self.season_label.pack(side="top", anchor="e", padx=(0, 10)) 
+
+        self.season_sub_label = ctk.CTkLabel(
+            self.date_filter_frame, # Parent is the main filter frame
+            text="", # Will be set by _update_season_indicator
+            font=("Arial", 12), # MODIFIED: Set to strict size 12
+            text_color="white" 
+        )
+        self.season_sub_label.pack(side="top", anchor="e", padx=(0, 10))
+        # -----------------------------------------------
 
         # --- Button Setup (Unchanged) ---
         
@@ -202,39 +256,31 @@ class WeatherPage(SC):
         y_pres = y_hum + scaled_button_height + scaled_padding
         x_pos = self._scale_value(LEFT_PANEL_WIDTH / 2, 'x')
 
-        # MODIFIED: Changed hover_color from "#2A2E3F" to "#50556b"
         self.all_button = ctk.CTkButton(self.left_panel, text=" All Data", width=scaled_button_width, height=scaled_button_height, image=self.all_icon, command=lambda: self.show_view("all"), 
                                         fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
                                         text_color="white", font=("Arial", 14), anchor="w")
         self.all_button.place(x=x_pos, y=y_all, anchor="center")
-        # DELETE THIS: create_hover_bindings(self.all_button, y_all, scaled_hover_offset)
 
-        # MODIFIED: Changed hover_color from "#2A2E3F" to "#50556b"
         self.temp_button = ctk.CTkButton(self.left_panel, text=" Temperature", 
                                          width=scaled_button_width, height=scaled_button_height, 
                                          image=self.temp_icon, command=lambda: self.show_view("temp"), 
                                          fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
                                          text_color="white", font=("Arial", 14), anchor="w")
         self.temp_button.place(x=x_pos, y=y_temp, anchor="center")
-        # DELETE THIS: create_hover_bindings(self.temp_button, y_temp, scaled_hover_offset)
 
-        # MODIFIED: Changed hover_color from "#2A2E3F" to "#50556b"
         self.hum_button = ctk.CTkButton(self.left_panel, text=" Humidity", 
                                         width=scaled_button_width, height=scaled_button_height, 
                                         image=self.hum_icon, command=lambda: self.show_view("hum"), 
                                         fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
                                         text_color="white", font=("Arial", 14), anchor="w")
         self.hum_button.place(x=x_pos, y=y_hum, anchor="center")
-        # DELETE THIS: create_hover_bindings(self.hum_button, y_hum, scaled_hover_offset)
         
-        # MODIFIED: Changed hover_color from "#2A2E3F" to "#50556b"
         self.pres_button = ctk.CTkButton(self.left_panel, text=" Pressure", 
                                          width=scaled_button_width, height=scaled_button_height, 
                                          image=self.pres_icon, command=lambda: self.show_view("pres"), 
                                          fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
                                          text_color="white", font=("Arial", 14), anchor="w")
         self.pres_button.place(x=x_pos, y=y_pres, anchor="center")
-        # DELETE THIS: create_hover_bindings(self.pres_button, y_pres, scaled_hover_offset)
 
         self.chart_buttons = [self.all_button, self.temp_button, self.hum_button, self.pres_button]
 
@@ -272,6 +318,12 @@ class WeatherPage(SC):
         # --- Tide Label Objects ---
         self.high_tide_label = None
         self.low_tide_label = None
+        
+        # --- NEW: Call the season indicator method ---
+        self._update_season_indicator()
+        
+        # --- MODIFIED: Lift the filter frame to the front ---
+        self.date_filter_frame.lift()
 
         # Start the plot setup
         self.root.after(100, self.setup_plot)
@@ -283,13 +335,11 @@ class WeatherPage(SC):
             self.fig_stacked, (self.ax1, self.ax2, self.ax3) = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
             self.fig_stacked.patch.set_facecolor("#202332")
             
-            # FIX: Manually adjust subplot spacing to prevent shrinking
             self.fig_stacked.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.15)
             
             self.fig_single, self.ax_single = plt.subplots(1, 1, figsize=(12, 8))
             self.fig_single.patch.set_facecolor("#202332")
 
-            # FIX: Add spacing for single plot too
             self.fig_single.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.15)
             
             self.status_label.pack_forget()
@@ -513,7 +563,6 @@ class WeatherPage(SC):
             
             # --- Plot Temp ---
             self.ax1.plot(filtered_df.index, filtered_df['Temperature'], color='red', zorder=3)
-            # FIX: Added labelpad=15
             self.ax1.set_ylabel('Temperature (°C)', color='white', labelpad=15)
             self.ax1.grid(True, linestyle='--', alpha=0.3)
             self.ax1.tick_params(axis='y', colors='white')
@@ -525,7 +574,6 @@ class WeatherPage(SC):
 
             # --- Plot Humidity ---
             self.ax2.plot(filtered_df.index, filtered_df['Humidity'], color='blue', zorder=3)
-            # FIX: Removed fontsize=5 and added labelpad=15
             self.ax2.set_ylabel('Humidity (%)', color='white', labelpad=15)
             self.ax2.grid(True, linestyle='--', alpha=0.3)
             self.ax2.tick_params(axis='y', colors='white')
@@ -537,7 +585,6 @@ class WeatherPage(SC):
 
             # --- Plot Pressure ---
             self.ax3.plot(filtered_df.index, filtered_df['Pressure'], color='green', zorder=3)
-            # FIX: Removed \n and added labelpad=15
             self.ax3.set_ylabel('Pressure (hPa)', color='white', labelpad=15)
             self.ax3.grid(True, linestyle='--', alpha=0.3)
             self.ax3.tick_params(axis='y', colors='white')
@@ -549,18 +596,15 @@ class WeatherPage(SC):
 
             self.ax3.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p'))
             self.ax3.set_xlabel('Time', color='white')
-            # FIX: Set rotation=0 (horizontal)
             plt.setp(self.ax3.get_xticklabels(), rotation=0, ha="center", color='white')
             
             self.fig_stacked.suptitle(f"BME280 Sensor Data ({self.selected_date})", fontsize=14, color='white')
-            # REMOVED tight_layout to prevent shrinking
             
             # --- 4. Redraw SINGLE Plot (ax_single) based on current view ---
             title = 'Sensor Data'
             if self.current_view == "temp":
                 title = f"Temperature ({self.selected_date})"
                 self.ax_single.plot(filtered_df.index, filtered_df['Temperature'], color='red', zorder=3)
-                # FIX: Added labelpad=15
                 self.ax_single.set_ylabel('Temperature (°C)', color='white', labelpad=15)
                 if not filtered_df.empty:
                     self._set_dynamic_ylim(self.ax_single, filtered_df['Temperature'])
@@ -569,7 +613,6 @@ class WeatherPage(SC):
             elif self.current_view == "hum":
                 title = f"Humidity ({self.selected_date})"
                 self.ax_single.plot(filtered_df.index, filtered_df['Humidity'], color='blue', zorder=3)
-                # FIX: Added labelpad=15
                 self.ax_single.set_ylabel('Humidity (%)', color='white', labelpad=15)
                 if not filtered_df.empty:
                     self._set_dynamic_ylim(self.ax_single, filtered_df['Humidity'])
@@ -578,7 +621,7 @@ class WeatherPage(SC):
             elif self.current_view == "pres":
                 title = f"Pressure ({self.selected_date})"
                 self.ax_single.plot(filtered_df.index, filtered_df['Pressure'], color='green', zorder=3)
-                # FIX: Added labelpad=15
+                # --- FIX: Changed 1S5 to 15 ---
                 self.ax_single.set_ylabel('Pressure (hPa)', color='white', labelpad=15)
                 if not filtered_df.empty:
                     self._set_dynamic_ylim(self.ax_single, filtered_df['Pressure'])
@@ -587,10 +630,10 @@ class WeatherPage(SC):
             else: # "all" view
                 title = f"Temperature ({self.selected_date})"
                 self.ax_single.plot(filtered_df.index, filtered_df['Temperature'], color='red', zorder=3)
-                # FIX: Added labelpad=15
                 self.ax_single.set_ylabel('Temperature (°C)', color='white', labelpad=15)
                 if not filtered_df.empty:
                     self._set_dynamic_ylim(self.ax_single, filtered_df['Temperature'])
+                    # --- FIX: Changed self.ax_single._apply_gradient to self._apply_gradient ---
                     self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Temperature'], 'red')
             
             # Apply formatting to the single chart
@@ -600,10 +643,8 @@ class WeatherPage(SC):
             self.ax_single.set_facecolor(ax_color)
             self.ax_single.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p'))
             self.ax_single.set_xlabel('Time', color='white')
-            # FIX: Set rotation=0 (horizontal)
             plt.setp(self.ax_single.get_xticklabels(), rotation=0, ha="center", color='white')
             self.fig_single.suptitle(title, fontsize=14, color='white')
-            # REMOVED tight_layout to prevent shrinking
             
             # --- 5. Update both canvases ---
             self.canvas_stacked.draw()

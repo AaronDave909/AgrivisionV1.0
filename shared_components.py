@@ -476,7 +476,7 @@ class SharedComponents:
         
         for widget in widgets_to_bind:
              widget.bind("<Button-1>", lambda e, cmd=command: cmd() if cmd else None)
-             widget.bind("<Enter>", on_composite_enter)
-             widget.bind("<Leave>", on_composite_leave)
+             #widget.bind("<Enter>", on_composite_enter)
+             #widget.bind("<Leave>", on_composite_leave)
 
         return weather_button
