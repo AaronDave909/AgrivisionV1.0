@@ -71,7 +71,7 @@ class AnalysisPage(SC):
             else:
                 return {} 
         except (json.JSONDecodeError, Exception) as e:
-            print(f"❌ Error reading master JSON or file is empty: {e}. Returning empty dict.")
+            print(f"--- ERROR reading master JSON or file is empty: {e}. Returning empty dict.")
             return {}
 
     def _save_master_json(self, data):
@@ -80,7 +80,7 @@ class AnalysisPage(SC):
             with open(self.single_json_path, 'w') as f:
                 json.dump(data, f, indent=4)
         except Exception as e:
-            print(f"❌ Error writing master JSON: {e}")
+            print(f"--- ERROR writing master JSON: {e}")
 
     def _setup_display(self):
         """Places the UI elements and then runs the correct process."""
@@ -106,7 +106,6 @@ class AnalysisPage(SC):
         def create_info_row(parent, label_text):
             row_frame = ctk.CTkFrame(parent, fg_color="transparent")
             
-            # This label will be changed (e.g., from "Disease" to "Pest")
             label_widget = ctk.CTkLabel(row_frame, text=f"{label_text}:", font=ctk.CTkFont(size=14, weight="bold"), text_color="white", anchor="w")
             label_widget.pack(side="left", padx=(10, 5))
             
@@ -114,11 +113,9 @@ class AnalysisPage(SC):
             value_label.pack(side="left", expand=True, fill="x", padx=5)
             
             row_frame.pack(fill="x", pady=8)
-            # Return both widgets so we can change the label AND the value
             return label_widget, value_label
 
-        # MODIFIED: Store label and value for the main detection
-        self.main_info_label, self.main_value_label = create_info_row(self.info_frame, "Detection") # Default label
+        self.main_info_label, self.main_value_label = create_info_row(self.info_frame, "Detection") 
         
         _, self.accuracy_label = create_info_row(self.info_frame, "Accuracy")
         _, self.count_label = create_info_row(self.info_frame, "Detections")
@@ -134,7 +131,6 @@ class AnalysisPage(SC):
         x_pos_info = x_pos_image + self.display_w
         self.info_frame.place(x=x_pos_info, y=0, anchor="nw")
 
-    # ... (save_button and trash_button methods are unchanged) ...
     def save_button(self, x, y, command=None):
         scaled_x = self._scale_value(x, 'x')
         scaled_y = self._scale_value(y, 'y')
@@ -202,7 +198,7 @@ class AnalysisPage(SC):
             self.update_info_panel(results)
 
         except Exception as e:
-            print(f"❌ Error during YOLO analysis: {e}")
+            print(f"--- ERROR during YOLO analysis: {e}")
             self.image_label.configure(text=f"Error analyzing image.", text_color="red")
             self.main_value_label.configure(text="Analysis Failed")
             self.accuracy_label.configure(text="---")
@@ -223,9 +219,8 @@ class AnalysisPage(SC):
             accuracy = "N/A"
             detection_count = "0"
             
-        # Store data using the "disease" key for captures from this page
         self.analysis_data_dict = {
-            "disease": detection_name, # <-- Key is "disease"
+            "disease": detection_name, 
             "accuracy": accuracy,
             "count": detection_count,
             "timestamp": timestamp
@@ -233,11 +228,9 @@ class AnalysisPage(SC):
         
         self.populate_info_panel(self.analysis_data_dict)
 
-    # MODIFIED: This function is now "smart"
     def populate_info_panel(self, data_dict):
         """Populates the info panel labels from a given data dictionary."""
         
-        # Check if the data is a disease or a pest
         if "disease" in data_dict:
             self.main_info_label.configure(text="Disease:")
             name = data_dict.get("disease", "---")
@@ -248,7 +241,6 @@ class AnalysisPage(SC):
             self.main_info_label.configure(text="Detection:")
             name = "Unknown"
             
-        # Format the name (e.g., "Powdery_mildew" -> "Powdery Mildew")
         self.main_value_label.configure(text=_format_name(name))
         
         self.accuracy_label.configure(text=data_dict.get("accuracy", "---"))
@@ -261,27 +253,24 @@ class AnalysisPage(SC):
             image_filename = os.path.basename(self.image_path)
             
             if not os.path.exists(self.image_path):
-                print(f"❌ Error: Missing image file.")
+                print(f"--- ERROR: Missing image file.")
                 self.image_label.configure(text="Error: File not found.", text_color="red")
                 return
 
-            # Load and display the annotated image
             self.annotated_image_data = cv2.imread(self.image_path)
             self.display_image(self.annotated_image_data)
 
-            # Load and display the analysis data
             master_data = self._load_master_json()
             image_specific_data = master_data.get(image_filename)
 
             if image_specific_data:
-                # MODIFIED: Use the smart populator function
                 self.populate_info_panel(image_specific_data)
             else:
-                print(f"❌ Error: No data found for {image_filename} in {self.single_json_path}")
-                self.populate_info_panel({}) # Clear labels
+                print(f"--- ERROR: No data found for {image_filename} in {self.single_json_path}")
+                self.populate_info_panel({}) 
 
         except Exception as e:
-            print(f"❌ Error loading gallery data: {e}")
+            print(f"--- ERROR loading gallery data: {e}")
             self.image_label.configure(text="Error loading data.", text_color="red")
 
 
@@ -302,22 +291,19 @@ class AnalysisPage(SC):
             save_path_img = os.path.join(self.gallery_path, image_filename)
 
             try:
-                # Save the image
                 cv2.imwrite(save_path_img, self.annotated_image_data)
                 print(f"✅ Annotated image saved to: {save_path_img}")
                 
-                # Load, update, and save JSON
                 master_data = self._load_master_json()
                 master_data[image_filename] = self.analysis_data_dict
                 self._save_master_json(master_data)
                 print(f"✅ Analysis data saved to: {self.single_json_path}")
 
-                # Clean up the original capture
                 os.remove(self.original_image_path)
                 self.return_to_capture()
 
             except Exception as e:
-                print(f"❌ Error saving files: {e}")
+                print(f"--- ERROR saving files: {e}")
 
     def trash_image(self):
         if os.path.exists(self.original_image_path):
@@ -354,9 +340,11 @@ class AnalysisPage(SC):
                 print(f"⚠️ Warning: No data found for {image_filename} in master JSON.")
                 
         except Exception as e:
-            print(f"❌ Error deleting files: {e}")
+            # FIX 1: Replaced Unicode character with basic ASCII string
+            print(f"--- ERROR deleting files: {e}")
         
-        self.return_to_gallery() # Go back to gallery after deleting
+        # FIX 2: Call return_to_gallery without destroying immediately in this context
+        self.root.after(0, self.return_to_gallery) 
 
     def return_to_gallery(self):
         self.root.destroy()

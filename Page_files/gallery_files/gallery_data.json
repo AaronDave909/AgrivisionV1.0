@@ -47,12 +47,6 @@
         "count": "1",
         "timestamp": "Oct 23, 2025 08:46 PM"
     },
-    "capture_20251023_204635.jpg": {
-        "disease": "Powdery_mildew_on_lettuce",
-        "accuracy": "81.40%",
-        "count": "1",
-        "timestamp": "Oct 23, 2025 08:46 PM"
-    },
     "capture_20251023_204748.jpg": {
         "disease": "Bacterial_leaf_spot",
         "accuracy": "42.24%",
