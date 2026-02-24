@@ -148,5 +148,35 @@
         "accuracy": "77.61%",
         "count": "1",
         "timestamp": "Nov 03, 2025 05:27 PM"
+    },
+    "capture_20251125_142741.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "71.39%",
+        "count": "2",
+        "timestamp": "Nov 25, 2025 02:27 PM"
+    },
+    "capture_20251125_142827.jpg": {
+        "disease": "No Disease Detected",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Nov 25, 2025 02:28 PM"
+    },
+    "capture_20251125_151450.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "57.12%",
+        "count": "1",
+        "timestamp": "Nov 25, 2025 03:14 PM"
+    },
+    "capture_20260125_153326.jpg": {
+        "disease": "Bacterial",
+        "accuracy": "78.13%",
+        "count": "1",
+        "timestamp": "Jan 25, 2026 03:33 PM"
+    },
+    "capture_20260125_153451.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "62.85%",
+        "count": "1",
+        "timestamp": "Jan 25, 2026 03:34 PM"
     }
 }

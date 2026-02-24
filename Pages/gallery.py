@@ -6,6 +6,14 @@ import random
 import json
 from Pages.analysis_page import AnalysisPage 
 
+# --- FIX for UnicodeEncodeError ---
+import sys
+import io
+# Forces stdout to use UTF-8 encoding for Unicode characters (like emojis)
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+# --- End of fix ---
+
+
 # --- No changes to gallery_preview function ---
 def gallery_preview(root):
     
@@ -190,8 +198,9 @@ class GalleryPage(SC):
     def _load_master_json(self, json_path):
         """Loads the master JSON file. Returns an empty dict if it doesn't exist."""
         try:
+            # Use encoding='utf-8' for reading the JSON file as well
             if os.path.exists(json_path):
-                with open(json_path, 'r') as f:
+                with open(json_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                     if not content:
                         return {}
@@ -247,6 +256,7 @@ class GalleryPage(SC):
             
             # 4. Check if the image filename is a key in the master JSON
             if filename not in master_data:
+                # This print statement is now safe because of the fix at the top
                 print(f"⚠️ Warning: No data for {filename} in master JSON. Skipping.")
                 continue 
 
@@ -312,8 +322,3 @@ class GalleryPage(SC):
         self.root.destroy()
         app = AnalysisPage(image_path=image_path, view_only=True)
         app.root.mainloop()
-
-# --- To run this page directly for testing (if needed) ---
-if __name__ == "__main__":
-    app = GalleryPage()
-    app.root.mainloop()
