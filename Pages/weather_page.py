@@ -543,7 +543,7 @@ class WeatherPage(SC):
             self._update_plot_data()
 
             # --- Lift the frame after plots are drawn ---
-            self.filter_frame.lift()
+            self.date_filter_frame.lift()
 
         except Exception as e:
             print(f"An error occurred during plot setup: {e}")
@@ -643,7 +643,7 @@ class WeatherPage(SC):
             self.root.after(10, self._update_plot_data, True) 
 
         # --- Lift the frame after view switch ---
-        self.filter_frame.lift()
+        self.date_filter_frame.lift()
 
     def _set_dynamic_ylim(self, ax, data_series):
         """Calculates and sets dynamic Y-limits with padding."""
@@ -870,7 +870,7 @@ class WeatherPage(SC):
             if self.canvas_single: self.canvas_single.draw()
             
             # --- Lift frame after plots are drawn ---
-            self.filter_frame.lift()
+            self.date_filter_frame.lift()
             
             if not force_update and self.is_running:
                 print(f"Plot updated at {datetime.datetime.now().strftime('%H:%M:%S')}")

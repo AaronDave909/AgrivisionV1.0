@@ -9,7 +9,8 @@ from Pages.records import ReportViewerPage
 from Pages.analysis_page import AnalysisPage
 from Pages.pest_monitor import PestMonitorPage
 from Pages.weather_page import WeatherPage
-from Pages.weather_page import get_latest_weather_averages 
+from Pages.weather_page import get_latest_weather_averages
+from Pages.predict import PredictPage 
 import customtkinter as ctk
 import datetime
 import os
@@ -58,13 +59,11 @@ class MyDashboard(SC):
         monitor_page.root.mainloop()
 
     # --- MODIFIED: Added is_running flag ---
-    def open_report_viewer(self, folder_name, title):
+    def predict_page(self, folder_name, title):
         """Destroys dashboard and opens the report viewer page."""
         self.is_running = False # Stop update loop
         self.root.destroy()
-        app = ReportViewerPage(folder_name=folder_name, 
-                             title=title, 
-                             return_page="dashboard")
+        app = PredictPage()
         app.root.mainloop()
 
     # --- MODIFIED: Added is_running flag ---
@@ -505,12 +504,12 @@ class MyDashboard(SC):
         
         # Diseases Button
         self.create_button(
-            text="Diseases", 
+            text="Risk Check", 
             x=572, y=414,
             width=217, height=37,
             anchor="center",
             font=tuple(custom_font_bold), 
-            command=lambda: self.open_report_viewer("_diseases_", "Diseases") 
+            command=lambda: self.predict_page("_diseases_", "Diseases") 
         )
 
         # Help Button (rounded)
