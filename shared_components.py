@@ -143,7 +143,7 @@ class SharedComponents:
         scaled_width = self._scale_value(80, 'x')
         scaled_height = self._scale_value(80, 'y')
         scaled_img_size = (self._scale_value(80, 'x'), self._scale_value(80, 'y'))
-        scaled_hover_offset = self._scale_value(5, 'y')
+        scaled_hover_offset = self._scale_value(1, 'y')
 
         record_img = Image.open("_image_assets/record.png")
         record_photo = ctk.CTkImage(light_image=record_img, dark_image=record_img, size=scaled_img_size)

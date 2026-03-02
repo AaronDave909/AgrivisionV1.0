@@ -11,6 +11,7 @@ from Pages.pest_monitor import PestMonitorPage
 from Pages.weather_page import WeatherPage
 from Pages.weather_page import get_latest_weather_averages
 from Pages.predict import PredictPage 
+from Pages.help import HelpPage
 import customtkinter as ctk
 import datetime
 import os
@@ -69,7 +70,7 @@ class MyDashboard(SC):
     # --- MODIFIED: Added is_running flag ---
     def open_analysis_view(self, image_path):
         """Destroys the dashboard and opens the analysis page in view-only mode."""
-        self.is_running = False # Stop update loop
+        self.is_running = False # Stop update loopys
         self.root.destroy()
         app = AnalysisPage(image_path=image_path, view_only=True)
         app.root.mainloop()
@@ -80,6 +81,13 @@ class MyDashboard(SC):
         self.is_running = False # Stop update loop
         self.root.destroy()
         app = WeatherPage()
+        app.root.mainloop()
+
+    def open_help_page(self):
+        """Destroys the dashboard and opens the HelpPage."""
+        self.is_running = False # Stop update loop
+        self.root.destroy()
+        app = HelpPage()
         app.root.mainloop()
     
     def _update_temp_chart(self):
@@ -522,7 +530,7 @@ class MyDashboard(SC):
             anchor="center",
             font=scaled_help_font,
             corner_radius=50,
-            command=None
+            command=self.open_help_page
         )
 
         # --- ADDED: Start the update loop ---
