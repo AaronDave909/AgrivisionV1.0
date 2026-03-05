@@ -496,8 +496,8 @@ class WeatherPage(SC):
         self.temp_avg_label = None
         self.hum_avg_label = None
         self.pres_avg_label = None
-        self.high_tide_label = None
-        self.low_tide_label = None
+        #self.high_tide_label = None
+        #self.low_tide_label = None
         self.disease_total_label = None
         self.pest_total_label = None
         
@@ -528,8 +528,8 @@ class WeatherPage(SC):
             self.temp_avg_label = ctk.CTkLabel(self.avg_frame, text="Temperature Avg: -- °C", font=font_style, text_color=text_color)
             self.hum_avg_label = ctk.CTkLabel(self.avg_frame, text="Humidity Avg: -- %", font=font_style, text_color=text_color)
             self.pres_avg_label = ctk.CTkLabel(self.avg_frame, text="Pressure Avg: -- hPa", font=font_style, text_color=text_color)
-            self.high_tide_label = ctk.CTkLabel(self.avg_frame, text="High Tide: N/A", font=font_style, text_color=text_color)
-            self.low_tide_label = ctk.CTkLabel(self.avg_frame, text="Low Tide: N/A", font=font_style, text_color=text_color)
+            #self.high_tide_label = ctk.CTkLabel(self.avg_frame, text="High Tide: N/A", font=font_style, text_color=text_color)
+            #self.low_tide_label = ctk.CTkLabel(self.avg_frame, text="Low Tide: N/A", font=font_style, text_color=text_color)
             self.disease_total_label = ctk.CTkLabel(self.avg_frame, text="Total Detections: --", font=font_style, text_color=text_color)
             self.pest_total_label = ctk.CTkLabel(self.avg_frame, text="Total Detections: --", font=font_style, text_color=text_color)
 
@@ -586,14 +586,15 @@ class WeatherPage(SC):
         self.temp_avg_label.pack_forget()
         self.hum_avg_label.pack_forget()
         self.pres_avg_label.pack_forget()
-        self.high_tide_label.pack_forget()
-        self.low_tide_label.pack_forget()
+        #self.high_tide_label.pack_forget()
+        #self.low_tide_label.pack_forget()
         self.disease_total_label.pack_forget()
         self.pest_total_label.pack_forget()
         
         if self.current_view == "all":
-            self.high_tide_label.pack(side=ctk.LEFT, padx=10)
-            self.low_tide_label.pack(side=ctk.LEFT, padx=10)
+            #self.high_tide_label.pack(side=ctk.LEFT, padx=10)
+            #self.low_tide_label.pack(side=ctk.LEFT, padx=10)
+            pass
         elif self.current_view == "temp":
             self.temp_avg_label.pack(side=ctk.LEFT, padx=10)
         elif self.current_view == "hum":
