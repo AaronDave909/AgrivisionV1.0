@@ -150,7 +150,7 @@ class PredictPage(SC):
         self.manual_frame = ctk.CTkScrollableFrame(self.main_container, 
                                                    fg_color=LEFT_PANEL_COLOR, 
                                                    width=self._scale_value(430, 'x'),
-                                                   height=self._scale_value(200, 'y'),
+                                                   height=self._scale_value(400, 'y'),
                                                    corner_radius=8)
         self.manual_frame.pack(fill="y", pady=100, expand=False)
         
