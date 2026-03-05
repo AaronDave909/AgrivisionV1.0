@@ -90,7 +90,7 @@ class HelpSlideshowPopup(ctk.CTkToplevel):
         with open(current_image_path, "rb") as f:
             img_data = Image.open(io.BytesIO(f.read()))
         # Adjust size=(width, height) to fit nicely in your modal
-        ctk_img = ctk.CTkImage(light_image=img_data, dark_image=img_data, size=(960, 540)) 
+        ctk_img = ctk.CTkImage(light_image=img_data, dark_image=img_data, size=(1010, 600)) 
         self.image_label.configure(image=ctk_img)
 
         # 3. Disable/Enable buttons if at the start or end of the slideshow
@@ -119,13 +119,6 @@ class HelpPage(SC):
         self.scale_x_val = lambda val: self._scale_value(val, 'x')
         self.scale_y_val = lambda val: self._scale_value(val, 'y')
 
-        weather_folder = "_image_assets/weather_guide"
-        weather_folder = sorted([
-            os.path.join(weather_folder, file) 
-            for file in os.listdir(weather_folder) 
-            if file.lower().endswith(('.png', '.jpg', '.jpeg'))
-        ])
-
         #Help Page Description
         scaled_badge_font_size = self._scale_value(16, 'y') 
         scaled_badge_font = ("Arial", scaled_badge_font_size, "bold")
@@ -141,12 +134,25 @@ class HelpPage(SC):
             hover_color="#FF6B6B", # Matches fg_color so it doesn't flash if a user taps it
             command=None          # It acts purely as a visual indicator
         )
-        
+
         #Capture Button 
-        self.create_record_button(x=107 / 2, y=480 / 2, command=lambda: HelpSlideshowPopup(None, "Capture Button Guide", weather_folder))#to change
+        capture_folder = "_image_assets/capture"
+        capture_folder = sorted([
+            os.path.join(capture_folder, file) 
+            for file in os.listdir(capture_folder) 
+            if file.lower().endswith(('.png', '.jpg', '.jpeg'))
+        ])
+        self.create_record_button(x=107 / 2, y=480 / 2, command=lambda: HelpSlideshowPopup(None, "Capture Button Guide", capture_folder))
+        
 
         #Setting Button
-        self.settings_button(command=lambda: HelpSlideshowPopup(None, "Setting Guide", weather_folder)) #to change
+        setting_folder = "_image_assets/settings"
+        setting_folder = sorted([
+            os.path.join(setting_folder, file) 
+            for file in os.listdir(setting_folder) 
+            if file.lower().endswith(('.png', '.jpg', '.jpeg'))
+        ])
+        self.settings_button(command=lambda: HelpSlideshowPopup(None, "Setting Guide", setting_folder)) 
 
         #Return/Close Button
         scaled_close_font_size = self._scale_value(22, 'y') 
@@ -163,6 +169,12 @@ class HelpPage(SC):
         )
                 
         #Crop Monitor Button
+        monitor_folder = "_image_assets/crops in monitor"
+        monitor_folder = sorted([
+            os.path.join(monitor_folder, file) 
+            for file in os.listdir(monitor_folder) 
+            if file.lower().endswith(('.png', '.jpg', '.jpeg'))
+        ])
         crops_file = os.path.join("Page_files", "crops_monitored.txt")
         if os.path.exists(crops_file):
             try:
@@ -177,17 +189,20 @@ class HelpPage(SC):
             x=118, y=75,
             width=140, height=140,
             anchor="s", 
-            command=lambda: HelpSlideshowPopup(None, "Crop Monitor Guide", weather_folder), #to change
+            command=lambda: HelpSlideshowPopup(None, "Crop Monitor Guide", monitor_folder), 
             )
         
         #Recent Diseases Button
+        recent_images = ["_image_assets/Recent Diseases.png"] 
+
         btn_text = "Recent Disease Detected"
         self.create_button(
             text=btn_text,
             x=270, y=75,
             width=140, height=140,
             anchor="s",
-            command=lambda: HelpSlideshowPopup(None, "Recent Disease Detected Guide", weather_folder), #to change
+            # 2. Pass that single-item list directly into your popup
+            command=lambda: HelpSlideshowPopup(None, "Recent Disease Detected Guide", recent_images) 
         )
 
         #Manage Files Button
@@ -203,14 +218,26 @@ class HelpPage(SC):
         )        
 
         #Weather Analytics Button
+        weather_folder = "_image_assets/weather"
+        weather_folder = sorted([
+            os.path.join(weather_folder, file) 
+            for file in os.listdir(weather_folder) 
+            if file.lower().endswith(('.png', '.jpg', '.jpeg'))
+        ])
         self.weather_button = self.create_weather_analytics_panel(
                 x=121, y=232,
                 width=205, height=220,
                 anchor="n",
-                command=lambda: HelpSlideshowPopup(None, "Weather Analytics Guide", weather_folder) #eto palang may images na guide
+                command=lambda: HelpSlideshowPopup(None, "Weather Analytics Guide", weather_folder)
             )
 
         #Capture Gallery Button
+        gallery_folder = "_image_assets/gallery"
+        gallery_folder = sorted([
+            os.path.join(gallery_folder, file) 
+            for file in os.listdir(gallery_folder) 
+            if file.lower().endswith(('.png', '.jpg', '.jpeg'))
+        ])
         gallery_photo, file_label = gallery_preview(self.root)
 
         gallery_scaled_y = self._scale_value(232, 'y')
@@ -221,7 +248,7 @@ class HelpPage(SC):
             x=340, y=232,
             width=222, height=220,
             anchor="n",
-            command=lambda: HelpSlideshowPopup(None, "Capture Gallery Guide", weather_folder), #to change
+            command=lambda: HelpSlideshowPopup(None, "Capture Gallery Guide", gallery_folder), #to change
             handle_hover=False, # Disable default hover
             hover_color=BUTTON_COLOR, # <-- FIX: Use variable
         )
@@ -272,25 +299,37 @@ class HelpPage(SC):
             x=572, y=75,
             anchor="nw",
             width=217, height=275,
-            command=lambda: HelpSlideshowPopup(None, "Disease Record History Guide", weather_folder), #to change
+            command=lambda: HelpSlideshowPopup(None, "Disease Record History Guide", weather_folder), 
         )
 
         #Dock Mode Button
+        dock_folder = "_image_assets/dock"
+        dock_folder = sorted([
+            os.path.join(dock_folder, file) 
+            for file in os.listdir(dock_folder) 
+            if file.lower().endswith(('.png', '.jpg', '.jpeg'))
+        ])
         self.create_button(
                     text="Dock Mode",
                     x=572, y=368,
                     width=217, height=37,
                     anchor="center",
                     font=tuple(custom_font_bold),
-                    command=lambda: HelpSlideshowPopup(None, "Dock Mode Button Guide", weather_folder), #to change
+                    command=lambda: HelpSlideshowPopup(None, "Dock Mode Button Guide", dock_folder), 
                 )
         
         #Risk Check Button
+        risk_folder = "_image_assets/risk"
+        risk_folder = sorted([
+            os.path.join(risk_folder, file) 
+            for file in os.listdir(risk_folder) 
+            if file.lower().endswith(('.png', '.jpg', '.jpeg'))
+        ])
         self.create_button(
             text="Risk Check", 
             x=572, y=414,
             width=217, height=37,
             anchor="center",
             font=tuple(custom_font_bold), 
-            command=lambda: HelpSlideshowPopup(None, "Risk Check Guide", weather_folder), #to change
+            command=lambda: HelpSlideshowPopup(None, "Risk Check Guide", risk_folder), #to change
         )
