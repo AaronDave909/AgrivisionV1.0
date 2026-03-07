@@ -148,5 +148,11 @@
         "accuracy": "62.85%",
         "count": "1",
         "timestamp": "Jan 25, 2026 03:34 PM"
+    },
+    "pest_20260307_155315.jpg": {
+        "pest": "aphid",
+        "accuracy": "86.15%",
+        "count": "38",
+        "timestamp": "Mar 07, 2026 03:53 PM"
     }
 }
