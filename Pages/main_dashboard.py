@@ -533,6 +533,8 @@ class MyDashboard(SC):
             command=self.open_help_page
         )
 
+        self.create_battery_indicator(x=15, y=100)
+
         # --- ADDED: Start the update loop ---
         # Start the loop 1 second after the dashboard loads
         self.root.after(1000, self.update_weather_data) 
