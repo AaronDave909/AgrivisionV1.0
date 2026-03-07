@@ -18,7 +18,11 @@ class ReportPage(SC):
         self.selected_pests = {}  
         self.current_view = "create"
         
-        # ADDED: Variable to track touch/mouse drag position
+        # Tracks the currently open report for the master delete button
+        self.current_viewed_report = None 
+        self.del_btn = None
+        
+        # Variable to track touch/mouse drag position
         self._drag_start_y = 0 
         
         self.create_title(text="Report Generation", x=119, y=0)
@@ -34,7 +38,7 @@ class ReportPage(SC):
 
         self.setup_ui()
 
-    # --- ADDED: Touch Scrolling Logic ---
+    # --- Touch Scrolling Logic ---
     def _start_pan(self, event):
         """Records the starting Y coordinate when the user touches/clicks."""
         self._drag_start_y = event.y_root
@@ -42,14 +46,9 @@ class ReportPage(SC):
     def _pan(self, event):
         """Calculates the drag distance and scrolls the PDF viewer."""
         delta = self._drag_start_y - event.y_root
-        
-        # Add a tiny threshold to prevent screen jittering on slight touches
         if abs(delta) > 2:
-            # Move the underlying canvas. Divide by 3 for a natural scrolling speed.
             self.viewer_frame._parent_canvas.yview_scroll(int(delta / 3), "units")
-            # Update the starting position so it scrolls continuously
             self._drag_start_y = event.y_root
-    # ------------------------------------
 
     def load_json_data(self):
         try:
@@ -105,7 +104,7 @@ class ReportPage(SC):
             width=scaled_button_width, height=scaled_button_height,
             command=self.show_create_view,
             fg_color="#50556b", hover_color="#50556b",
-            corner_radius=5, text_color="white", font=btn_font
+            corner_radius=20, text_color="white", font=btn_font
         )
         self.create_tab_btn.place(x=x_pos, y=y_create, anchor="center")
         
@@ -114,7 +113,7 @@ class ReportPage(SC):
             width=scaled_button_width, height=scaled_button_height,
             command=self.show_view_list,
             fg_color=LEFT_PANEL_COLOR, hover_color="#50556b",
-            corner_radius=5, text_color="white", font=btn_font
+            corner_radius=20, text_color="white", font=btn_font
         )
         self.view_tab_btn.place(x=x_pos, y=y_view, anchor="center")
         
@@ -124,14 +123,12 @@ class ReportPage(SC):
                                                    height=self._scale_value(400, 'y'))
         self.viewer_frame.place(x=self._scale_value(390, 'x'), y=self._scale_value(60, 'y'))
         
-        # ADDED: Bind touch/drag to the empty viewer frame itself
         self.viewer_frame._parent_canvas.bind("<ButtonPress-1>", self._start_pan)
         self.viewer_frame._parent_canvas.bind("<B1-Motion>", self._pan)
         
         self.viewer_placeholder = ctk.CTkLabel(self.viewer_frame, text="Select or generate a report to view.", text_color="gray")
         self.viewer_placeholder.pack(pady=50)
         
-        # ADDED: Bind touch/drag to the placeholder text
         self.viewer_placeholder.bind("<ButtonPress-1>", self._start_pan)
         self.viewer_placeholder.bind("<B1-Motion>", self._pan)
 
@@ -143,11 +140,42 @@ class ReportPage(SC):
         self.filter_frame.pack_propagate(False)
 
         # --- CONTAINERS FOR THE TWO MODES ---
-        self.create_container = ctk.CTkScrollableFrame(self.filter_frame, fg_color="transparent")
-        self.view_container = ctk.CTkScrollableFrame(self.filter_frame, fg_color="transparent")
+        # FIX: The frames are now shorter (300px) so they don't cover the bottom buttons
+        self.create_container = ctk.CTkScrollableFrame(self.filter_frame, fg_color="transparent", height=self._scale_value(300, 'y'))
+        self.view_container = ctk.CTkScrollableFrame(self.filter_frame, fg_color="transparent", height=self._scale_value(300, 'y'))
 
         self.build_create_ui()
-        self.create_container.pack(fill="both", expand=True)
+        self.create_container.place(x=0, y=0, relwidth=1.0) 
+
+        # --- FIXED BOTTOM BUTTONS ---
+        # 1. Generate Button (Shows on Create tab)
+        self.gen_btn = ctk.CTkButton(
+            self.filter_frame,
+            text="Generate Report",
+            font=tuple(custom_font_bold),
+            fg_color="#2A2E3F",
+            hover_color="#383C4E",
+            command=self.generate_and_display_report,
+            width=self._scale_value(230, 'x'),
+            height=self._scale_value(40, 'y')
+        )
+
+        self.gen_btn.place(
+            x=self._scale_value(10, 'x'),
+            y=self._scale_value(320, 'y')
+        )
+
+        # 2. Master Delete Button (Created but hidden initially)
+        self.del_btn = ctk.CTkButton(
+            self.filter_frame,
+            text="Delete",
+            font=tuple(custom_font_bold),
+            fg_color="#CC0000",
+            hover_color="#FF4C4C",
+            command=self.trigger_delete,
+            width=self._scale_value(230, 'x'),
+            height=self._scale_value(40, 'y')
+        )
 
     def build_create_ui(self):
         """Builds the Date Range and Checkboxes inside the Create Container."""
@@ -155,7 +183,6 @@ class ReportPage(SC):
         # --- Date Range Selection ---
         ctk.CTkLabel(self.create_container, text="Date Range:", font=tuple(custom_font_bold), text_color="white").pack(anchor="w", pady=(10, 5), padx=10)
         
-        # Create a horizontal frame for From and To selectors
         date_frame = ctk.CTkFrame(self.create_container, fg_color="transparent")
         date_frame.pack(fill="x", padx=10, pady=(0, 15))
         
@@ -229,37 +256,46 @@ class ReportPage(SC):
         else:
             ctk.CTkLabel(pest_frame, text="No pests found", text_color="gray").pack()
 
-        # Generate Button
-        gen_btn = ctk.CTkButton(
-            self.create_container, 
-            text="Generate Report", 
-            font=tuple(custom_font_bold),
-            fg_color="#2A2E3F", 
-            hover_color="#383C4E",
-            command=self.generate_and_display_report
-        )
-        gen_btn.pack(fill="x", pady=15, padx=10)
-
     # --- TOGGLE LOGIC ---
     def show_create_view(self):
-        """Switches to the creation form."""
         self.current_view = "create"
-        self.view_container.pack_forget()
-        self.create_container.pack(fill="both", expand=True)
+
+        self.view_container.place_forget()
+
+        if self.del_btn:
+            self.del_btn.place_forget()
+
+        self.create_container.place(x=0, y=0, relwidth=1.0)
+
+        self.gen_btn.place(
+            x=self._scale_value(10, 'x'),
+            y=self._scale_value(320, 'y')
+        )
+
         self.create_tab_btn.configure(fg_color="#50556b", hover_color="#50556b")
         self.view_tab_btn.configure(fg_color=LEFT_PANEL_COLOR, hover_color="#50556b")
 
     def show_view_list(self):
-        """Switches to the saved reports list."""
         self.current_view = "view"
-        self.create_container.pack_forget()
-        self.view_container.pack(fill="both", expand=True)
+
+        self.create_container.place_forget()
+
+        if self.gen_btn:
+            self.gen_btn.place_forget()
+
+        self.view_container.place(x=0, y=0, relwidth=1.0)
+
+        self.del_btn.place(
+            x=self._scale_value(10, 'x'),
+            y=self._scale_value(320, 'y')
+        )
+
         self.view_tab_btn.configure(fg_color="#50556b", hover_color="#50556b")
         self.create_tab_btn.configure(fg_color=LEFT_PANEL_COLOR, hover_color="#50556b")
+
         self.refresh_reports_list()
 
     def refresh_reports_list(self):
-        """Scans the _reports_ folder and creates a button for each PDF."""
         for widget in self.view_container.winfo_children():
             widget.destroy()
 
@@ -284,9 +320,82 @@ class ReportPage(SC):
             )
             btn.pack(fill="x", pady=2, padx=5)
 
+    # --- DELETE LOGIC ---
+    def trigger_delete(self):
+        """Checks if a report is actively open before asking to delete."""
+        if not self.current_viewed_report or not os.path.exists(self.current_viewed_report):
+            return 
+
+        report_filename = os.path.basename(self.current_viewed_report)
+        self.confirm_delete_report(report_filename)
+
+    def confirm_delete_report(self, report_filename):
+        def scale_val(value, axis='x'):
+            factor = self.scale_x if axis == 'x' else self.scale_y
+            return round(value * factor)
+
+        popup_width = scale_val(300, 'x')
+        popup_height = scale_val(150, 'y')
+
+        self.root.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() // 2) - (popup_width // 2)
+        y = self.root.winfo_y() + (self.root.winfo_height() // 2) - (popup_height // 2)
+
+        popup = ctk.CTkToplevel(self.root)
+        popup.title("Delete Report")
+        popup.geometry(f"{popup_width}x{popup_height}+{x}+{y}")
+        popup.configure(fg_color="#202332")
+        popup.transient(self.root)
+        
+        popup.after(50, lambda: (popup.lift(), popup.focus_force(), popup.grab_set()))
+
+        label = ctk.CTkLabel(
+            popup, 
+            text=f"Delete '{report_filename}'?", 
+            text_color="white", 
+            font=("Arial", scale_val(12, 'y'), "bold")
+        )
+        label.pack(pady=scale_val(20, 'y'))
+
+        btn_frame = ctk.CTkFrame(popup, fg_color="transparent")
+        btn_frame.pack(fill="x", padx=scale_val(20, 'x'))
+
+        def on_delete():
+            try:
+                report_path = os.path.join("_reports_", report_filename)
+                os.remove(report_path)
+                
+                if self.current_viewed_report == report_path:
+                    for widget in self.viewer_frame.winfo_children():
+                        widget.destroy()
+                    self.viewer_placeholder = ctk.CTkLabel(self.viewer_frame, text="Select or generate a report to view.", text_color="gray")
+                    self.viewer_placeholder.pack(pady=50)
+                    self.current_viewed_report = None
+                    
+            except Exception as e:
+                print(f"Error deleting report: {e}")
+            
+            popup.destroy()
+            self.refresh_reports_list()
+
+        del_btn = ctk.CTkButton(
+            btn_frame, text="Delete", fg_color="#FF4C4C", hover_color="#CC0000", 
+            width=scale_val(100, 'x'), command=on_delete
+        )
+        del_btn.pack(side="left", expand=True, padx=5)
+
+        cancel_btn = ctk.CTkButton(
+            btn_frame, text="Cancel", fg_color="#2A2E3F", hover_color="#383C4E", 
+            width=scale_val(100, 'x'), command=popup.destroy
+        )
+        cancel_btn.pack(side="right", expand=True, padx=5)
+
     # --- PDF GENERATION LOGIC ---
     def generate_and_display_report(self):
-        """Show a popup to get the custom report name"""
+
+        if not self.months:
+            return
+
         month_from = self.month_from_var.get()
         month_to = self.month_to_var.get()
         active_diseases = [dis for dis, var in self.selected_diseases.items() if var.get()]
@@ -340,19 +449,13 @@ class ReportPage(SC):
                 ctk.CTkLabel(self.viewer_frame, text="No data found for selected filters", text_color="orange").pack(pady=20)
             return
         
-        # Show popup to get custom report name
         self.show_report_name_popup(filtered_data, month_from, month_to)
 
     def show_report_name_popup(self, filtered_data, month_from, month_to):
-        """Shows a popup for the user to enter a custom report name"""
-        
-        # --- Scaling Helper ---
         def scale_val(value, axis='x'):
             factor = self.scale_x if axis == 'x' else self.scale_y
             return round(value * factor)
-        # ---
 
-        # --- Scale the original fixed dimensions ---
         ORIGINAL_POPUP_WIDTH = 350
         ORIGINAL_POPUP_HEIGHT = 200
         
@@ -369,7 +472,6 @@ class ReportPage(SC):
         scaled_pady_10 = scale_val(10, 'y')
         scaled_pady_5 = scale_val(5, 'y')
 
-        # Center popup on root window
         self.root.update_idletasks()
         root_x = self.root.winfo_x()
         root_y = self.root.winfo_y()
@@ -414,7 +516,6 @@ class ReportPage(SC):
                 entry.configure(text_color="#FF6B6B")
                 return
             
-            # Sanitize filename (remove invalid characters)
             safe_name = re.sub(r'[<>:"/\\|?*]', '', report_name)
             safe_name = safe_name.replace(" ", "_")
             
@@ -429,7 +530,6 @@ class ReportPage(SC):
             
             os.makedirs("_reports_", exist_ok=True)
             
-            # Handle duplicate filenames
             counter = 1
             base_name = safe_name
             while os.path.exists(report_path):
@@ -437,13 +537,11 @@ class ReportPage(SC):
                 report_path = os.path.join("_reports_", report_filename)
                 counter += 1
             
-            # Generate the PDF
             self.create_pdf(filtered_data, report_path, month_from, month_to)
             print(f"✅ Report generated and saved to: {report_path}")
             
             popup.destroy()
             
-            # Switch to View tab and display the report
             self.show_view_list()
             self.render_pdf_to_viewer(report_path)
 
@@ -551,6 +649,8 @@ class ReportPage(SC):
 
     def render_pdf_to_viewer(self, pdf_path):
         if not self.viewer_frame: return
+        # Save the absolute path of the currently viewed report
+        self.current_viewed_report = pdf_path
         
         for widget in self.viewer_frame.winfo_children():
             widget.destroy()
@@ -561,7 +661,7 @@ class ReportPage(SC):
             doc = fitz.open(pdf_path)
             for page_num in range(len(doc)):
                 page = doc.load_page(page_num)
-                pix = page.get_pixmap(dpi=150) 
+                pix = page.get_pixmap(dpi=120) 
                 
                 mode = "RGBA" if pix.alpha else "RGB"
                 img = Image.frombytes(mode, [pix.width, pix.height], pix.samples)
@@ -571,7 +671,6 @@ class ReportPage(SC):
                 lbl = ctk.CTkLabel(self.viewer_frame, image=ctk_img, text="")
                 lbl.pack(pady=10)
                 
-                # ADDED: Bind touch/drag to the generated images so you can drag the page itself
                 lbl.bind("<ButtonPress-1>", self._start_pan)
                 lbl.bind("<B1-Motion>", self._pan)
                 
