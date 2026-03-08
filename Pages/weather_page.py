@@ -524,12 +524,15 @@ class WeatherPage(SC):
         try:
             plt.style.use('dark_background') 
             
+            current_mode = ctk.get_appearance_mode()
+            bg_hex = BG_COLOR[0] if current_mode == "Light" else BG_COLOR[1]
+            
             self.fig_stacked, (self.ax1, self.ax2, self.ax3) = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
-            self.fig_stacked.patch.set_facecolor(BG_COLOR)
+            self.fig_stacked.patch.set_facecolor(bg_hex)
             self.fig_stacked.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.15)
             
             self.fig_single, self.ax_single = plt.subplots(1, 1, figsize=(12, 8))
-            self.fig_single.patch.set_facecolor(BG_COLOR)
+            self.fig_single.patch.set_facecolor(bg_hex)
             self.fig_single.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.15)
             
             self.status_label.pack_forget()
@@ -538,15 +541,12 @@ class WeatherPage(SC):
             self.avg_frame.pack(side=ctk.TOP, fill="x", padx=20, pady=(5, 10))
 
             font_style = ("Arial", 20, "bold")
-            text_color = TEXT_COLOR
             
-            self.temp_avg_label = ctk.CTkLabel(self.avg_frame, text="Temperature Avg: -- °C", font=font_style, text_color=text_color)
-            self.hum_avg_label = ctk.CTkLabel(self.avg_frame, text="Humidity Avg: -- %", font=font_style, text_color=text_color)
-            self.pres_avg_label = ctk.CTkLabel(self.avg_frame, text="Pressure Avg: -- hPa", font=font_style, text_color=text_color)
-            #self.high_tide_label = ctk.CTkLabel(self.avg_frame, text="High Tide: N/A", font=font_style, text_color=text_color)
-            #self.low_tide_label = ctk.CTkLabel(self.avg_frame, text="Low Tide: N/A", font=font_style, text_color=text_color)
-            self.disease_total_label = ctk.CTkLabel(self.avg_frame, text="Total Detections: --", font=font_style, text_color=text_color)
-            self.pest_total_label = ctk.CTkLabel(self.avg_frame, text="Total Detections: --", font=font_style, text_color=text_color)
+            self.temp_avg_label = ctk.CTkLabel(self.avg_frame, text="Temperature Avg: -- °C", font=font_style, text_color=TEXT_COLOR)
+            self.hum_avg_label = ctk.CTkLabel(self.avg_frame, text="Humidity Avg: -- %", font=font_style, text_color=TEXT_COLOR)
+            self.pres_avg_label = ctk.CTkLabel(self.avg_frame, text="Pressure Avg: -- hPa", font=font_style, text_color=TEXT_COLOR)
+            self.disease_total_label = ctk.CTkLabel(self.avg_frame, text="Total Detections: --", font=font_style, text_color=TEXT_COLOR)
+            self.pest_total_label = ctk.CTkLabel(self.avg_frame, text="Total Detections: --", font=font_style, text_color=TEXT_COLOR)
 
             self.canvas_stacked = FigureCanvasTkAgg(self.fig_stacked, master=self.chart_frame)
             self.canvas_stacked.get_tk_widget().pack(side=ctk.TOP, fill=ctk.BOTH, expand=True)
@@ -557,7 +557,6 @@ class WeatherPage(SC):
             self.show_view(self.current_view) 
             self._update_plot_data()
 
-            # --- Lift the frame after plots are drawn ---
             self.date_filter_frame.lift()
 
         except Exception as e:
@@ -707,14 +706,15 @@ class WeatherPage(SC):
                 return 
             
         try:
-            ax_color = BUTTON_COLOR
+            current_mode = ctk.get_appearance_mode()
+            ax_bg = BUTTON_COLOR[0] if current_mode == "Light" else BUTTON_COLOR[1]
+            text_hex = TEXT_COLOR[0] if current_mode == "Light" else TEXT_COLOR[1]
             
             if self.ax1: self.ax1.clear()
             if self.ax2: self.ax2.clear()
             if self.ax3: self.ax3.clear()
             if self.ax_single: self.ax_single.clear()
 
-            # --- A) PLOT WEATHER DATA (Line Charts) ---
             if self.current_view in ["all", "temp", "hum", "pres"]:
                 
                 if not os.path.exists(self.CSV_FILE_PATH):
@@ -724,7 +724,12 @@ class WeatherPage(SC):
                     return
                 
                 self.status_label.pack_forget()
+                
                 df_full = pd.read_csv(self.CSV_FILE_PATH)
+                df_full['Temperature'] = pd.to_numeric(df_full['Temperature'], errors='coerce')
+                df_full['Humidity'] = pd.to_numeric(df_full['Humidity'], errors='coerce')
+                df_full['Pressure'] = pd.to_numeric(df_full['Pressure'], errors='coerce')
+                df_full = df_full.dropna(subset=['Temperature', 'Humidity', 'Pressure'])
                 
                 self._update_weather_date_selector(df_full.copy())
                 
@@ -790,35 +795,34 @@ class WeatherPage(SC):
                     self._set_dynamic_ylim(self.ax3, filtered_df['Pressure'])
                     self._apply_gradient(self.ax3, filtered_df.index, filtered_df['Pressure'], 'green')
                 
-                self.ax1.set_ylabel('Temperature (°C)', color=TEXT_COLOR, labelpad=15); self.ax1.grid(True, linestyle='--', alpha=0.3); self.ax1.tick_params(axis='y', colors='white'); self.ax1.tick_params(axis='x', colors='white'); self.ax1.set_facecolor(ax_color)
-                self.ax2.set_ylabel('Humidity (%)', color=TEXT_COLOR, labelpad=15); self.ax2.grid(True, linestyle='--', alpha=0.3); self.ax2.tick_params(axis='y', colors='white'); self.ax2.tick_params(axis='x', colors='white'); self.ax2.set_facecolor(ax_color)
-                self.ax3.set_ylabel('Pressure (hPa)', color=TEXT_COLOR, labelpad=15); self.ax3.grid(True, linestyle='--', alpha=0.3); self.ax3.tick_params(axis='y', colors='white'); self.ax3.tick_params(axis='x', colors='white'); self.ax3.set_facecolor(ax_color)
+                self.ax1.set_ylabel('Temperature (°C)', color=text_hex, labelpad=15); self.ax1.grid(True, linestyle='--', alpha=0.3); self.ax1.tick_params(axis='y', colors='white'); self.ax1.tick_params(axis='x', colors='white'); self.ax1.set_facecolor(ax_bg)
+                self.ax2.set_ylabel('Humidity (%)', color=text_hex, labelpad=15); self.ax2.grid(True, linestyle='--', alpha=0.3); self.ax2.tick_params(axis='y', colors='white'); self.ax2.tick_params(axis='x', colors='white'); self.ax2.set_facecolor(ax_bg)
+                self.ax3.set_ylabel('Pressure (hPa)', color=text_hex, labelpad=15); self.ax3.grid(True, linestyle='--', alpha=0.3); self.ax3.tick_params(axis='y', colors='white'); self.ax3.tick_params(axis='x', colors='white'); self.ax3.set_facecolor(ax_bg)
                 
-                self.ax3.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p')); self.ax3.set_xlabel('Time', color=TEXT_COLOR); plt.setp(self.ax3.get_xticklabels(), rotation=0, ha="center", color='white')
-                self.fig_stacked.suptitle(f"BME280 Sensor Data ({self.selected_filter})", fontsize=14, color=TEXT_COLOR)
+                self.ax3.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p')); self.ax3.set_xlabel('Time', color=text_hex); plt.setp(self.ax3.get_xticklabels(), rotation=0, ha="center", color='white')
+                self.fig_stacked.suptitle(f"BME280 Sensor Data ({self.selected_filter})", fontsize=14, color=text_hex)
                 
                 title = 'Sensor Data'
                 if not filtered_df.empty:
                     if self.current_view == "temp":
-                        title = f"Temperature ({self.selected_filter})"; self.ax_single.set_ylabel('Temperature (°C)', color=TEXT_COLOR, labelpad=15)
+                        title = f"Temperature ({self.selected_filter})"; self.ax_single.set_ylabel('Temperature (°C)', color=text_hex, labelpad=15)
                         self.ax_single.plot(filtered_df.index, filtered_df['Temperature'], color='red', zorder=3)
                         self._set_dynamic_ylim(self.ax_single, filtered_df['Temperature']); self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Temperature'], 'red')
                     elif self.current_view == "hum":
-                        title = f"Humidity ({self.selected_filter})"; self.ax_single.set_ylabel('Humidity (%)', color=TEXT_COLOR, labelpad=15)
+                        title = f"Humidity ({self.selected_filter})"; self.ax_single.set_ylabel('Humidity (%)', color=text_hex, labelpad=15)
                         self.ax_single.plot(filtered_df.index, filtered_df['Humidity'], color='blue', zorder=3)
                         self._set_dynamic_ylim(self.ax_single, filtered_df['Humidity']); self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Humidity'], 'blue')
                     elif self.current_view == "pres":
-                        title = f"Pressure ({self.selected_filter})"; self.ax_single.set_ylabel('Pressure (hPa)', color=TEXT_COLOR, labelpad=15)
+                        title = f"Pressure ({self.selected_filter})"; self.ax_single.set_ylabel('Pressure (hPa)', color=text_hex, labelpad=15)
                         self.ax_single.plot(filtered_df.index, filtered_df['Pressure'], color='green', zorder=3)
                         self._set_dynamic_ylim(self.ax_single, filtered_df['Pressure']); self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Pressure'], 'green')
                 
-                self.ax_single.grid(True, linestyle='--', alpha=0.3); self.ax_single.tick_params(axis='y', colors=TEXT_COLOR); self.ax_single.tick_params(axis='x', colors=TEXT_COLOR); self.ax_single.set_facecolor(ax_color)
-                self.ax_single.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p')); self.ax_single.set_xlabel('Time', color=TEXT_COLOR); plt.setp(self.ax_single.get_xticklabels(), rotation=0, ha="center", color=TEXT_COLOR)
+                self.ax_single.grid(True, linestyle='--', alpha=0.3); self.ax_single.tick_params(axis='y', colors=text_hex); self.ax_single.tick_params(axis='x', colors=text_hex); self.ax_single.set_facecolor(ax_bg)
+                self.ax_single.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p')); self.ax_single.set_xlabel('Time', color=text_hex); plt.setp(self.ax_single.get_xticklabels(), rotation=0, ha="center", color=text_hex)
                 
                 self.ax_single.set_title("") 
-                self.fig_single.suptitle(title, fontsize=14, color=TEXT_COLOR)
+                self.fig_single.suptitle(title, fontsize=14, color=text_hex)
 
-            # --- B) PLOT DISEASE/PEST DATA (Bar Charts) ---
             else:
                 self.status_label.pack_forget()
                 self._update_weather_date_selector(pd.DataFrame()) 
@@ -869,23 +873,21 @@ class WeatherPage(SC):
                      self.ax_single.set_ylim(bottom=0, top=1) 
 
 
-                self.ax_single.set_ylabel('Total Count', color=TEXT_COLOR, labelpad=15)
+                self.ax_single.set_ylabel('Total Count', color=text_hex, labelpad=15)
                 
                 self.ax_single.set_title("") 
-                self.fig_single.suptitle(title, fontsize=14, color=TEXT_COLOR) 
+                self.fig_single.suptitle(title, fontsize=14, color=text_hex) 
 
                 self.ax_single.grid(True, linestyle='--', alpha=0.3, axis='y')
-                self.ax_single.tick_params(axis='y', colors=TEXT_COLOR)
-                self.ax_single.tick_params(axis='x', colors=TEXT_COLOR)
-                self.ax_single.set_facecolor(ax_color)
+                self.ax_single.tick_params(axis='y', colors=text_hex)
+                self.ax_single.tick_params(axis='x', colors=text_hex)
+                self.ax_single.set_facecolor(ax_bg)
                 
-                plt.setp(self.ax_single.get_xticklabels(), rotation=0, ha="center", color=TEXT_COLOR, fontsize=10)
+                plt.setp(self.ax_single.get_xticklabels(), rotation=0, ha="center", color=text_hex, fontsize=10)
 
-            # --- 6. Update both canvases ---
             if self.canvas_stacked: self.canvas_stacked.draw()
             if self.canvas_single: self.canvas_single.draw()
             
-            # --- Lift frame after plots are drawn ---
             self.date_filter_frame.lift()
             
             if not force_update and self.is_running:
@@ -896,7 +898,6 @@ class WeatherPage(SC):
             import traceback
             traceback.print_exc()
         
-        # --- 7. Schedule the next update (only if in a running state) ---
         if self.is_running and not force_update: 
             self.after_id = self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
 
