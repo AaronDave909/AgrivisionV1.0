@@ -183,7 +183,7 @@ class GalleryPage(SC):
         # 1. The Canvas
         self.canvas = ctk.CTkCanvas(
             self.root,
-            bg=self.unpacked_bg,        # <--- FIX: Use unpacked hex string
+            bg=self.unpacked_bg,        
             highlightthickness=0
         )
         self.canvas.place(x=scaled_x_start, y=self.scale_y_val(60), relwidth=0.84, relheight=0.85)
@@ -194,8 +194,8 @@ class GalleryPage(SC):
             orientation="vertical",
             command=self.canvas.yview,
             width=scaled_scrollbar_width,  
-            fg_color=self.unpacked_bg,      # <--- FIX: Use unpacked hex string
-            button_color=self.unpacked_btn, # <--- FIX: Use unpacked hex string
+            fg_color=self.unpacked_bg,      
+            button_color=self.unpacked_btn, 
             button_hover_color=self.unpacked_hover, 
         )
         self.scrollbar.place(relx=1.0, rely=0, relheight=1.0, anchor="ne") 
@@ -203,8 +203,6 @@ class GalleryPage(SC):
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
 
         # 3. The Inner Frame
-        # CTkFrame usually handles tuples, but inside a Canvas window, 
-        # it's safer to use the unpacked hex.
         self.scrollable_frame = ctk.CTkFrame(self.canvas, fg_color=self.unpacked_bg)
 
         self.scrollable_frame.bind(
@@ -269,6 +267,10 @@ class GalleryPage(SC):
 
         scaled_name_font = tuple(custom_font_regular)
 
+        # Determine a contrasting color for the card container based on appearance mode
+        current_mode = ctk.get_appearance_mode()
+        card_color = LEFT_PANEL_COLOR[0] if current_mode == "Light" else LEFT_PANEL_COLOR[1]
+
         # 3. We need a new index variable to handle grid placement
         valid_image_index = 0
 
@@ -311,7 +313,7 @@ class GalleryPage(SC):
                 self.scrollable_frame, 
                 width=panel_width, 
                 height=panel_height, 
-                fg_color=self.unpacked_bg, # This is where you were pasting the color
+                fg_color=card_color, # <-- FIX: Now using the contrasting card color
                 corner_radius=self.scale_x_val(10)
             )
             # 2. Add this line to LOCK the size
@@ -327,8 +329,8 @@ class GalleryPage(SC):
                 text="",
                 width=image_width,
                 height=image_height,
-                fg_color=BUTTON_COLOR,
-                hover_color=BUTTON_HOVER,
+                fg_color="transparent", # <-- FIX: Back to transparent so it blends with the card
+                hover_color=self.unpacked_hover,
                 command=lambda path=file_path: self.open_analysis_view(path)
             )
             img_button.image = ctk_img
@@ -349,3 +351,8 @@ class GalleryPage(SC):
         self.root.destroy()
         app = AnalysisPage(image_path=image_path, view_only=True)
         app.root.mainloop()
+
+# --- To run this page directly for testing (if needed) ---
+if __name__ == "__main__":
+    app = GalleryPage()
+    app.root.mainloop()
