@@ -480,3 +480,98 @@ class SharedComponents:
              #widget.bind("<Leave>", on_composite_leave)
 
         return weather_button
+
+    def create_battery_indicator(self, x=530, y=21):
+        """Creates a MacBook-style battery icon with a depletion bar."""
+        scaled_x = self._scale_value(x, 'x')
+        scaled_y = self._scale_value(y, 'y')
+
+        # 1. Main Container
+        self.battery_container = ctk.CTkFrame(self.root, fg_color="#2A2E3F")
+        self.battery_container.place(x=scaled_x, y=scaled_y)
+
+        # 2. The Battery "Body" (The outer shell)
+        self.battery_body = ctk.CTkFrame(
+            self.battery_container,
+            width=self._scale_value(45, 'x'),
+            height=self._scale_value(20, 'y'),
+            border_width=2,
+            border_color="white",
+            fg_color="transparent",
+            corner_radius=4
+        )
+        self.battery_body.pack(side="left", padx=(0, 2))
+        self.battery_body.pack_propagate(False)
+
+        # 3. The Depletion Bar (Inside the Body)
+        # Anchored to the "w" (West/Left) so it drains to the left
+        self.battery_bar = ctk.CTkFrame(
+            self.battery_body,
+            width=self._scale_value(37, 'x'),
+            height=self._scale_value(12, 'y'),
+            corner_radius=2,
+            fg_color="#4CAF50" # Start Green
+        )
+        self.battery_bar.place(relx=0.05, rely=0.5, anchor="w")
+
+        # 4. The MacBook "Tip/Nub" (Positive terminal)
+        self.battery_tip = ctk.CTkFrame(
+            self.battery_container,
+            width=self._scale_value(3, 'x'),
+            height=self._scale_value(8, 'y'),
+            fg_color="white",
+            corner_radius=1
+        )
+        self.battery_tip.pack(side="left")
+
+        # 5. Percentage Text (Centered vertically next to the battery)
+        self.battery_label = ctk.CTkLabel(
+            self.battery_container,
+            text="--%",
+            font=tuple(custom_font_regular),
+            text_color="white",
+            justify="center"
+        )
+        self.battery_label.pack(side="left", padx=(8, 0), anchor="center")
+
+        # Start the background update loop for testing
+        self._simulated_battery = 100.0 
+        self._update_battery_loop()
+
+    def _update_battery_loop(self):
+        """Simulates depletion for Mac testing. Will integrate bat.py later."""
+        try:
+            # We will put the bat.py logic here later!
+            # For now, force an error to trigger the Mac simulation
+            raise ImportError("Testing on Mac")
+        except Exception:
+            # FALLBACK: Simulates battery drain for UI testing on Mac
+            self._simulated_battery -= 1.0 # Drain by 1% per tick
+            if self._simulated_battery <= 0:
+                self._simulated_battery = 100.0 # Loop back to 100% so you can keep testing
+            p = round(self._simulated_battery, 1)
+
+        # 1. Update text
+        self.battery_label.configure(text=f"{int(p)}%")
+
+        # 2. Update visual bar width based on percentage
+        max_width = self._scale_value(37, 'x')
+        new_width = max(1, int(max_width * (p / 100.0))) # Ensure it doesn't drop below 1px width
+        self.battery_bar.configure(width=new_width)
+
+        # 3. MacBook-style Color Logic
+        if p > 20:
+            self.battery_bar.configure(fg_color="#4CAF50") # Green
+            self.battery_body.configure(border_color="white")
+            self.battery_label.configure(text_color="white")
+        elif p > 10:
+            self.battery_bar.configure(fg_color="#FFEB3B") # Yellow
+            self.battery_body.configure(border_color="white")
+            self.battery_label.configure(text_color="white")
+        else:
+            self.battery_bar.configure(fg_color="#F44336") # Red warning
+            self.battery_body.configure(border_color="#F44336")
+            self.battery_label.configure(text_color="#F44336")
+
+        # Update every 100ms so you can watch it drain very fast on your Mac
+        self.root.after(100, self._update_battery_loop)

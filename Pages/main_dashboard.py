@@ -12,6 +12,7 @@ from Pages.weather_page import WeatherPage
 from Pages.weather_page import get_latest_weather_averages
 from Pages.predict import PredictPage 
 from Pages.help import HelpPage
+from Pages.report import ReportPage
 import customtkinter as ctk
 import datetime
 import os
@@ -88,6 +89,13 @@ class MyDashboard(SC):
         self.is_running = False # Stop update loop
         self.root.destroy()
         app = HelpPage()
+        app.root.mainloop()
+
+    def open_report_page(self):
+        """Destroys the dashboard and opens the ReportPage."""
+        self.is_running = False # Stop update loop
+        self.root.destroy()
+        app = ReportPage()
         app.root.mainloop()
     
     def _update_temp_chart(self):
@@ -353,16 +361,16 @@ class MyDashboard(SC):
             command=btn_command
         )
 
-        # Manage Files Button with Image
+        # Generate Report Button with Image
         futures_photo = self.load_futures_icon()
         self.create_button(
-            text="Manage Files\n",
+            text="Generate Report\n",
             x=422, y=75,
             width=140, height=140,
             anchor="s",
-            command=None,
+            command=self.open_report_page,
             image=futures_photo,
-            compound="top"
+            compound="top",
         )
         
         # Analytics Button
@@ -532,6 +540,8 @@ class MyDashboard(SC):
             corner_radius=50,
             command=self.open_help_page
         )
+
+        self.create_battery_indicator(x=15, y=100)
 
         # --- ADDED: Start the update loop ---
         # Start the loop 1 second after the dashboard loads
