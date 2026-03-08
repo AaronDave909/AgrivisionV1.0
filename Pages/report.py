@@ -1,4 +1,4 @@
-from shared_components import SharedComponents as SC, custom_font_bold, custom_font_regular, LEFT_PANEL_WIDTH, LEFT_PANEL_COLOR
+from shared_components import BUTTON_HOVER, SharedComponents as SC, custom_font_bold, custom_font_regular, LEFT_PANEL_WIDTH, LEFT_PANEL_COLOR
 import customtkinter as ctk
 import json
 import os
@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from PIL import Image
 from fpdf import FPDF
 import fitz  # PyMuPDF for viewing the PDF inside Tkinter
+from shared_components import BUTTON_COLOR, TEXT_COLOR, LEFT_PANEL_COLOR, BG_COLOR
 
 class ReportPage(SC):
     def __init__(self):
@@ -103,8 +104,8 @@ class ReportPage(SC):
             self.left_panel, text="Create", 
             width=scaled_button_width, height=scaled_button_height,
             command=self.show_create_view,
-            fg_color="#50556b", hover_color="#50556b",
-            corner_radius=20, text_color="white", font=btn_font
+            fg_color=BUTTON_COLOR, hover_color=BUTTON_HOVER,
+            corner_radius=20, text_color=TEXT_COLOR, font=btn_font
         )
         self.create_tab_btn.place(x=x_pos, y=y_create, anchor="center")
         
@@ -112,13 +113,13 @@ class ReportPage(SC):
             self.left_panel, text="View", 
             width=scaled_button_width, height=scaled_button_height,
             command=self.show_view_list,
-            fg_color=LEFT_PANEL_COLOR, hover_color="#50556b",
-            corner_radius=20, text_color="white", font=btn_font
+            fg_color=LEFT_PANEL_COLOR, hover_color=BUTTON_HOVER,
+            corner_radius=20, text_color=TEXT_COLOR, font=btn_font
         )
         self.view_tab_btn.place(x=x_pos, y=y_view, anchor="center")
         
         # --- PDF VIEWER SECTION (Right Side) ---
-        self.viewer_frame = ctk.CTkScrollableFrame(self.root, fg_color="#2A2E3F",
+        self.viewer_frame = ctk.CTkScrollableFrame(self.root, fg_color=BG_COLOR,
                                                    width=self._scale_value(390, 'x'), 
                                                    height=self._scale_value(400, 'y'))
         self.viewer_frame.place(x=self._scale_value(390, 'x'), y=self._scale_value(60, 'y'))
@@ -126,7 +127,7 @@ class ReportPage(SC):
         self.viewer_frame._parent_canvas.bind("<ButtonPress-1>", self._start_pan)
         self.viewer_frame._parent_canvas.bind("<B1-Motion>", self._pan)
         
-        self.viewer_placeholder = ctk.CTkLabel(self.viewer_frame, text="Select or generate a report to view.", text_color="gray")
+        self.viewer_placeholder = ctk.CTkLabel(self.viewer_frame, text="Select or generate a report to view.", text_color=TEXT_COLOR)
         self.viewer_placeholder.pack(pady=50)
         
         self.viewer_placeholder.bind("<ButtonPress-1>", self._start_pan)
@@ -152,9 +153,10 @@ class ReportPage(SC):
         self.gen_btn = ctk.CTkButton(
             self.filter_frame,
             text="Generate Report",
+            text_color=TEXT_COLOR,
             font=tuple(custom_font_bold),
-            fg_color="#2A2E3F",
-            hover_color="#383C4E",
+            fg_color=BUTTON_COLOR,
+            hover_color=BUTTON_HOVER,
             command=self.generate_and_display_report,
             width=self._scale_value(230, 'x'),
             height=self._scale_value(40, 'y')
@@ -181,15 +183,19 @@ class ReportPage(SC):
         """Builds the Date Range and Checkboxes inside the Create Container."""
         
         # --- Date Range Selection ---
-        ctk.CTkLabel(self.create_container, text="Date Range:", font=tuple(custom_font_bold), text_color="white").pack(anchor="w", pady=(10, 5), padx=10)
+        ctk.CTkLabel(self.create_container, text="Date Range:", font=tuple(custom_font_bold), text_color=TEXT_COLOR).pack(anchor="w", pady=(10, 5), padx=10)
         
         date_frame = ctk.CTkFrame(self.create_container, fg_color="transparent")
         date_frame.pack(fill="x", padx=10, pady=(0, 15))
         
         # From selector
-        from_label = ctk.CTkLabel(date_frame, text="From:", font=tuple(custom_font_regular), text_color="white")
+        from_label = ctk.CTkLabel(date_frame, text="From:", font=tuple(custom_font_regular), text_color=TEXT_COLOR)
         from_label.pack(side="left", padx=(0, 5))
         
+        current_mode = ctk.get_appearance_mode()
+        menu_bg = BUTTON_COLOR[0] if current_mode == "Light" else BUTTON_COLOR[1]
+        menu_text = TEXT_COLOR[0] if current_mode == "Light" else TEXT_COLOR[1]
+        menu_hover = BUTTON_HOVER[0] if current_mode == "Light" else BUTTON_HOVER[1]
         self.month_from_var = ctk.StringVar(value=self.months[0] if self.months else "")
         month_from_dropdown = ctk.CTkOptionMenu(
             date_frame, 
@@ -197,20 +203,25 @@ class ReportPage(SC):
             variable=self.month_from_var,
             font=("Arial", 14),
             dropdown_font=("Arial", 14),
-            fg_color="#2A2E3F",
-            text_color="#FFFFFF",
-            button_color="#383C4E",
-            button_hover_color="#50556b",
-            dropdown_fg_color="#2A2E3F",
-            dropdown_hover_color="#383C4E",
-            dropdown_text_color="#FFFFFF"
+            fg_color=BUTTON_COLOR,
+            text_color=TEXT_COLOR,
+            button_color=BUTTON_HOVER,
+            button_hover_color=("#C1C3C8", "#50556b"), 
+            
+            dropdown_fg_color=menu_bg,          
+            dropdown_hover_color=menu_hover,    
+            dropdown_text_color=menu_text   
         )
         month_from_dropdown.pack(side="left", padx=(0, 15), fill="x", expand=True)
         
         # To selector
-        to_label = ctk.CTkLabel(date_frame, text="To:", font=tuple(custom_font_regular), text_color="white")
+        to_label = ctk.CTkLabel(date_frame, text="To:", font=tuple(custom_font_regular), text_color=TEXT_COLOR)
         to_label.pack(side="left", padx=(0, 5))
         
+        current_mode = ctk.get_appearance_mode()
+        menu_bg = BUTTON_COLOR[0] if current_mode == "Light" else BUTTON_COLOR[1]
+        menu_text = TEXT_COLOR[0] if current_mode == "Light" else TEXT_COLOR[1]
+        menu_hover = BUTTON_HOVER[0] if current_mode == "Light" else BUTTON_HOVER[1]
         self.month_to_var = ctk.StringVar(value=self.months[-1] if self.months else "")
         month_to_dropdown = ctk.CTkOptionMenu(
             date_frame, 
@@ -218,43 +229,44 @@ class ReportPage(SC):
             variable=self.month_to_var,
             font=("Arial", 14),
             dropdown_font=("Arial", 14),
-            fg_color="#2A2E3F",
-            text_color="#FFFFFF",
-            button_color="#383C4E",
-            button_hover_color="#50556b",
-            dropdown_fg_color="#2A2E3F",
-            dropdown_hover_color="#383C4E",
-            dropdown_text_color="#FFFFFF"
+            fg_color=BUTTON_COLOR,
+            text_color=TEXT_COLOR,
+            button_color=BUTTON_HOVER,
+            button_hover_color=("#C1C3C8", "#50556b"), 
+            
+            dropdown_fg_color=menu_bg,          
+            dropdown_hover_color=menu_hover,    
+            dropdown_text_color=menu_text 
         )
         month_to_dropdown.pack(side="left", fill="x", expand=True)
 
         # --- Disease Checklist ---
-        ctk.CTkLabel(self.create_container, text="Select Diseases:", font=tuple(custom_font_bold), text_color="white").pack(anchor="w", pady=(0, 5), padx=10)
-        disease_frame = ctk.CTkScrollableFrame(self.create_container, height=self._scale_value(65, 'y'), fg_color="#2A2E3F")
+        ctk.CTkLabel(self.create_container, text="Select Diseases:", font=tuple(custom_font_bold), text_color=TEXT_COLOR).pack(anchor="w", pady=(0, 5), padx=10)
+        disease_frame = ctk.CTkScrollableFrame(self.create_container, height=self._scale_value(65, 'y'), fg_color=BUTTON_COLOR)
         disease_frame.pack(fill="x", pady=(0, 10), padx=10)
 
         if self.diseases:
             for disease in self.diseases:
                 var = ctk.BooleanVar(value=True) 
-                cb = ctk.CTkCheckBox(disease_frame, text=disease.replace("_", " "), variable=var, text_color="white")
+                cb = ctk.CTkCheckBox(disease_frame, text=disease.replace("_", " "), variable=var, text_color=TEXT_COLOR)
                 cb.pack(anchor="w", pady=3, padx=5)
                 self.selected_diseases[disease] = var
         else:
-            ctk.CTkLabel(disease_frame, text="No diseases found", text_color="gray").pack()
+            ctk.CTkLabel(disease_frame, text="No diseases found", text_color=TEXT_COLOR).pack()
 
         # --- Pest Checklist ---
-        ctk.CTkLabel(self.create_container, text="Select Pests:", font=tuple(custom_font_bold), text_color="white").pack(anchor="w", pady=(0, 5), padx=10)
-        pest_frame = ctk.CTkScrollableFrame(self.create_container, height=self._scale_value(65, 'y'), fg_color="#2A2E3F")
+        ctk.CTkLabel(self.create_container, text="Select Pests:", font=tuple(custom_font_bold), text_color=TEXT_COLOR).pack(anchor="w", pady=(0, 5), padx=10)
+        pest_frame = ctk.CTkScrollableFrame(self.create_container, height=self._scale_value(65, 'y'), fg_color=BUTTON_COLOR)
         pest_frame.pack(fill="x", pady=(0, 15), padx=10)
 
         if self.pests:
             for pest in self.pests:
                 var = ctk.BooleanVar(value=True) 
-                cb = ctk.CTkCheckBox(pest_frame, text=pest.replace("_", " "), variable=var, text_color="white")
+                cb = ctk.CTkCheckBox(pest_frame, text=pest.replace("_", " "), variable=var, text_color=TEXT_COLOR)
                 cb.pack(anchor="w", pady=3, padx=5)
                 self.selected_pests[pest] = var
         else:
-            ctk.CTkLabel(pest_frame, text="No pests found", text_color="gray").pack()
+            ctk.CTkLabel(pest_frame, text="No pests found", text_color=TEXT_COLOR).pack()
 
     # --- TOGGLE LOGIC ---
     def show_create_view(self):
@@ -272,8 +284,12 @@ class ReportPage(SC):
             y=self._scale_value(320, 'y')
         )
 
-        self.create_tab_btn.configure(fg_color="#50556b", hover_color="#50556b")
-        self.view_tab_btn.configure(fg_color=LEFT_PANEL_COLOR, hover_color="#50556b")
+        # ---> FIX: Use the inline tuple for the active/hover states <---
+        active_tab_color = ("#C1C3C8", "#50556b")
+        
+        self.create_tab_btn.configure(fg_color=active_tab_color, hover_color=active_tab_color)
+        self.view_tab_btn.configure(fg_color=LEFT_PANEL_COLOR, hover_color=active_tab_color)
+
 
     def show_view_list(self):
         self.current_view = "view"
@@ -290,8 +306,11 @@ class ReportPage(SC):
             y=self._scale_value(320, 'y')
         )
 
-        self.view_tab_btn.configure(fg_color="#50556b", hover_color="#50556b")
-        self.create_tab_btn.configure(fg_color=LEFT_PANEL_COLOR, hover_color="#50556b")
+        # ---> FIX: Use the inline tuple for the active/hover states <---
+        active_tab_color = ("#C1C3C8", "#50556b")
+        
+        self.view_tab_btn.configure(fg_color=active_tab_color, hover_color=active_tab_color)
+        self.create_tab_btn.configure(fg_color=LEFT_PANEL_COLOR, hover_color=active_tab_color)
 
         self.refresh_reports_list()
 
@@ -306,16 +325,17 @@ class ReportPage(SC):
         reports.sort(reverse=True)
 
         if not reports:
-            ctk.CTkLabel(self.view_container, text="No reports generated yet.", text_color="gray").pack(pady=20)
+            ctk.CTkLabel(self.view_container, text="No reports generated yet.", text_color=TEXT_COLOR).pack(pady=20)
             return
 
         for report in reports:
             btn = ctk.CTkButton(
                 self.view_container,
                 text=report,
+                text_color=TEXT_COLOR,
                 anchor="w", 
-                fg_color="#2A2E3F",
-                hover_color="#3a3f57",
+                fg_color=BUTTON_COLOR,
+                hover_color=BUTTON_HOVER,
                 command=lambda r=report: self.render_pdf_to_viewer(os.path.join(reports_dir, r))
             )
             btn.pack(fill="x", pady=2, padx=5)
@@ -344,7 +364,7 @@ class ReportPage(SC):
         popup = ctk.CTkToplevel(self.root)
         popup.title("Delete Report")
         popup.geometry(f"{popup_width}x{popup_height}+{x}+{y}")
-        popup.configure(fg_color="#202332")
+        popup.configure(fg_color=BG_COLOR)
         popup.transient(self.root)
         
         popup.after(50, lambda: (popup.lift(), popup.focus_force(), popup.grab_set()))
@@ -352,7 +372,7 @@ class ReportPage(SC):
         label = ctk.CTkLabel(
             popup, 
             text=f"Delete '{report_filename}'?", 
-            text_color="white", 
+            text_color=TEXT_COLOR, 
             font=("Arial", scale_val(12, 'y'), "bold")
         )
         label.pack(pady=scale_val(20, 'y'))
@@ -368,7 +388,7 @@ class ReportPage(SC):
                 if self.current_viewed_report == report_path:
                     for widget in self.viewer_frame.winfo_children():
                         widget.destroy()
-                    self.viewer_placeholder = ctk.CTkLabel(self.viewer_frame, text="Select or generate a report to view.", text_color="gray")
+                    self.viewer_placeholder = ctk.CTkLabel(self.viewer_frame, text="Select or generate a report to view.", text_color=TEXT_COLOR)
                     self.viewer_placeholder.pack(pady=50)
                     self.current_viewed_report = None
                     
@@ -385,7 +405,7 @@ class ReportPage(SC):
         del_btn.pack(side="left", expand=True, padx=5)
 
         cancel_btn = ctk.CTkButton(
-            btn_frame, text="Cancel", fg_color="#2A2E3F", hover_color="#383C4E", 
+            btn_frame, text="Cancel", fg_color=BUTTON_COLOR, hover_color=BUTTON_HOVER, 
             width=scale_val(100, 'x'), command=popup.destroy
         )
         cancel_btn.pack(side="right", expand=True, padx=5)
@@ -484,7 +504,7 @@ class ReportPage(SC):
         popup = ctk.CTkToplevel(self.root)
         popup.title("Name Your Report")
         popup.geometry(f"{popup_width}x{popup_height}+{x}+{y}")
-        popup.configure(fg_color="#202332")
+        popup.configure(fg_color=BG_COLOR)
         popup.transient(self.root)
 
         popup.after(50, lambda: (
@@ -493,14 +513,14 @@ class ReportPage(SC):
             popup.grab_set()
         ))
 
-        label = ctk.CTkLabel(popup, text="Enter report name:", text_color="white", font=scaled_label_font)
+        label = ctk.CTkLabel(popup, text="Enter report name:", text_color=TEXT_COLOR, font=scaled_label_font)
         label.pack(pady=scaled_pady_10)
 
         entry = ctk.CTkEntry(
             popup,
             justify="center",
-            fg_color="#333645",
-            text_color="#FFFFFF",
+            fg_color=BG_COLOR,
+            text_color=TEXT_COLOR,
             width=scaled_button_width,
             font=scaled_label_font,
             placeholder_text="e.g., Weekly Report"
@@ -550,9 +570,10 @@ class ReportPage(SC):
         confirm_btn = ctk.CTkButton(
             popup,
             text="Generate Report",
+            text_color=TEXT_COLOR,
             command=on_confirm,
-            fg_color="#2A2E3F",
-            hover_color="#3a3f57",
+            fg_color=BUTTON_COLOR,
+            hover_color=BUTTON_HOVER,
             height=scaled_button_height,
             width=scaled_button_width,
             font=scaled_label_font
@@ -566,8 +587,8 @@ class ReportPage(SC):
             popup,
             text="Cancel",
             command=on_cancel,
-            fg_color="#2A2E3F",
-            hover_color="#383C4E",
+            fg_color=BUTTON_COLOR,
+            hover_color=BUTTON_HOVER,
             height=scaled_button_height,
             width=scaled_button_width,
             font=scaled_label_font

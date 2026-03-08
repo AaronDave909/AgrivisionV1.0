@@ -9,7 +9,7 @@ from matplotlib.figure import Figure
 import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
 import matplotlib.colors as mcolors
-from shared_components import SharedComponents as SC, BUTTON_HOVER, BUTTON_COLOR, custom_font_title, LEFT_PANEL_WIDTH, LEFT_PANEL_COLOR # Import scaled font
+from shared_components import TEXT_COLOR, SharedComponents as SC, BUTTON_HOVER, BUTTON_COLOR, custom_font_title, LEFT_PANEL_WIDTH, LEFT_PANEL_COLOR # Import scaled font
 
 # ===============================
 # Disease Risk Calculation Functions
@@ -94,11 +94,17 @@ class PredictPage(SC):
         scaled_img_size = (self._scale_value(30, 'x'), self._scale_value(30, 'y'))
 
         try:
-            self.undo_icon = ctk.CTkImage(light_image=Image.open("_image_assets/Undo.png"), size=scaled_img_size)
+            # ---> FIX: A quick helper function to handle the light/dark flip <---
+            def get_dual_icon(path):
+                img_white = Image.open(path).convert("RGBA")
+                img_dark = self._recolor_icon(path, hex_color=TEXT_COLOR[0])
+                return ctk.CTkImage(light_image=img_dark, dark_image=img_white, size=scaled_img_size)
+
+            self.undo_icon = get_dual_icon("_image_assets/Undo.png")
        
         except Exception as e:
             print(f"Error loading button icons: {e}. Please check _image_assets folder.")
-            self.all_icon = self.temp_icon = self.hum_icon = self.pres_icon = self.disease_icon = self.pest_icon = self.undo_icon = None
+            self.undo_icon = None
         
         x_pos = self._scale_value(LEFT_PANEL_WIDTH / 2, 'x')
         y_manual = self._scale_value(200, 'y')
@@ -107,12 +113,13 @@ class PredictPage(SC):
         
         btn_font = ("Arial", 10)
         
+        # ---> FIX: Swapped hardcoded colors for magic tuples <---
         self.manual_button = ctk.CTkButton(
             self.left_panel, text="Manual Input",
             width=scaled_button_width, height=scaled_button_height,
             command=lambda: self.show_view("manual"),
-            fg_color=LEFT_PANEL_COLOR, hover_color="#50556b",
-            corner_radius=5, text_color="white", font=btn_font
+            fg_color=LEFT_PANEL_COLOR, hover_color=BUTTON_HOVER,
+            corner_radius=5, text_color=TEXT_COLOR, font=btn_font
         )
         self.manual_button.place(x=x_pos, y=y_manual, anchor="center")
         
@@ -120,17 +127,17 @@ class PredictPage(SC):
             self.left_panel, text="Auto Weather",
             width=scaled_button_width, height=scaled_button_height,
             command=lambda: self.show_view("auto"),
-            fg_color=LEFT_PANEL_COLOR, hover_color="#50556b",
-            corner_radius=5, text_color="white", font=btn_font
+            fg_color=LEFT_PANEL_COLOR, hover_color=BUTTON_HOVER,
+            corner_radius=5, text_color=TEXT_COLOR, font=btn_font
         )
         self.auto_button.place(x=x_pos, y=y_auto, anchor="center")
         
         self.return_button = ctk.CTkButton(
-                                            self.left_panel, text="Return",
-                                            width=scaled_button_width, height=scaled_button_height,
-                                            image=self.undo_icon, command=self.go_back_to_dashboard,
-                                            fg_color=LEFT_PANEL_COLOR, hover_color="#50556b",
-                                            corner_radius=5, text_color="white", font=btn_font, anchor="w"
+            self.left_panel, text=" Return", # Added a space to match your previous style!
+            width=scaled_button_width, height=scaled_button_height,
+            image=self.undo_icon, command=self.go_back_to_dashboard,
+            fg_color=LEFT_PANEL_COLOR, hover_color=BUTTON_HOVER,
+            corner_radius=5, text_color=TEXT_COLOR, font=btn_font, anchor="w"
         )
         self.return_button.place(x=x_pos, y=y_return, anchor="center")
 
@@ -155,35 +162,35 @@ class PredictPage(SC):
         self.manual_frame.pack(fill="y", pady=100, expand=False)
         
         # Input Frame for Temperature and Humidity
-        input_frame = ctk.CTkFrame(self.manual_frame, fg_color="#383C4E", corner_radius=8)
+        input_frame = ctk.CTkFrame(self.manual_frame, fg_color=LEFT_PANEL_COLOR, corner_radius=8)
         input_frame.pack(fill="x", pady=(0, 15), padx=10)
 
-        input_label = ctk.CTkLabel(input_frame, text="Input Environmental Data", font=("Arial", 12, "bold"))
+        input_label = ctk.CTkLabel(input_frame, text="Input Environmental Data", text_color=TEXT_COLOR ,font=("Arial", 12, "bold"))
         input_label.pack(anchor="w", padx=12, pady=(10, 8))
 
         # Temperature Input
-        temp_label = ctk.CTkLabel(input_frame, text="Temperature (°C):", font=("Arial", 11))
+        temp_label = ctk.CTkLabel(input_frame, text="Temperature (°C):", text_color=TEXT_COLOR, font=("Arial", 11))
         temp_label.pack(anchor="w", padx=12, pady=(0, 3))
         
         self.temp_entry = ctk.CTkEntry(input_frame, placeholder_text="e.g., 22.5")
         self.temp_entry.pack(anchor="w", padx=12, pady=(0, 10), fill="x")
 
         # Humidity Input
-        humidity_label = ctk.CTkLabel(input_frame, text="Relative Humidity (%):", font=("Arial", 11))
+        humidity_label = ctk.CTkLabel(input_frame, text="Relative Humidity (%):", text_color=TEXT_COLOR, font=("Arial", 11))
         humidity_label.pack(anchor="w", padx=12, pady=(0, 3))
         
         self.humidity_entry = ctk.CTkEntry(input_frame, placeholder_text="e.g., 75")
         self.humidity_entry.pack(anchor="w", padx=12, pady=(0, 12), fill="x")
 
         # Calculate Button
-        calc_button = ctk.CTkButton(input_frame, text="Calculate Risk", fg_color=BUTTON_HOVER, hover_color=BUTTON_HOVER, command=self.calculate_risks)
+        calc_button = ctk.CTkButton(input_frame, text="Calculate Risk", text_color=TEXT_COLOR, fg_color=BUTTON_COLOR, hover_color=BUTTON_HOVER, command=self.calculate_risks)
         calc_button.pack(anchor="w", padx=12, pady=(0, 12), fill="x")
 
         # Results Frame
-        results_frame = ctk.CTkFrame(self.manual_frame, fg_color="#383C4E", corner_radius=8)
+        results_frame = ctk.CTkFrame(self.manual_frame, fg_color=LEFT_PANEL_COLOR, corner_radius=8)
         results_frame.pack(fill="x", pady=(0, 10), padx=10)
 
-        results_label = ctk.CTkLabel(results_frame, text="Risk Assessment Results", font=("Arial", 12, "bold"))
+        results_label = ctk.CTkLabel(results_frame, text="Risk Assessment Results", text_color=TEXT_COLOR, font=("Arial", 12, "bold"))
         results_label.pack(anchor="w", padx=12, pady=(10, 8))
 
         # Disease risk labels
@@ -200,7 +207,7 @@ class PredictPage(SC):
         self.lmv_label.pack(anchor="w", padx=12, pady=3, fill="x")
 
         # Status message
-        self.status_label = ctk.CTkLabel(results_frame, text="Enter values and click Calculate", font=("Arial", 10), text_color="#888888")
+        self.status_label = ctk.CTkLabel(results_frame, text="Enter values and click Calculate", font=("Arial", 10), text_color=TEXT_COLOR)
         self.status_label.pack(anchor="w", padx=12, pady=(12, 12), fill="x")
 
         # --- Auto Weather View (Chart) ---
@@ -237,32 +244,40 @@ class PredictPage(SC):
             self.auto_button.configure(fg_color=BUTTON_HOVER)
             self.manual_button.configure(fg_color=LEFT_PANEL_COLOR)
             self.manual_frame.pack_forget()
-            self.auto_frame.pack(fill="y", expand=False)
+            
+            # ---> FIX: Tell the frame to fill the entire main container! <---
+            self.auto_frame.pack(fill="both", expand=True, padx=20, pady=20) 
+            
             if self.canvas is None:
                 self.setup_plot()
 
     def setup_plot(self):
         """Initialize matplotlib figures for temperature and humidity"""
-        # Remove old canvas if exists
         if self.canvas:
             self.canvas.get_tk_widget().destroy()
         
-        # Create figure with 2 subplots
-        self.fig = Figure(figsize=(8, 4), dpi=100, facecolor=LEFT_PANEL_COLOR)
+        # ---> FIX: Unpack colors for Matplotlib! <---
+        current_mode = ctk.get_appearance_mode()
+        plot_bg = LEFT_PANEL_COLOR[0] if current_mode == "Light" else LEFT_PANEL_COLOR[1]
+        ax_bg = BUTTON_HOVER[0] if current_mode == "Light" else BUTTON_HOVER[1]
+        text_hex = TEXT_COLOR[0] if current_mode == "Light" else TEXT_COLOR[1]
+        
+        # Create figure with 2 subplots (using plot_bg)
+        self.fig = Figure(figsize=(8, 4), dpi=100, facecolor=plot_bg)
         self.ax_temp = self.fig.add_subplot(121)
         self.ax_hum = self.fig.add_subplot(122)
         
-        # Style the plots
+        # Style the plots (using ax_bg and text_hex)
         for ax in [self.ax_temp, self.ax_hum]:
-            ax.set_facecolor("#383C4E")
+            ax.set_facecolor(ax_bg)
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
-            ax.spines['left'].set_color('white')
-            ax.spines['bottom'].set_color('white')
-            ax.tick_params(colors='white', labelsize=9)
+            ax.spines['left'].set_color(text_hex)
+            ax.spines['bottom'].set_color(text_hex)
+            ax.tick_params(colors=text_hex, labelsize=9)
         
-        self.ax_temp.set_title("Temperature (°C)", color='white', fontsize=11, fontweight='bold')
-        self.ax_hum.set_title("Humidity (%)", color='white', fontsize=11, fontweight='bold')
+        self.ax_temp.set_title("Temperature (°C)", color=text_hex, fontsize=11, fontweight='bold')
+        self.ax_hum.set_title("Humidity (%)", color=text_hex, fontsize=11, fontweight='bold')
         
         self.fig.tight_layout()
         
@@ -271,17 +286,17 @@ class PredictPage(SC):
         self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
         
         # Create info frame below chart
-        info_frame = ctk.CTkFrame(self.auto_frame, fg_color="#383C4E", corner_radius=8)
+        info_frame = ctk.CTkFrame(self.auto_frame, fg_color=BUTTON_HOVER, corner_radius=8)
         info_frame.pack(fill="x", padx=10, pady=(0, 10))
         
-        info_label = ctk.CTkLabel(info_frame, text="Current Values & Risk Index", font=("Arial", 11, "bold"))
+        info_label = ctk.CTkLabel(info_frame, text="Current Values & Risk Index", text_color=TEXT_COLOR, font=("Arial", 11, "bold"))
         info_label.pack(anchor="w", padx=12, pady=(10, 8))
         
         # Current values
-        self.auto_temp_label = ctk.CTkLabel(info_frame, text="Latest Temp: -- °C", font=("Arial", 10))
+        self.auto_temp_label = ctk.CTkLabel(info_frame, text="Latest Temp: -- °C", text_color=TEXT_COLOR, font=("Arial", 10))
         self.auto_temp_label.pack(anchor="w", padx=12, pady=2)
         
-        self.auto_hum_label = ctk.CTkLabel(info_frame, text="Latest Humidity: -- %", font=("Arial", 10))
+        self.auto_hum_label = ctk.CTkLabel(info_frame, text="Latest Humidity: -- %", text_color=TEXT_COLOR, font=("Arial", 10))
         self.auto_hum_label.pack(anchor="w", padx=12, pady=2)
         
         # Risk labels
@@ -298,8 +313,8 @@ class PredictPage(SC):
             label.pack(anchor="w", padx=12, pady=2)
             self.auto_risk_labels[key] = label
         
-        ctk.CTkLabel(info_frame, text="(Auto-updating every 10 seconds)", font=("Arial", 8), text_color="#888888").pack(anchor="w", padx=12, pady=(8, 10))
-
+        ctk.CTkLabel(info_frame, text="(Auto-updating every 10 seconds)", font=("Arial", 8), text_color=TEXT_COLOR).pack(anchor="w", padx=12, pady=(8, 10))
+    
     def update_auto_data(self):
         """Read CSV and update plots periodically"""
         if not self.is_running or self.current_view != "auto":
@@ -367,7 +382,12 @@ class PredictPage(SC):
         self.ax_hum.clear()
 
         def apply_gradient_plot(ax, x, y, title, color_hex):
-            """Apply line plot with gradient fill (from weather_page.py)"""
+            """Apply line plot with gradient fill"""
+            # ---> FIX: Unpack colors for the live updating chart! <---
+            current_mode = ctk.get_appearance_mode()
+            ax_bg = BUTTON_HOVER[0] if current_mode == "Light" else BUTTON_HOVER[1]
+            text_hex = TEXT_COLOR[0] if current_mode == "Light" else TEXT_COLOR[1]
+
             try:
                 val_max, val_min = max(y), min(y)
                 padding = (val_max - val_min) * 0.15 if val_max != val_min else 1.0
@@ -402,9 +422,9 @@ class PredictPage(SC):
                 ax.set_ylim(ymin, ymax)
                 ax.set_xlim(xmin, xmax)
                 
-                # 8. Styling
-                ax.set_title(title, color='white', fontsize=11, fontweight='bold')
-                ax.set_facecolor("#383C4E")
+                # 8. Styling (Using the unpacked colors)
+                ax.set_title(title, color=text_hex, fontsize=11, fontweight='bold')
+                ax.set_facecolor(ax_bg)
                 ax.grid(True, linestyle='--', alpha=0.1, color='gray')
                 
                 # X-Axis ticks
@@ -415,19 +435,19 @@ class PredictPage(SC):
                 ax.xaxis.set_major_locator(ticker.FixedLocator([mdates.date2num(t) for t in ticks]))
                 ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
                 
-                # Spines
+                # Spines (Using the unpacked text_hex)
                 for spine in ax.spines.values():
-                    spine.set_color('white')
+                    spine.set_color(text_hex)
                 ax.spines['top'].set_visible(False)
                 ax.spines['right'].set_visible(False)
-                ax.tick_params(colors='white', labelsize=8)
-                
+                ax.tick_params(colors=text_hex, labelsize=8)
+
             except Exception as e:
                 print(f"Gradient plotting error: {e}")
-                # Fallback: just plot the line without gradient
+                # Fallback
                 ax.plot(x, y, color=color_hex, linewidth=2)
-                ax.set_title(title, color='white', fontsize=11, fontweight='bold')
-                ax.set_facecolor("#383C4E")
+                ax.set_title(title, color=text_hex, fontsize=11, fontweight='bold')
+                ax.set_facecolor(ax_bg)
 
         # Apply the Gradient View
         apply_gradient_plot(self.ax_temp, timestamps, temps, "Temperature Profile", '#FF5733')

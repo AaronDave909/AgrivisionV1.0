@@ -3,7 +3,7 @@ from PIL import Image
 import cv2
 import os
 from ultralytics import YOLO
-from shared_components import SharedComponents as SC, LEFT_PANEL_WIDTH
+from shared_components import BG_COLOR, BUTTON_COLOR, BUTTON_HOVER, LEFT_PANEL_COLOR, TEXT_COLOR, SharedComponents as SC, LEFT_PANEL_WIDTH
 import datetime
 import json
 
@@ -96,20 +96,20 @@ class AnalysisPage(SC):
         info_panel_w = self._scale_value(213, 'x')
         info_panel_h = self._scale_value(480, 'y')
 
-        self.info_frame = ctk.CTkFrame(self.root, width=info_panel_w, height=info_panel_h, fg_color="#2A2E3F")
+        self.info_frame = ctk.CTkFrame(self.root, width=info_panel_w, height=info_panel_h, fg_color=BG_COLOR)
         self.info_frame.pack_propagate(False) 
 
-        title = ctk.CTkLabel(self.info_frame, text="Analysis Results", font=ctk.CTkFont(size=20, weight="bold"), text_color="white")
+        title = ctk.CTkLabel(self.info_frame, text="Analysis Results", font=ctk.CTkFont(size=20, weight="bold"), text_color=TEXT_COLOR)
         title.pack(pady=(20, 15), padx=10)
 
         # Helper function to create uniform label pairs
         def create_info_row(parent, label_text):
-            row_frame = ctk.CTkFrame(parent, fg_color="transparent")
+            row_frame = ctk.CTkFrame(parent, fg_color=BG_COLOR) #not sure
             
-            label_widget = ctk.CTkLabel(row_frame, text=f"{label_text}:", font=ctk.CTkFont(size=14, weight="bold"), text_color="white", anchor="w")
+            label_widget = ctk.CTkLabel(row_frame, text=f"{label_text}:", font=ctk.CTkFont(size=14, weight="bold"), text_color=TEXT_COLOR, anchor="w")
             label_widget.pack(side="left", padx=(10, 5))
             
-            value_label = ctk.CTkLabel(row_frame, text="---", font=ctk.CTkFont(size=14), anchor="w", text_color="white")
+            value_label = ctk.CTkLabel(row_frame, text="---", font=ctk.CTkFont(size=14), anchor="w", text_color=TEXT_COLOR)
             value_label.pack(side="left", expand=True, fill="x", padx=5)
             
             row_frame.pack(fill="x", pady=8)
@@ -144,7 +144,7 @@ class AnalysisPage(SC):
         
         btn = ctk.CTkButton(
             self.root, text="", width=scaled_width, height=scaled_height,
-            image=save_photo, compound="top", command=command, fg_color="#2A2E3F", hover_color="#2A2E3F",
+            image=save_photo, compound="top", command=command, fg_color=LEFT_PANEL_COLOR, hover_color=BUTTON_HOVER,
         )
         btn.place(x=scaled_x, y=scaled_y, anchor="center")
 
@@ -174,7 +174,7 @@ class AnalysisPage(SC):
         btn = ctk.CTkButton(
             self.root, text="", width=scaled_width, height=scaled_height,
             image=trash_photo, compound="top", command=command,
-            fg_color="#2A2E3F", hover_color="#2A2E3F", corner_radius=0
+            fg_color=LEFT_PANEL_COLOR, hover_color=BUTTON_HOVER, corner_radius=0
         )
         btn.place(x=scaled_x, y=scaled_y)
         btn.image = trash_photo

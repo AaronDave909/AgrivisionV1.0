@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from shared_components import SharedComponents as SC, LEFT_PANEL_WIDTH
+from shared_components import BG_COLOR, SharedComponents as SC, LEFT_PANEL_WIDTH
 import os
 import datetime 
 from PIL import Image
@@ -13,6 +13,10 @@ import json
 from collections import defaultdict
 import numpy as np
 import matplotlib.colors as mcolors
+from shared_components import (
+    custom_font_bold, custom_font_title, custom_font_regular, 
+    BUTTON_COLOR, BUTTON_HOVER, TEXT_COLOR, LEFT_PANEL_COLOR
+)
 # ---------------------
 
 def get_latest_weather_averages(csv_path="Page_files/weather.csv"):
@@ -135,7 +139,7 @@ class WeatherPage(SC):
 
             season = ""
             sub_text = ""
-            color = "#FFFFFF" 
+            color = TEXT_COLOR
 
             if current_month in [11, 12, 1, 2]: # November - February
                 season = "Dry Season (Cool)"
@@ -335,23 +339,28 @@ class WeatherPage(SC):
             selector_row_frame, 
             text="Select Date:",
             font=("Arial", self._scale_value(14, 'y')),
-            text_color="white"
+            text_color=TEXT_COLOR
         )
         self.filter_label.pack(side="left", padx=(5, 5))
 
+        current_mode = ctk.get_appearance_mode()
+        menu_bg = BUTTON_COLOR[0] if current_mode == "Light" else BUTTON_COLOR[1]
+        menu_text = TEXT_COLOR[0] if current_mode == "Light" else TEXT_COLOR[1]
+        menu_hover = BUTTON_HOVER[0] if current_mode == "Light" else BUTTON_HOVER[1]
         self.filter_selector = ctk.CTkOptionMenu(
             selector_row_frame,
             values=["Today"], 
             command=self.on_filter_selected,
             font=("Arial", self._scale_value(14, 'y')),
             dropdown_font=("Arial", self._scale_value(20, 'y')),
-            fg_color="#2A2E3F",
-            text_color="#FFFFFF",
-            button_color="#383C4E",
-            button_hover_color="#50556b",
-            dropdown_fg_color="#2A2E3F",
-            dropdown_hover_color="#383C4E",
-            dropdown_text_color="#FFFFFF"
+            fg_color=BUTTON_COLOR,
+            text_color=TEXT_COLOR,
+            button_color=BUTTON_HOVER,
+            button_hover_color=("#C1C3C8", "#50556b"), 
+            
+            dropdown_fg_color=menu_bg,          
+            dropdown_hover_color=menu_hover,    
+            dropdown_text_color=menu_text 
         )
         self.filter_selector.set("Today")
         self.filter_selector.pack(side="left", padx=(0, 10))
@@ -369,7 +378,7 @@ class WeatherPage(SC):
             self.date_filter_frame, 
             text="", 
             font=("Arial", 12, "bold"), 
-            text_color="white" 
+            text_color=TEXT_COLOR 
         )
         self.season_label.pack(side="top", anchor="e", padx=(0, 10)) 
 
@@ -377,7 +386,7 @@ class WeatherPage(SC):
             self.date_filter_frame, 
             text="", 
             font=("Arial", 12), 
-            text_color="white" 
+            text_color=TEXT_COLOR
         )
         self.season_sub_label.pack(side="top", anchor="e", padx=(0, 10))
 
@@ -389,13 +398,19 @@ class WeatherPage(SC):
         scaled_padding = self._scale_value(10, 'y')
         
         try:
-            self.all_icon = ctk.CTkImage(light_image=Image.open("_image_assets/all_data.png"), size=scaled_img_size)
-            self.temp_icon = ctk.CTkImage(light_image=Image.open("_image_assets/temperature.png"), size=scaled_img_size)
-            self.hum_icon = ctk.CTkImage(light_image=Image.open("_image_assets/humidity.png"), size=scaled_img_size)
-            self.pres_icon = ctk.CTkImage(light_image=Image.open("_image_assets/pressure.png"), size=scaled_img_size)
-            self.disease_icon = ctk.CTkImage(light_image=Image.open("_image_assets/disease_icon.png"), size=scaled_img_size) 
-            self.pest_icon = ctk.CTkImage(light_image=Image.open("_image_assets/pest_icon.png"), size=scaled_img_size)
-            self.undo_icon = ctk.CTkImage(light_image=Image.open("_image_assets/Undo.png"), size=scaled_img_size)
+            # ---> FIX: A quick helper function to handle the light/dark flip for all icons! <---
+            def get_dual_icon(path):
+                img_white = Image.open(path).convert("RGBA")
+                img_dark = self._recolor_icon(path, hex_color=TEXT_COLOR[0])
+                return ctk.CTkImage(light_image=img_dark, dark_image=img_white, size=scaled_img_size)
+
+            self.all_icon = get_dual_icon("_image_assets/all_data.png")
+            self.temp_icon = get_dual_icon("_image_assets/temperature.png")
+            self.hum_icon = get_dual_icon("_image_assets/humidity.png")
+            self.pres_icon = get_dual_icon("_image_assets/pressure.png")
+            self.disease_icon = get_dual_icon("_image_assets/disease_icon.png") 
+            self.pest_icon = get_dual_icon("_image_assets/pest_icon.png")
+            self.undo_icon = get_dual_icon("_image_assets/Undo.png")
        
         except Exception as e:
             print(f"Error loading button icons: {e}. Please check _image_assets folder.")
@@ -415,50 +430,50 @@ class WeatherPage(SC):
         btn_anchor = "w"
 
         self.all_button = ctk.CTkButton(self.left_panel, text=" All Data", width=scaled_button_width, height=scaled_button_height, image=self.all_icon, command=lambda: self.show_view("all"), 
-                                        fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
-                                        text_color="white", font=btn_font, anchor=btn_anchor)
+                                        fg_color=BUTTON_COLOR, hover_color=BUTTON_HOVER, corner_radius=5, 
+                                        text_color=TEXT_COLOR, font=btn_font, anchor=btn_anchor)
         self.all_button.place(x=x_pos, y=y_all, anchor="center")
 
         self.temp_button = ctk.CTkButton(self.left_panel, text=" Temperature", 
                                          width=scaled_button_width, height=scaled_button_height, 
                                          image=self.temp_icon, command=lambda: self.show_view("temp"), 
-                                         fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
-                                         text_color="white", font=btn_font, anchor=btn_anchor)
+                                         fg_color=BUTTON_COLOR, hover_color=BUTTON_HOVER, corner_radius=5, 
+                                         text_color=TEXT_COLOR, font=btn_font, anchor=btn_anchor)
         self.temp_button.place(x=x_pos, y=y_temp, anchor="center")
 
         self.hum_button = ctk.CTkButton(self.left_panel, text=" Humidity", 
                                         width=scaled_button_width, height=scaled_button_height, 
                                         image=self.hum_icon, command=lambda: self.show_view("hum"), 
-                                        fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
-                                        text_color="white", font=btn_font, anchor=btn_anchor)
+                                        fg_color=BUTTON_COLOR, hover_color=BUTTON_HOVER, corner_radius=5, 
+                                        text_color=TEXT_COLOR, font=btn_font, anchor=btn_anchor)
         self.hum_button.place(x=x_pos, y=y_hum, anchor="center")
         
         self.pres_button = ctk.CTkButton(self.left_panel, text=" Pressure", 
                                          width=scaled_button_width, height=scaled_button_height, 
                                          image=self.pres_icon, command=lambda: self.show_view("pres"), 
-                                         fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
-                                         text_color="white", font=btn_font, anchor=btn_anchor)
+                                         fg_color=BUTTON_COLOR, hover_color=BUTTON_HOVER, corner_radius=5, 
+                                         text_color=TEXT_COLOR, font=btn_font, anchor=btn_anchor)
         self.pres_button.place(x=x_pos, y=y_pres, anchor="center")
 
         self.disease_button = ctk.CTkButton(self.left_panel, text=" Diseases", 
                                          width=scaled_button_width, height=scaled_button_height, 
                                          image=self.disease_icon, command=lambda: self.show_view("disease"), 
-                                         fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
-                                         text_color="white", font=btn_font, anchor=btn_anchor)
+                                         fg_color=BUTTON_COLOR, hover_color=BUTTON_HOVER, corner_radius=5, 
+                                         text_color=TEXT_COLOR, font=btn_font, anchor=btn_anchor)
         self.disease_button.place(x=x_pos, y=y_disease, anchor="center")
         
         self.pest_button = ctk.CTkButton(self.left_panel, text=" Pests", 
                                          width=scaled_button_width, height=scaled_button_height, 
                                          image=self.pest_icon, command=lambda: self.show_view("pest"), 
-                                         fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
-                                         text_color="white", font=btn_font, anchor=btn_anchor)
+                                         fg_color=BUTTON_COLOR, hover_color=BUTTON_HOVER, corner_radius=5, 
+                                         text_color=TEXT_COLOR, font=btn_font, anchor=btn_anchor)
         self.pest_button.place(x=x_pos, y=y_pest, anchor="center")
         
         self.undo_button = ctk.CTkButton(self.left_panel, text=" Return", 
                                          width=scaled_button_width, height=scaled_button_height, 
                                          image=self.undo_icon, command=self.navigate_to_dashboard, 
-                                         fg_color="#2A2E3F", hover_color="#50556b", corner_radius=5, 
-                                         text_color="white", font=btn_font, anchor=btn_anchor)
+                                         fg_color=BUTTON_COLOR, hover_color=BUTTON_HOVER, corner_radius=5, 
+                                         text_color=TEXT_COLOR, font=btn_font, anchor=btn_anchor)
         self.undo_button.place(x=x_pos, y=y_undo, anchor="center")
 
         self.chart_buttons = [
@@ -470,7 +485,7 @@ class WeatherPage(SC):
         chart_frame_x = self._scale_value(LEFT_PANEL_WIDTH, 'x')
         chart_frame_y = self._scale_value(60, 'y') 
         
-        self.chart_frame = ctk.CTkFrame(self.root, fg_color="#202332")
+        self.chart_frame = ctk.CTkFrame(self.root, fg_color=BG_COLOR)
         self.chart_frame.place(
             x=chart_frame_x, 
             y=chart_frame_y,
@@ -510,11 +525,11 @@ class WeatherPage(SC):
             plt.style.use('dark_background') 
             
             self.fig_stacked, (self.ax1, self.ax2, self.ax3) = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
-            self.fig_stacked.patch.set_facecolor("#202332")
+            self.fig_stacked.patch.set_facecolor(BG_COLOR)
             self.fig_stacked.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.15)
             
             self.fig_single, self.ax_single = plt.subplots(1, 1, figsize=(12, 8))
-            self.fig_single.patch.set_facecolor("#202332")
+            self.fig_single.patch.set_facecolor(BG_COLOR)
             self.fig_single.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.15)
             
             self.status_label.pack_forget()
@@ -523,7 +538,7 @@ class WeatherPage(SC):
             self.avg_frame.pack(side=ctk.TOP, fill="x", padx=20, pady=(5, 10))
 
             font_style = ("Arial", 20, "bold")
-            text_color = "#FFFFFF"
+            text_color = TEXT_COLOR
             
             self.temp_avg_label = ctk.CTkLabel(self.avg_frame, text="Temperature Avg: -- °C", font=font_style, text_color=text_color)
             self.hum_avg_label = ctk.CTkLabel(self.avg_frame, text="Humidity Avg: -- %", font=font_style, text_color=text_color)
@@ -551,8 +566,8 @@ class WeatherPage(SC):
             self.status_label.pack(expand=True)
 
     def show_view(self, view_name):
-        default_color = "#2A2E3F"   
-        selected_color = "#202332"  
+        default_color = BUTTON_COLOR   
+        selected_color = BG_COLOR  
         
         # 1. Reset all chart buttons
         for button in self.chart_buttons:
@@ -692,7 +707,7 @@ class WeatherPage(SC):
                 return 
             
         try:
-            ax_color = "#2A2E3F"
+            ax_color = BUTTON_COLOR
             
             if self.ax1: self.ax1.clear()
             if self.ax2: self.ax2.clear()
@@ -775,33 +790,33 @@ class WeatherPage(SC):
                     self._set_dynamic_ylim(self.ax3, filtered_df['Pressure'])
                     self._apply_gradient(self.ax3, filtered_df.index, filtered_df['Pressure'], 'green')
                 
-                self.ax1.set_ylabel('Temperature (°C)', color='white', labelpad=15); self.ax1.grid(True, linestyle='--', alpha=0.3); self.ax1.tick_params(axis='y', colors='white'); self.ax1.tick_params(axis='x', colors='white'); self.ax1.set_facecolor(ax_color)
-                self.ax2.set_ylabel('Humidity (%)', color='white', labelpad=15); self.ax2.grid(True, linestyle='--', alpha=0.3); self.ax2.tick_params(axis='y', colors='white'); self.ax2.tick_params(axis='x', colors='white'); self.ax2.set_facecolor(ax_color)
-                self.ax3.set_ylabel('Pressure (hPa)', color='white', labelpad=15); self.ax3.grid(True, linestyle='--', alpha=0.3); self.ax3.tick_params(axis='y', colors='white'); self.ax3.tick_params(axis='x', colors='white'); self.ax3.set_facecolor(ax_color)
+                self.ax1.set_ylabel('Temperature (°C)', color=TEXT_COLOR, labelpad=15); self.ax1.grid(True, linestyle='--', alpha=0.3); self.ax1.tick_params(axis='y', colors='white'); self.ax1.tick_params(axis='x', colors='white'); self.ax1.set_facecolor(ax_color)
+                self.ax2.set_ylabel('Humidity (%)', color=TEXT_COLOR, labelpad=15); self.ax2.grid(True, linestyle='--', alpha=0.3); self.ax2.tick_params(axis='y', colors='white'); self.ax2.tick_params(axis='x', colors='white'); self.ax2.set_facecolor(ax_color)
+                self.ax3.set_ylabel('Pressure (hPa)', color=TEXT_COLOR, labelpad=15); self.ax3.grid(True, linestyle='--', alpha=0.3); self.ax3.tick_params(axis='y', colors='white'); self.ax3.tick_params(axis='x', colors='white'); self.ax3.set_facecolor(ax_color)
                 
-                self.ax3.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p')); self.ax3.set_xlabel('Time', color='white'); plt.setp(self.ax3.get_xticklabels(), rotation=0, ha="center", color='white')
-                self.fig_stacked.suptitle(f"BME280 Sensor Data ({self.selected_filter})", fontsize=14, color='white')
+                self.ax3.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p')); self.ax3.set_xlabel('Time', color=TEXT_COLOR); plt.setp(self.ax3.get_xticklabels(), rotation=0, ha="center", color='white')
+                self.fig_stacked.suptitle(f"BME280 Sensor Data ({self.selected_filter})", fontsize=14, color=TEXT_COLOR)
                 
                 title = 'Sensor Data'
                 if not filtered_df.empty:
                     if self.current_view == "temp":
-                        title = f"Temperature ({self.selected_filter})"; self.ax_single.set_ylabel('Temperature (°C)', color='white', labelpad=15)
+                        title = f"Temperature ({self.selected_filter})"; self.ax_single.set_ylabel('Temperature (°C)', color=TEXT_COLOR, labelpad=15)
                         self.ax_single.plot(filtered_df.index, filtered_df['Temperature'], color='red', zorder=3)
                         self._set_dynamic_ylim(self.ax_single, filtered_df['Temperature']); self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Temperature'], 'red')
                     elif self.current_view == "hum":
-                        title = f"Humidity ({self.selected_filter})"; self.ax_single.set_ylabel('Humidity (%)', color='white', labelpad=15)
+                        title = f"Humidity ({self.selected_filter})"; self.ax_single.set_ylabel('Humidity (%)', color=TEXT_COLOR, labelpad=15)
                         self.ax_single.plot(filtered_df.index, filtered_df['Humidity'], color='blue', zorder=3)
                         self._set_dynamic_ylim(self.ax_single, filtered_df['Humidity']); self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Humidity'], 'blue')
                     elif self.current_view == "pres":
-                        title = f"Pressure ({self.selected_filter})"; self.ax_single.set_ylabel('Pressure (hPa)', color='white', labelpad=15)
+                        title = f"Pressure ({self.selected_filter})"; self.ax_single.set_ylabel('Pressure (hPa)', color=TEXT_COLOR, labelpad=15)
                         self.ax_single.plot(filtered_df.index, filtered_df['Pressure'], color='green', zorder=3)
                         self._set_dynamic_ylim(self.ax_single, filtered_df['Pressure']); self._apply_gradient(self.ax_single, filtered_df.index, filtered_df['Pressure'], 'green')
                 
-                self.ax_single.grid(True, linestyle='--', alpha=0.3); self.ax_single.tick_params(axis='y', colors='white'); self.ax_single.tick_params(axis='x', colors='white'); self.ax_single.set_facecolor(ax_color)
-                self.ax_single.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p')); self.ax_single.set_xlabel('Time', color='white'); plt.setp(self.ax_single.get_xticklabels(), rotation=0, ha="center", color='white')
+                self.ax_single.grid(True, linestyle='--', alpha=0.3); self.ax_single.tick_params(axis='y', colors=TEXT_COLOR); self.ax_single.tick_params(axis='x', colors=TEXT_COLOR); self.ax_single.set_facecolor(ax_color)
+                self.ax_single.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p')); self.ax_single.set_xlabel('Time', color=TEXT_COLOR); plt.setp(self.ax_single.get_xticklabels(), rotation=0, ha="center", color=TEXT_COLOR)
                 
                 self.ax_single.set_title("") 
-                self.fig_single.suptitle(title, fontsize=14, color='white')
+                self.fig_single.suptitle(title, fontsize=14, color=TEXT_COLOR)
 
             # --- B) PLOT DISEASE/PEST DATA (Bar Charts) ---
             else:
@@ -854,17 +869,17 @@ class WeatherPage(SC):
                      self.ax_single.set_ylim(bottom=0, top=1) 
 
 
-                self.ax_single.set_ylabel('Total Count', color='white', labelpad=15)
+                self.ax_single.set_ylabel('Total Count', color=TEXT_COLOR, labelpad=15)
                 
                 self.ax_single.set_title("") 
-                self.fig_single.suptitle(title, fontsize=14, color='white') 
+                self.fig_single.suptitle(title, fontsize=14, color=TEXT_COLOR) 
 
                 self.ax_single.grid(True, linestyle='--', alpha=0.3, axis='y')
-                self.ax_single.tick_params(axis='y', colors='white')
-                self.ax_single.tick_params(axis='x', colors='white')
+                self.ax_single.tick_params(axis='y', colors=TEXT_COLOR)
+                self.ax_single.tick_params(axis='x', colors=TEXT_COLOR)
                 self.ax_single.set_facecolor(ax_color)
                 
-                plt.setp(self.ax_single.get_xticklabels(), rotation=0, ha="center", color='white', fontsize=10)
+                plt.setp(self.ax_single.get_xticklabels(), rotation=0, ha="center", color=TEXT_COLOR, fontsize=10)
 
             # --- 6. Update both canvases ---
             if self.canvas_stacked: self.canvas_stacked.draw()

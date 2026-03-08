@@ -1,11 +1,14 @@
 import customtkinter as ctk
 from PIL import Image
-from shared_components import SharedComponents as SC, custom_font_regular
+from shared_components import BG_COLOR, SharedComponents as SC, custom_font_regular
 import os
 import random
 import json
 from Pages.analysis_page import AnalysisPage 
-
+from shared_components import (
+    custom_font_bold, custom_font_title, custom_font_regular, 
+    BUTTON_COLOR, BUTTON_HOVER, TEXT_COLOR, LEFT_PANEL_COLOR
+)
 # --- FIX for UnicodeEncodeError ---
 import sys
 import io
@@ -88,9 +91,15 @@ class GalleryPage(SC):
             self.filter_frame, 
             text="Filter by:",
             font=("Arial", self._scale_value(14, 'y')),
-            text_color="white"
+            text_color=TEXT_COLOR
         )
         self.filter_label.pack(side="left", padx=(5, 5))
+
+        # Unpack the colors for the dropdown menu
+        current_mode = ctk.get_appearance_mode()
+        menu_bg = BUTTON_COLOR[0] if current_mode == "Light" else BUTTON_COLOR[1]
+        menu_text = TEXT_COLOR[0] if current_mode == "Light" else TEXT_COLOR[1]
+        menu_hover = BUTTON_HOVER[0] if current_mode == "Light" else BUTTON_HOVER[1]
 
         self.filter_selector = ctk.CTkOptionMenu(
             self.filter_frame,
@@ -98,13 +107,15 @@ class GalleryPage(SC):
             command=self.on_filter_selected,
             font=("Arial", self._scale_value(14, 'y')),
             dropdown_font=("Arial", self._scale_value(20, 'y')),
-            fg_color="#2A2E3F",
-            text_color="#FFFFFF",
-            button_color="#383C4E",
-            button_hover_color="#50556b",
-            dropdown_fg_color="#2A2E3F",
-            dropdown_hover_color="#383C4E",
-            dropdown_text_color="#FFFFFF"
+            
+            fg_color=BUTTON_COLOR,
+            text_color=TEXT_COLOR,
+            button_color=BUTTON_HOVER,
+            button_hover_color=("#C1C3C8", "#50556b"), 
+            
+            dropdown_fg_color=menu_bg,          
+            dropdown_hover_color=menu_hover,    
+            dropdown_text_color=menu_text       
         )
         self.filter_selector.set(self.current_filter)
         self.filter_selector.pack(side="left", padx=(0, 10))
@@ -159,31 +170,42 @@ class GalleryPage(SC):
         self.load_gallery_images(self.gallery_folder_path)
 
     def create_scrollable_gallery(self):
-        
         scaled_x_start = self.scale_x_val(120)
         scaled_scrollbar_width = self.scale_x_val(40)
         
+        # --- FIX: Unpack tuples for standard tkinter components ---
+        current_mode = ctk.get_appearance_mode()
+        # Extract single hex strings from your tuples
+        self.unpacked_bg = BG_COLOR[0] if current_mode == "Light" else BG_COLOR[1]
+        self.unpacked_btn = BUTTON_COLOR[0] if current_mode == "Light" else BUTTON_COLOR[1]
+        self.unpacked_hover = BUTTON_HOVER[0] if current_mode == "Light" else BUTTON_HOVER[1]
+
+        # 1. The Canvas
         self.canvas = ctk.CTkCanvas(
             self.root,
-            bg="#202332",
+            bg=self.unpacked_bg,        # <--- FIX: Use unpacked hex string
             highlightthickness=0
         )
         self.canvas.place(x=scaled_x_start, y=self.scale_y_val(60), relwidth=0.84, relheight=0.85)
 
+        # 2. The Scrollbar
         self.scrollbar = ctk.CTkScrollbar(
             self.root,
             orientation="vertical",
             command=self.canvas.yview,
             width=scaled_scrollbar_width,  
-            fg_color="#222533",   
-            button_color="#4C516D",  
-            button_hover_color="#6A7090", 
+            fg_color=self.unpacked_bg,      # <--- FIX: Use unpacked hex string
+            button_color=self.unpacked_btn, # <--- FIX: Use unpacked hex string
+            button_hover_color=self.unpacked_hover, 
         )
         self.scrollbar.place(relx=1.0, rely=0, relheight=1.0, anchor="ne") 
 
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
 
-        self.scrollable_frame = ctk.CTkFrame(self.canvas, fg_color="#202332")
+        # 3. The Inner Frame
+        # CTkFrame usually handles tuples, but inside a Canvas window, 
+        # it's safer to use the unpacked hex.
+        self.scrollable_frame = ctk.CTkFrame(self.canvas, fg_color=self.unpacked_bg)
 
         self.scrollable_frame.bind(
             "<Configure>",
@@ -192,7 +214,7 @@ class GalleryPage(SC):
 
         self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
 
-        # Load the gallery images (will now use the default "All Captures" filter)
+        # Load the gallery images
         self.load_gallery_images(self.gallery_folder_path)
 
     def _load_master_json(self, json_path):
@@ -284,14 +306,19 @@ class GalleryPage(SC):
             
             valid_image_index += 1 # Increment index ONLY for valid images
 
+            # 1. Create the container frame
             frame = ctk.CTkFrame(
                 self.scrollable_frame, 
                 width=panel_width, 
                 height=panel_height, 
-                fg_color="#2A2E3F", 
+                fg_color=self.unpacked_bg, # This is where you were pasting the color
                 corner_radius=self.scale_x_val(10)
             )
-            frame.grid(row=row, column=col, padx=spacing, pady=spacing)
+            # 2. Add this line to LOCK the size
+            frame.grid_propagate(False) 
+            
+            # 3. Use 'sticky' to ensure it fills the grid slot
+            frame.grid(row=row, column=col, padx=spacing, pady=spacing, sticky="nsew")
 
             # Image button
             img_button = ctk.CTkButton(
@@ -300,8 +327,8 @@ class GalleryPage(SC):
                 text="",
                 width=image_width,
                 height=image_height,
-                fg_color="transparent",
-                hover_color="#3B3F51",
+                fg_color=BUTTON_COLOR,
+                hover_color=BUTTON_HOVER,
                 command=lambda path=file_path: self.open_analysis_view(path)
             )
             img_button.image = ctk_img
@@ -312,7 +339,7 @@ class GalleryPage(SC):
             name_label = ctk.CTkLabel(
                 frame, 
                 text=name, 
-                text_color="white", 
+                text_color=TEXT_COLOR, 
                 font=scaled_name_font 
             )
             name_label.place(relx=0.5, rely=0.9, anchor="center")

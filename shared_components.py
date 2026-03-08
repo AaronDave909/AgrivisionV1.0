@@ -11,10 +11,12 @@ import matplotlib.ticker as ticker
 ORIGINAL_WIDTH = 800
 ORIGINAL_HEIGHT = 480
 LEFT_PANEL_WIDTH = 107
-LEFT_PANEL_COLOR = "#2A2E3F"
-BG_COLOR = "#202332"
-BUTTON_COLOR = "#2A2E3F"
-BUTTON_HOVER = "#383C4E"
+# The Magic Tuples: ("Light Mode Color", "Dark Mode Color")
+BG_COLOR = ("#F8F8F8", "#202332")         # Pure white / Darkest blue
+LEFT_PANEL_COLOR = ("#F0F2F5", "#2F3344")     # Very light gray-blue / Dark panel blue
+BUTTON_COLOR = ("#E4E6EB", "#2A2E3F")         # Light gray / Dark panel blue
+BUTTON_HOVER = ("#D8DADF", "#383C4E")         # Slightly darker gray / Lighter dark blue
+TEXT_COLOR = ("#0A1128", "#FFFFFF")           # Dark Dark Blue / Pure White
 
 ADJUSTED_HEIGHT_MARGIN_PIXELS = 40
 
@@ -86,20 +88,38 @@ class SharedComponents:
         
         self._calculate_scaling_factors()
 
+    def _recolor_icon(self, image_path, hex_color):
+        """Dynamically recolors a white transparent PNG to a new hex color."""
+        # 1. Open the original image
+        original = Image.open(image_path).convert("RGBA")
+        
+        # 2. Extract just the transparency layer (the shape of the icon)
+        alpha_mask = original.split()[3] 
+        
+        # 3. Create a brand new solid block of the target color
+        color_block = Image.new("RGBA", original.size, color=hex_color)
+        
+        # 4. Cookie-cutter the solid block using the original alpha shape!
+        color_block.putalpha(alpha_mask)
+        
+        return color_block
+
     def create_leaf_image(self, image_path="_image_assets/Leaf.png", x=5, y=5, size=(100, 100)):
-        # Scale position and size
         scaled_x = self._scale_value(x, 'x')
         scaled_y = self._scale_value(y, 'y')
         scaled_size = (self._scale_value(size[0], 'x'), self._scale_value(size[1], 'y'))
 
-        leaf_img = Image.open(image_path).convert("RGBA")
-        leaf_img = leaf_img.resize(scaled_size)
+        img_white = Image.open(image_path).convert("RGBA")
+        
+        img_dark = self._recolor_icon(image_path, hex_color=TEXT_COLOR[0])
 
-        transparent_bg = Image.new("RGBA", leaf_img.size, (42, 46, 63))
-        transparent_bg.paste(leaf_img, (0, 0), leaf_img)
-
-        leaf_ctk = ctk.CTkImage(light_image=transparent_bg, dark_image=transparent_bg, size=scaled_size)
-        self.leaf_label = ctk.CTkLabel(self.root, image=leaf_ctk, text="")
+        leaf_ctk = ctk.CTkImage(
+            light_image=img_dark,  
+            dark_image=img_white,  
+            size=scaled_size
+        )
+        
+        self.leaf_label = ctk.CTkLabel(self.root, image=leaf_ctk, text="", fg_color=LEFT_PANEL_COLOR)
         self.leaf_label.place(x=scaled_x, y=scaled_y)
         self.leaf_label.image = leaf_ctk  
         return self.leaf_label
@@ -113,8 +133,8 @@ class SharedComponents:
                 self.root,
                 text=text,
                 font=tuple(custom_font_title), # FIX: Convert list to tuple
-                text_color="#FFFFFF",
-                fg_color=BG_COLOR
+                text_color=TEXT_COLOR,         # <--- CHANGE THIS LINE!
+                fg_color="transparent"
             )
             self.title_label.place(x=scaled_x, y=scaled_y)
         else:
@@ -156,8 +176,8 @@ class SharedComponents:
             image=record_photo,
             compound="top",
             command=command,
-            fg_color="#2A2E3F",
-            hover_color="#2A2E3F",
+            fg_color=LEFT_PANEL_COLOR,
+            hover_color=LEFT_PANEL_COLOR,
             corner_radius=0
         )
         btn.place(x=scaled_x, y=scaled_y, anchor="center")
@@ -173,7 +193,6 @@ class SharedComponents:
         return btn
 
     def settings_button(self, command=None):
-        # Scale image size, position, width, height, and hover offset
         scaled_img_size = (self._scale_value(80, 'x'), self._scale_value(80, 'y'))
         scaled_width = self._scale_value(80, 'x')
         scaled_height = self._scale_value(80, 'y')
@@ -182,8 +201,11 @@ class SharedComponents:
         scaled_y = self._scale_value(y, 'y')
         scaled_hover_offset = self._scale_value(5, 'y')
 
-        settings_img = Image.open("_image_assets/Settings.png").resize(scaled_img_size)
-        settings_photo = ctk.CTkImage(light_image=settings_img, dark_image=settings_img, size=scaled_img_size) 
+        image_path = "_image_assets/Settings.png"
+        img_white = Image.open(image_path).convert("RGBA")
+        img_dark = self._recolor_icon(image_path, hex_color=TEXT_COLOR[0])
+
+        settings_photo = ctk.CTkImage(light_image=img_dark, dark_image=img_white, size=scaled_img_size) 
 
         btn = ctk.CTkButton(
             self.root,
@@ -193,8 +215,8 @@ class SharedComponents:
             image=settings_photo,
             compound="top",
             command=command,
-            fg_color="#2A2E3F",
-            hover_color="#2A2E3F",
+            fg_color=LEFT_PANEL_COLOR,
+            hover_color=LEFT_PANEL_COLOR,
             corner_radius=0
         )
         btn.place(x=scaled_x, y=scaled_y)
@@ -210,7 +232,6 @@ class SharedComponents:
         return btn
 
     def undo_button(self,command=None):
-        # Scale image size, position, width, height, and hover offset
         scaled_img_size = (self._scale_value(80, 'x'), self._scale_value(80, 'y'))
         scaled_width = self._scale_value(80, 'x')
         scaled_height = self._scale_value(80, 'y')
@@ -219,8 +240,11 @@ class SharedComponents:
         scaled_y = self._scale_value(y, 'y')
         scaled_hover_offset = self._scale_value(5, 'y')
 
-        undo_img = Image.open("_image_assets/Undo.png")
-        undo_photo = ctk.CTkImage(light_image=undo_img, dark_image=undo_img, size=scaled_img_size)
+        image_path = "_image_assets/Undo.png"
+        img_white = Image.open(image_path).convert("RGBA")
+        img_dark = self._recolor_icon(image_path, hex_color=TEXT_COLOR[0])
+        
+        undo_photo = ctk.CTkImage(light_image=img_dark, dark_image=img_white, size=scaled_img_size)
         
         btn = ctk.CTkButton(
             self.root,
@@ -230,8 +254,8 @@ class SharedComponents:
             image=undo_photo,
             compound="top",
             command=command,
-            fg_color="#2A2E3F",
-            hover_color="#2A2E3F",
+            fg_color=LEFT_PANEL_COLOR,
+            hover_color=LEFT_PANEL_COLOR,
             corner_radius=0
         )
         btn.place(x=scaled_x, y=scaled_y)
@@ -277,9 +301,20 @@ class SharedComponents:
         # Scale image size
         scaled_size = (self._scale_value(size[0], 'x'), self._scale_value(size[1], 'y'))
         try:
-            futures_img = Image.open("_image_assets/futures.png")
-            futures_ctk = ctk.CTkImage(light_image=futures_img, dark_image=futures_img, size=scaled_size)
+            image_path = "_image_assets/futures.png"
+            
+            # ---> FIX: Load original and generate the dark version <---
+            img_white = Image.open(image_path).convert("RGBA")
+            img_dark = self._recolor_icon(image_path, hex_color=TEXT_COLOR[0])
+
+            # ---> FIX: Hand both versions to CustomTkinter <---
+            futures_ctk = ctk.CTkImage(
+                light_image=img_dark,   # Displays in Light Mode
+                dark_image=img_white,   # Displays in Dark Mode
+                size=scaled_size
+            )
             return futures_ctk
+            
         except Exception as e:
             print(f"Error loading futures icon: {e}")
             return None
@@ -310,6 +345,7 @@ class SharedComponents:
             command=command,
             image=image,
             compound=compound,
+            text_color=TEXT_COLOR
         )
         button.place(x=scaled_x, y=scaled_y)
 
@@ -349,7 +385,7 @@ class SharedComponents:
                 panel,
                 text=text,
                 font=tuple(custom_font_bold), # FIX: Convert list to tuple
-                text_color="#FFFFFF",
+                text_color=TEXT_COLOR, # <--- CHANGE THIS LINE!
                 fg_color="transparent",
                 image=image,
                 compound=compound
@@ -382,7 +418,18 @@ class SharedComponents:
         # 2. Load Icon
         try:
             icon_size = (self._scale_value(40, 'x'), self._scale_value(40, 'y'))
-            self.temp_icon = ctk.CTkImage(light_image=Image.open("_image_assets/temperature.png"), size=icon_size)
+            image_path = "_image_assets/temperature.png"
+            
+            # ---> FIX: Load original and generate the dark version <---
+            img_white = Image.open(image_path).convert("RGBA")
+            img_dark = self._recolor_icon(image_path, hex_color=TEXT_COLOR[0])
+
+            # ---> FIX: Hand both versions to CustomTkinter <---
+            self.temp_icon = ctk.CTkImage(
+                light_image=img_dark,   # Displays in Light Mode
+                dark_image=img_white,   # Displays in Dark Mode
+                size=icon_size
+            )
         except Exception as e:
             print(f"Error loading temperature icon: {e}")
             self.temp_icon = None
@@ -394,7 +441,7 @@ class SharedComponents:
             weather_button, 
             text="Analytics", 
             font=shared_button_font, 
-            text_color="white",
+            text_color=TEXT_COLOR,
             fg_color="transparent" 
         )
         title_label.pack(pady=(self._scale_value(10, 'y'), 0)) # Padding only at top
@@ -405,7 +452,7 @@ class SharedComponents:
         temp_frame = ctk.CTkFrame(weather_button, fg_color=BUTTON_COLOR)
         temp_icon_label = ctk.CTkLabel(temp_frame, text="", image=self.temp_icon)
         temp_icon_label.pack(side="left", padx=10)
-        self.temp_label = ctk.CTkLabel(temp_frame, text="-- °C", font=shared_button_font, text_color="white")
+        self.temp_label = ctk.CTkLabel(temp_frame, text="-- °C", font=shared_button_font, text_color=TEXT_COLOR)
         self.temp_label.pack(side="left", padx=10)
         temp_frame.pack(fill="x", pady=self._scale_value(5, 'y'))
         
@@ -414,7 +461,7 @@ class SharedComponents:
             weather_button,
             text="Date: --",
             font=shared_button_font,
-            text_color="white",
+            text_color=TEXT_COLOR,
             fg_color="transparent"
         )
         self.recent_date_label.pack(
@@ -425,16 +472,19 @@ class SharedComponents:
         )
 
         # --- 5. Create Chart Frame and Canvas ---
-        # This frame will hold the matplotlib chart
         chart_frame = ctk.CTkFrame(weather_button, fg_color="transparent")
         chart_frame.pack(fill="none", expand=True, padx=self._scale_value(5, 'x'), pady=(0, self._scale_value(5, 'y')))
         
-        # Create the matplotlib Figure and Axes
-        self.chart_fig = Figure(facecolor=BUTTON_COLOR, dpi=100)
+        # ---> FIX: Extract the right single color for Matplotlib <---
+        current_mode = ctk.get_appearance_mode()
+        # BUTTON_COLOR[0] is Light mode, [1] is Dark mode
+        current_bg = BUTTON_COLOR[0] if current_mode == "Light" else BUTTON_COLOR[1]
+
+        # Create the matplotlib Figure and Axes using the single color
+        self.chart_fig = Figure(facecolor=current_bg, dpi=100)
         
-        # --- MODIFIED: Adjust subplot to make room for x-axis labels ---
-        self.chart_ax = self.chart_fig.add_subplot(111, facecolor=BUTTON_COLOR)
-        self.chart_fig.subplots_adjust(left=0.18, right=0.95, bottom=0.2, top=0.95) # Make margins tight
+        self.chart_ax = self.chart_fig.add_subplot(111, facecolor=current_bg)
+        self.chart_fig.subplots_adjust(left=0.18, right=0.95, bottom=0.2, top=0.95)
         
         # Style the chart to match the UI
         self.chart_ax.spines['top'].set_visible(False)
@@ -448,13 +498,18 @@ class SharedComponents:
         self.chart_canvas_widget.pack(fill="both", expand=True)
 
         # --- 6. UPDATED: Hover logic ---
+        # --- 6. UPDATED: Hover logic ---
         def on_composite_enter(event):
             weather_button.place_configure(y=scaled_y - scaled_hover_offset)
             weather_button.configure(fg_color=BUTTON_HOVER) 
             title_label.configure(fg_color=BUTTON_HOVER) 
             temp_frame.configure(fg_color=BUTTON_HOVER)
-            self.chart_fig.set_facecolor(BUTTON_HOVER)
-            self.chart_ax.set_facecolor(BUTTON_HOVER)
+            
+            # ---> FIX: Unpack hover color for Matplotlib <---
+            mode = ctk.get_appearance_mode()
+            hover_bg = BUTTON_HOVER[0] if mode == "Light" else BUTTON_HOVER[1]
+            self.chart_fig.set_facecolor(hover_bg)
+            self.chart_ax.set_facecolor(hover_bg)
             self.chart_canvas.draw_idle() 
 
         def on_composite_leave(event):
@@ -462,8 +517,12 @@ class SharedComponents:
             weather_button.configure(fg_color=BUTTON_COLOR) 
             title_label.configure(fg_color="transparent")
             temp_frame.configure(fg_color=BUTTON_COLOR)
-            self.chart_fig.set_facecolor(BUTTON_COLOR)
-            self.chart_ax.set_facecolor(BUTTON_COLOR)
+            
+            # ---> FIX: Unpack normal color for Matplotlib <---
+            mode = ctk.get_appearance_mode()
+            normal_bg = BUTTON_COLOR[0] if mode == "Light" else BUTTON_COLOR[1]
+            self.chart_fig.set_facecolor(normal_bg)
+            self.chart_ax.set_facecolor(normal_bg)
             self.chart_canvas.draw_idle()
 
         # 7. Make all inner widgets clickable and hoverable
@@ -487,16 +546,16 @@ class SharedComponents:
         scaled_y = self._scale_value(y, 'y')
 
         # 1. Main Container
-        self.battery_container = ctk.CTkFrame(self.root, fg_color="#2A2E3F")
+        self.battery_container = ctk.CTkFrame(self.root, fg_color=LEFT_PANEL_COLOR)
         self.battery_container.place(x=scaled_x, y=scaled_y)
 
         # 2. The Battery "Body" (The outer shell)
         self.battery_body = ctk.CTkFrame(
-            self.battery_container,
+            self.battery_container, 
             width=self._scale_value(45, 'x'),
             height=self._scale_value(20, 'y'),
             border_width=2,
-            border_color="white",
+            border_color=BG_COLOR,
             fg_color="transparent",
             corner_radius=4
         )
@@ -519,7 +578,7 @@ class SharedComponents:
             self.battery_container,
             width=self._scale_value(3, 'x'),
             height=self._scale_value(8, 'y'),
-            fg_color="white",
+            fg_color=TEXT_COLOR,
             corner_radius=1
         )
         self.battery_tip.pack(side="left")
@@ -529,7 +588,7 @@ class SharedComponents:
             self.battery_container,
             text="--%",
             font=tuple(custom_font_regular),
-            text_color="white",
+            text_color=TEXT_COLOR,
             justify="center"
         )
         self.battery_label.pack(side="left", padx=(8, 0), anchor="center")
@@ -562,12 +621,12 @@ class SharedComponents:
         # 3. MacBook-style Color Logic
         if p > 20:
             self.battery_bar.configure(fg_color="#4CAF50") # Green
-            self.battery_body.configure(border_color="white")
-            self.battery_label.configure(text_color="white")
+            self.battery_body.configure(border_color=TEXT_COLOR)
+            self.battery_label.configure(text_color=TEXT_COLOR)
         elif p > 10:
             self.battery_bar.configure(fg_color="#FFEB3B") # Yellow
-            self.battery_body.configure(border_color="white")
-            self.battery_label.configure(text_color="white")
+            self.battery_body.configure(border_color=TEXT_COLOR)
+            self.battery_label.configure(text_color=TEXT_COLOR)
         else:
             self.battery_bar.configure(fg_color="#F44336") # Red warning
             self.battery_body.configure(border_color="#F44336")

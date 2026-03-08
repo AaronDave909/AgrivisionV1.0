@@ -18,7 +18,7 @@ import datetime
 import os
 from shared_components import (
     custom_font_bold, custom_font_title, custom_font_regular, 
-    BUTTON_COLOR, BUTTON_HOVER
+    BUTTON_COLOR, BUTTON_HOVER, TEXT_COLOR, LEFT_PANEL_COLOR
 )
 import matplotlib.dates as mdates
 from collections import deque
@@ -166,19 +166,24 @@ class MyDashboard(SC):
         ax.grid(True, linestyle='--', alpha=0.3, color='gray') # Subtle grid
 
         # --- 5. Re-apply all styling ---
+        # FIX: Unpack the TEXT_COLOR tuple for Matplotlib
+        current_mode = ctk.get_appearance_mode()
+        # TEXT_COLOR[0] is Light mode (Dark Blue), TEXT_COLOR[1] is Dark mode (White)
+        axis_color = TEXT_COLOR[0] if current_mode == "Light" else TEXT_COLOR[1]
+
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_color('white')
-        ax.spines['bottom'].set_color('white')
+        ax.spines['left'].set_color(axis_color)   # <--- Use the unpacked variable!
+        ax.spines['bottom'].set_color(axis_color) # <--- Use the unpacked variable!
         
         # --- 6. Format the Ticks ---
         
-        # Y-Ticks (Vertical) - FONT SIZE REDUCED
-        ax.tick_params(axis='y', colors='white', labelsize=self._scale_value(5, 'y'))
+        # Y-Ticks (Vertical)
+        ax.tick_params(axis='y', colors=axis_color, labelsize=self._scale_value(5, 'y'))
         ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3, prune='both'))
         
-        # X-Ticks (Horizontal) - FONT SIZE REDUCED
-        ax.tick_params(axis='x', colors='white', labelsize=self._scale_value(5, 'y'), rotation=0)
+        # X-Ticks (Horizontal)
+        ax.tick_params(axis='x', colors=axis_color, labelsize=self._scale_value(5, 'y'), rotation=0)
         
         # Smart Tick Locator and Formatter
         ax.xaxis.set_major_locator(mdates.AutoDateLocator(minticks=2, maxticks=4)) 
@@ -337,8 +342,8 @@ class MyDashboard(SC):
                 frame,
                 text=str(saved_crops),
                 font=scaled_title_font, 
-                text_color="white",
-                fg_color="#2A2E3F"
+                text_color=TEXT_COLOR,
+                fg_color=BUTTON_COLOR
             )
             num_label.pack()
             self.crops_button.number_frame = frame
@@ -407,7 +412,7 @@ class MyDashboard(SC):
             self.gallery_button,
             text="Capture Gallery",
             font=tuple(custom_font_bold), # Use same font as weather panel
-            text_color="white",
+            text_color=TEXT_COLOR,
             fg_color="transparent"
         )
         # Use the same padding as the weather panel's title to align them
@@ -442,7 +447,7 @@ class MyDashboard(SC):
                 text=f"{file_label}",
                 justify="center",
                 font=tuple(custom_font_regular),
-                text_color="white",
+                text_color=TEXT_COLOR,
             )
             gallery_file_label_widget.pack(padx=self._scale_value(5, 'x'), pady=self._scale_value(1, 'y'))
 
@@ -498,7 +503,7 @@ class MyDashboard(SC):
             master=disease_panel,
             width=list_width,
             height=list_height,
-            fg_color="#2A2E3F"
+            fg_color=LEFT_PANEL_COLOR
         )
         recent_list.pack(
             side="bottom",
@@ -551,7 +556,7 @@ class MyDashboard(SC):
             self.weather_button,  # <-- Change this to the frame holding the temp
             text="Loading Season...",
             font=("Arial", 12), # You can change the font
-            text_color="white"
+            text_color=TEXT_COLOR
         )
         # --- Adjust these x/y coordinates to be above your temp label ---
         self.season_label.place(x=80, y=75)

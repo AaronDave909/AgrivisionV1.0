@@ -1,5 +1,6 @@
 import os
 import customtkinter as ctk
+from shared_components import BG_COLOR, BUTTON_COLOR, BUTTON_HOVER, TEXT_COLOR, LEFT_PANEL_COLOR
 
 # The function now accepts the scaling factors and the scaled font
 def show_crop_input_popup(root, target_button, scale_x_factor, scale_y_factor, scaled_title_font):
@@ -59,7 +60,7 @@ def show_crop_input_popup(root, target_button, scale_x_factor, scale_y_factor, s
     popup = ctk.CTkToplevel(root)
     popup.title("Crops in Monitor")
     popup.geometry(f"{popup_width}x{popup_height}+{x}+{y}")
-    popup.configure(fg_color="#202332")
+    popup.configure(fg_color=BG_COLOR)
     popup.transient(root) 
 
     popup.after(50, lambda: (
@@ -68,14 +69,14 @@ def show_crop_input_popup(root, target_button, scale_x_factor, scale_y_factor, s
         popup.grab_set()                 
     ))
 
-    label = ctk.CTkLabel(popup, text="Enter number of crops:", text_color="white", font=scaled_label_font)
+    label = ctk.CTkLabel(popup, text="Enter number of crops:", text_color=TEXT_COLOR, font=scaled_label_font)
     label.pack(pady=scaled_pady_10)
 
     entry = ctk.CTkEntry(
         popup,
         justify="center",
-        fg_color="#333645",
-        text_color="#FFFFFF",
+        fg_color=BUTTON_HOVER,
+        text_color=TEXT_COLOR,
         width=scaled_button_width,
         font=scaled_label_font 
     )
@@ -95,14 +96,14 @@ def show_crop_input_popup(root, target_button, scale_x_factor, scale_y_factor, s
                 target_button.number_frame.destroy()
 
             # Add updated label
-            frame = ctk.CTkFrame(target_button, fg_color="transparent")
+            frame = ctk.CTkFrame(target_button, fg_color=BUTTON_COLOR)
             frame.place(relx=0.15, rely=0.2, anchor="nw")
             num_label = ctk.CTkLabel(
                 frame,
                 text=str(num),
                 font=scaled_title_font, 
-                text_color="white",
-                fg_color="transparent"
+                text_color=TEXT_COLOR,
+                fg_color=BUTTON_COLOR
             )
             num_label.pack()
             target_button.number_frame = frame
@@ -121,9 +122,10 @@ def show_crop_input_popup(root, target_button, scale_x_factor, scale_y_factor, s
     submit_btn = ctk.CTkButton(
         popup,
         text="Enter",
+        text_color=TEXT_COLOR,
         command=on_enter,
-        fg_color="#2A2E3F",
-        hover_color="#383C4E",
+        fg_color=BUTTON_COLOR,
+        hover_color=BUTTON_HOVER,
         height=scaled_button_height,
         width=scaled_button_width,
         font=scaled_label_font
@@ -136,9 +138,10 @@ def show_crop_input_popup(root, target_button, scale_x_factor, scale_y_factor, s
     return_btn = ctk.CTkButton(
         popup,
         text="Return to Dashboard",
+        text_color=TEXT_COLOR,
         command=return_to_dashboard,
-        fg_color="#2A2E3F",
-        hover_color="#383C4E",
+        fg_color=BUTTON_COLOR,
+        hover_color=BUTTON_HOVER,
         height=scaled_button_height,
         width=scaled_button_width,
         font=scaled_label_font

@@ -2,6 +2,7 @@ import customtkinter as ctk
 import os
 import json
 from datetime import datetime
+from shared_components import BUTTON_COLOR, TEXT_COLOR, LEFT_PANEL_COLOR
 
 # --- Standalone Helper Function ---
 def _format_disease_name(name_str):
@@ -147,8 +148,14 @@ class RecentDiseaseList(ctk.CTkFrame):
 
         # --- Create Scrollable Components ---
         
+        # --- Create Scrollable Components ---
+        
         # 1. Canvas for scrolling
-        self.canvas = ctk.CTkCanvas(self, bg=self.cget("fg_color"), highlightthickness=0)
+        # FIX: Unpack the tuple so the standard tkinter Canvas doesn't crash!
+        current_mode = ctk.get_appearance_mode()
+        canvas_bg = LEFT_PANEL_COLOR[0] if current_mode == "Light" else LEFT_PANEL_COLOR[1]
+        
+        self.canvas = ctk.CTkCanvas(self, bg=canvas_bg, highlightthickness=0)
         
         # 2. Scrollbar
         self.scrollbar = ctk.CTkScrollbar(self, orientation="vertical", command=self.canvas.yview)
@@ -254,7 +261,7 @@ class RecentDiseaseList(ctk.CTkFrame):
         sorted_data = self._load_and_sort_data()
         
         if not sorted_data:
-            label = ctk.CTkLabel(self.scrollable_frame, text="No disease records found.", text_color="gray")
+            label = ctk.CTkLabel(self.scrollable_frame, text="No disease records found.", text_color=TEXT_COLOR)
             label.pack(pady=10)
             # Bind drag events even to the "empty" label
             label.bind("<ButtonPress-1>", self._on_press)
@@ -274,14 +281,14 @@ class RecentDiseaseList(ctk.CTkFrame):
             timestamp = item.get("timestamp", "Unknown Date")
             
             # Create a frame for each item
-            item_frame = ctk.CTkFrame(self.scrollable_frame, fg_color="#3B3F51", corner_radius=5)
+            item_frame = ctk.CTkFrame(self.scrollable_frame, fg_color=BUTTON_COLOR, corner_radius=5)
             
             # Disease Label
             disease_label = ctk.CTkLabel(
                 item_frame,
                 text=disease,
                 font=disease_font,
-                text_color="white",
+                text_color=TEXT_COLOR,
                 anchor="w" # Anchor to the West (left)
             )
             disease_label.pack(pady=(5, 0), padx=10, fill="x")
@@ -291,7 +298,7 @@ class RecentDiseaseList(ctk.CTkFrame):
                 item_frame,
                 text=timestamp,
                 font=date_font,
-                text_color="#BCBCBC", # A lighter gray
+                text_color=TEXT_COLOR,
                 anchor="w" # Anchor to the West (left)
             )
             # MODIFIED: Use vertical packing (default) and fill="x"

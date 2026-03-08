@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from shared_components import SharedComponents as SC
+from shared_components import BG_COLOR, TEXT_COLOR, SharedComponents as SC
 import datetime
 import os
 from shared_components import (
@@ -9,7 +9,7 @@ from shared_components import (
 import matplotlib.dates as mdates
 from collections import deque
 import matplotlib.ticker as ticker
-import pandas as pd
+import pandas as pd 
 import numpy as np                    # For creating the gradient
 import matplotlib.colors as mcolors
 from Pages.gallery import gallery_preview
@@ -28,7 +28,7 @@ class HelpSlideshowPopup(ctk.CTkToplevel):
         # Removes the default OS window bar for a clean, app-like modal
         self.overrideredirect(True) 
         self.geometry("728x420") # Adjust overall size to fit your screen
-        self.configure(fg_color="#1E2235") # Matches your dark theme
+        self.configure(fg_color=BG_COLOR) # Matches your dark theme
         
         # Center the pop-up on the screen (Optional, but looks premium)
         self.update_idletasks()
@@ -37,7 +37,7 @@ class HelpSlideshowPopup(ctk.CTkToplevel):
         self.geometry(f"+{x}+{y}")
 
         # --- Main Container Frame (For rounded borders) ---
-        self.main_frame = ctk.CTkFrame(self, corner_radius=15, border_width=2, border_color="#3A3E55", fg_color="#2A2E3F")
+        self.main_frame = ctk.CTkFrame(self, corner_radius=15, border_width=2, border_color=BUTTON_HOVER, fg_color=BUTTON_COLOR)
         self.main_frame.pack(fill="both", expand=True, padx=5, pady=5)
 
         # --- Header Section ---
@@ -45,12 +45,12 @@ class HelpSlideshowPopup(ctk.CTkToplevel):
         self.header_frame.pack(fill="x", pady=(15, 5), padx=20)
 
         # Title Label
-        self.title_label = ctk.CTkLabel(self.header_frame, text=title_text, font=("Arial", 20, "bold"))
+        self.title_label = ctk.CTkLabel(self.header_frame, text=title_text, text_color=TEXT_COLOR, font=("Arial", 20, "bold"))
         self.title_label.pack(side="left", expand=True)
 
         # Exit Button (Top Right)
         self.close_btn = ctk.CTkButton(
-            self.header_frame, text="✕", width=35, height=35, corner_radius=17, 
+            self.header_frame, text="✕", text_color=TEXT_COLOR, width=35, height=35, corner_radius=17, 
             font=("Arial", 16, "bold"), fg_color="#FF6B6B", hover_color="#FF4C4C", 
             command=self.destroy # Closes the pop-up completely
         )
@@ -65,15 +65,15 @@ class HelpSlideshowPopup(ctk.CTkToplevel):
         self.footer_frame.pack(fill="x", side="bottom", pady=(0, 15), padx=30)
 
         # Previous Button (◀)
-        self.prev_btn = ctk.CTkButton(self.footer_frame, text="◀", width=45, height=45, corner_radius=10, command=self.prev_slide)
+        self.prev_btn = ctk.CTkButton(self.footer_frame, text="◀", text_color=TEXT_COLOR, width=45, height=45, corner_radius=10, command=self.prev_slide)
         self.prev_btn.pack(side="left")
 
         # Slide Counter (e.g., "1 / 3")
-        self.counter_label = ctk.CTkLabel(self.footer_frame, text="1 / X", font=("Arial", 16, "bold"))
+        self.counter_label = ctk.CTkLabel(self.footer_frame, text="1 / X", text_color=TEXT_COLOR, font=("Arial", 16, "bold"))
         self.counter_label.pack(side="left", expand=True)
 
         # Next Button (▶)
-        self.next_btn = ctk.CTkButton(self.footer_frame, text="▶", width=45, height=45, corner_radius=10, command=self.next_slide)
+        self.next_btn = ctk.CTkButton(self.footer_frame, text="▶", text_color=TEXT_COLOR, width=45, height=45, corner_radius=10, command=self.next_slide)
         self.next_btn.pack(side="right")
 
         # Load the very first slide upon opening
@@ -176,8 +176,14 @@ class HelpPage(SC):
             if file.lower().endswith(('.png', '.jpg', '.jpeg'))
         ])
         
-        raw_monitor_icon = Image.open("_image_assets/crop_inside.png") 
-        monitor_button_photo = ctk.CTkImage(light_image=raw_monitor_icon, size=(200, 180))
+        icon_for_dark_mode = Image.open("_image_assets/crop_inside.png")
+        icon_for_light_mode = Image.open("_image_assets/crop_inside_light.png").resize(icon_for_dark_mode.size)
+        
+        monitor_button_photo = ctk.CTkImage(
+            light_image=icon_for_light_mode, 
+            dark_image=icon_for_dark_mode, 
+            size=(200, 180)
+        )
 
         self.crops_button = self.create_button(
             text="Crops in Monitor\n", 
@@ -191,8 +197,15 @@ class HelpPage(SC):
 
         #Recent Diseases Button
         recent_images = ["_image_assets/Recent Diseases.png"] 
-        raw_monitor_icon = Image.open("_image_assets/recent_inside.png") 
-        monitor_button_photo = ctk.CTkImage(light_image=raw_monitor_icon, size=(200, 180))
+        
+        icon_for_dark_mode = Image.open("_image_assets/recent_inside.png") 
+        icon_for_light_mode = Image.open("_image_assets/recent_inside_light.png").resize(icon_for_dark_mode.size)
+        
+        monitor_button_photo = ctk.CTkImage(
+            light_image=icon_for_light_mode, 
+            dark_image=icon_for_dark_mode, 
+            size=(200, 180)
+        )
 
         btn_text = "Recent Disease Detected\n"
         self.create_button(
@@ -208,11 +221,11 @@ class HelpPage(SC):
         #Manage Files Button
         futures_photo = self.load_futures_icon()
         self.create_button(
-            text="Manage Files\n",
+            text="Generate Report\n",
             x=422, y=75,
             width=140, height=140,
             anchor="s",
-            command=lambda: HelpSlideshowPopup(None, "Manage Files Guide", weather_folder), #to change
+            command=lambda: HelpSlideshowPopup(None, "Report Generation Guide", weather_folder), 
             image=futures_photo,
             compound="top"
         )        
@@ -224,8 +237,15 @@ class HelpPage(SC):
             for file in os.listdir(weather_folder) 
             if file.lower().endswith(('.png', '.jpg', '.jpeg'))
         ])
-        raw_monitor_icon = Image.open("_image_assets/weather_inside.png") 
-        monitor_button_photo = ctk.CTkImage(light_image=raw_monitor_icon, size=(300, 275))
+        
+        icon_for_dark_mode = Image.open("_image_assets/weather_inside.png") 
+        icon_for_light_mode = Image.open("_image_assets/weather_inside_light.png").resize(icon_for_dark_mode.size)
+        
+        monitor_button_photo = ctk.CTkImage(
+            light_image=icon_for_light_mode, 
+            dark_image=icon_for_dark_mode, 
+            size=(300, 275)
+        )
         
         btn_text = "\nAnalytics"
         self.weather_button = self.create_button(
@@ -236,7 +256,7 @@ class HelpPage(SC):
             command=lambda: HelpSlideshowPopup(None, "Weather Analytics Guide", weather_folder),
             image=monitor_button_photo, 
             compound="bottom"
-        )        
+        )
 
         #Capture Gallery Button
         gallery_folder = "_image_assets/gallery"
@@ -245,8 +265,15 @@ class HelpPage(SC):
             for file in os.listdir(gallery_folder) 
             if file.lower().endswith(('.png', '.jpg', '.jpeg'))
         ])
-        raw_monitor_icon = Image.open("_image_assets/gallery_inside.png") 
-        monitor_button_photo = ctk.CTkImage(light_image=raw_monitor_icon, size=(300, 275))
+        
+        icon_for_dark_mode = Image.open("_image_assets/gallery_inside.png") 
+        icon_for_light_mode = Image.open("_image_assets/gallery_inside_light.png").resize(icon_for_dark_mode.size)
+        
+        monitor_button_photo = ctk.CTkImage(
+            light_image=icon_for_light_mode, 
+            dark_image=icon_for_dark_mode, 
+            size=(300, 275)
+        )
         
         btn_text = "\nCapture Gallery"
         self.gallery_button = self.create_button(
@@ -261,19 +288,23 @@ class HelpPage(SC):
         
         # Disease Record Panel
         history_images = ["_image_assets/history.png"] 
+
+        icon_for_dark_mode = Image.open("_image_assets/history_image.png")
+        icon_for_light_mode = Image.open("_image_assets/history_image_light.png").resize(icon_for_dark_mode.size)
         
-        history_button = Image.open("_image_assets/history_image.png") 
-        # Since your button is 217 pixels wide
-        history_photo = ctk.CTkImage(light_image=history_button, size=(340, 370))
+        history_photo = ctk.CTkImage(
+            light_image=icon_for_light_mode, 
+            dark_image=icon_for_dark_mode, 
+            size=(340, 370)
+        )
 
         self.create_button(
             text="\nDisease Record History",
             x=572, y=75,
             anchor="n",
             width=217, height=275,
-            # Update the lambda command to point to your history images, not weather!
             command=lambda: HelpSlideshowPopup(None, "Disease Record History Guide", history_images), 
-            image=history_photo, # Use the correctly named variable here
+            image=history_photo,
             compound="bottom"
         )
 
