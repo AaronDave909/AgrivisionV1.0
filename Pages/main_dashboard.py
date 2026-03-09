@@ -205,9 +205,9 @@ class MyDashboard(SC):
         avg_temp, _, _ = get_latest_weather_averages()
 
         if avg_temp is not None:
-            self.temp_label.configure(text=f"{avg_temp:.1f} °C")
+            self.temp_label.configure(text=f"{avg_temp:.1f} Â°C")
         else:
-            self.temp_label.configure(text="-- °C")
+            self.temp_label.configure(text="-- Â°C")
 
         # --- 2. Get LAST 20 READINGS from CSV for the CHART ---
         try:
@@ -342,8 +342,8 @@ class MyDashboard(SC):
                 frame,
                 text=str(saved_crops),
                 font=scaled_title_font, 
-                text_color=TEXT_COLOR,
-                fg_color=BUTTON_COLOR
+                text_color=self._get_color(TEXT_COLOR),
+                fg_color=self._get_color(BUTTON_COLOR)
             )
             num_label.pack()
             self.crops_button.number_frame = frame
@@ -403,7 +403,7 @@ class MyDashboard(SC):
             anchor="n",
             command=self.open_gallery,
             handle_hover=False, # Disable default hover
-            hover_color=BUTTON_COLOR, # <-- FIX: Use variable
+            hover_color=self._get_color(BUTTON_COLOR), # <-- FIX: Use variable
         )
         self.gallery_button.pack_propagate(False) # Prevent shrinking
 
@@ -412,7 +412,7 @@ class MyDashboard(SC):
             self.gallery_button,
             text="Capture Gallery",
             font=tuple(custom_font_bold), # Use same font as weather panel
-            text_color=TEXT_COLOR,
+            text_color=self._get_color(TEXT_COLOR),
             fg_color="transparent"
         )
         # Use the same padding as the weather panel's title to align them
@@ -435,7 +435,7 @@ class MyDashboard(SC):
         if file_label not in ("Gallery Empty", "No Images"):
             gallery_file_frame = ctk.CTkFrame(
                 self.gallery_button, 
-                fg_color=BUTTON_COLOR, # <-- FIX: Use variable 
+                fg_color=self._get_color(BUTTON_COLOR), # <-- FIX: Use variable 
                 corner_radius = 0
             )
             
@@ -447,7 +447,7 @@ class MyDashboard(SC):
                 text=f"{file_label}",
                 justify="center",
                 font=tuple(custom_font_regular),
-                text_color=TEXT_COLOR,
+                text_color=self._get_color(TEXT_COLOR),
             )
             gallery_file_label_widget.pack(padx=self._scale_value(5, 'x'), pady=self._scale_value(1, 'y'))
 
@@ -463,13 +463,13 @@ class MyDashboard(SC):
 
         def on_gallery_leave(event):
             self.gallery_button.place_configure(y=gallery_scaled_y)
-            self.gallery_button.configure(fg_color=BUTTON_COLOR)
+            self.gallery_button.configure(fg_color=self._get_color(BUTTON_COLOR))
             gallery_title_label.configure(fg_color="transparent")
             if gallery_image_label:
                 gallery_image_label.configure(fg_color="transparent")
             if gallery_file_frame:
                 # Revert frame to normal color
-                gallery_file_frame.configure(fg_color=BUTTON_COLOR) # <-- FIX: Use variable
+                gallery_file_frame.configure(fg_color=self._get_color(BUTTON_COLOR)) # <-- FIX: Use variable
 
         # 7. Bind all child widgets to pass clicks/hovers to the parent button
         gallery_widgets_to_bind = [self.gallery_button, gallery_title_label]
@@ -503,7 +503,7 @@ class MyDashboard(SC):
             master=disease_panel,
             width=list_width,
             height=list_height,
-            fg_color=LEFT_PANEL_COLOR
+            fg_color=self._get_color(LEFT_PANEL_COLOR)
         )
         recent_list.pack(
             side="bottom",
@@ -556,7 +556,7 @@ class MyDashboard(SC):
             self.weather_button,  # <-- Change this to the frame holding the temp
             text="Loading Season...",
             font=("Arial", 12), # You can change the font
-            text_color=TEXT_COLOR
+            text_color=self._get_color(TEXT_COLOR)
         )
         # --- Adjust these x/y coordinates to be above your temp label ---
         self.season_label.place(x=80, y=75)

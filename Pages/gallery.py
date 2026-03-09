@@ -91,15 +91,14 @@ class GalleryPage(SC):
             self.filter_frame, 
             text="Filter by:",
             font=("Arial", self._scale_value(14, 'y')),
-            text_color=TEXT_COLOR
+            text_color=self._get_color(TEXT_COLOR) # <-- FIX: Use helper
         )
         self.filter_label.pack(side="left", padx=(5, 5))
 
-        # Unpack the colors for the dropdown menu
-        current_mode = ctk.get_appearance_mode()
-        menu_bg = BUTTON_COLOR[0] if current_mode == "Light" else BUTTON_COLOR[1]
-        menu_text = TEXT_COLOR[0] if current_mode == "Light" else TEXT_COLOR[1]
-        menu_hover = BUTTON_HOVER[0] if current_mode == "Light" else BUTTON_HOVER[1]
+        # Cleaned up unpacking using the helper function!
+        menu_bg = self._get_color(BUTTON_COLOR)
+        menu_text = self._get_color(TEXT_COLOR)
+        menu_hover = self._get_color(BUTTON_HOVER)
 
         self.filter_selector = ctk.CTkOptionMenu(
             self.filter_frame,
@@ -108,10 +107,11 @@ class GalleryPage(SC):
             font=("Arial", self._scale_value(14, 'y')),
             dropdown_font=("Arial", self._scale_value(20, 'y')),
             
-            fg_color=BUTTON_COLOR,
-            text_color=TEXT_COLOR,
-            button_color=BUTTON_HOVER,
-            button_hover_color=("#C1C3C8", "#50556b"), 
+            # <-- FIX: Added self._get_color() to all color assignments
+            fg_color=self._get_color(BUTTON_COLOR),
+            text_color=self._get_color(TEXT_COLOR),
+            button_color=self._get_color(BUTTON_HOVER),
+            button_hover_color=self._get_color(("#C1C3C8", "#50556b")), 
             
             dropdown_fg_color=menu_bg,          
             dropdown_hover_color=menu_hover,    
@@ -173,12 +173,10 @@ class GalleryPage(SC):
         scaled_x_start = self.scale_x_val(120)
         scaled_scrollbar_width = self.scale_x_val(40)
         
-        # --- FIX: Unpack tuples for standard tkinter components ---
-        current_mode = ctk.get_appearance_mode()
-        # Extract single hex strings from your tuples
-        self.unpacked_bg = BG_COLOR[0] if current_mode == "Light" else BG_COLOR[1]
-        self.unpacked_btn = BUTTON_COLOR[0] if current_mode == "Light" else BUTTON_COLOR[1]
-        self.unpacked_hover = BUTTON_HOVER[0] if current_mode == "Light" else BUTTON_HOVER[1]
+        # --- FIX: Cleaned up unpacking using the helper function ---
+        self.unpacked_bg = self._get_color(BG_COLOR)
+        self.unpacked_btn = self._get_color(BUTTON_COLOR)
+        self.unpacked_hover = self._get_color(BUTTON_HOVER)
 
         # 1. The Canvas
         self.canvas = ctk.CTkCanvas(
@@ -268,8 +266,7 @@ class GalleryPage(SC):
         scaled_name_font = tuple(custom_font_regular)
 
         # Determine a contrasting color for the card container based on appearance mode
-        current_mode = ctk.get_appearance_mode()
-        card_color = LEFT_PANEL_COLOR[0] if current_mode == "Light" else LEFT_PANEL_COLOR[1]
+        card_color = self._get_color(LEFT_PANEL_COLOR) # <-- FIX: Use helper
 
         # 3. We need a new index variable to handle grid placement
         valid_image_index = 0
@@ -280,7 +277,6 @@ class GalleryPage(SC):
             
             # 4. Check if the image filename is a key in the master JSON
             if filename not in master_data:
-                # This print statement is now safe because of the fix at the top
                 print(f"⚠️ Warning: No data for {filename} in master JSON. Skipping.")
                 continue 
 
@@ -313,7 +309,7 @@ class GalleryPage(SC):
                 self.scrollable_frame, 
                 width=panel_width, 
                 height=panel_height, 
-                fg_color=card_color, # <-- FIX: Now using the contrasting card color
+                fg_color=card_color, 
                 corner_radius=self.scale_x_val(10)
             )
             # 2. Add this line to LOCK the size
@@ -329,7 +325,7 @@ class GalleryPage(SC):
                 text="",
                 width=image_width,
                 height=image_height,
-                fg_color="transparent", # <-- FIX: Back to transparent so it blends with the card
+                fg_color="transparent",
                 hover_color=self.unpacked_hover,
                 command=lambda path=file_path: self.open_analysis_view(path)
             )
@@ -341,7 +337,7 @@ class GalleryPage(SC):
             name_label = ctk.CTkLabel(
                 frame, 
                 text=name, 
-                text_color=TEXT_COLOR, 
+                text_color=self._get_color(TEXT_COLOR), # <-- FIX: Use helper
                 font=scaled_name_font 
             )
             name_label.place(relx=0.5, rely=0.9, anchor="center")

@@ -50,7 +50,7 @@ class HelpSlideshowPopup(ctk.CTkToplevel):
 
         # Exit Button (Top Right)
         self.close_btn = ctk.CTkButton(
-            self.header_frame, text="✕", text_color=TEXT_COLOR, width=35, height=35, corner_radius=17, 
+            self.header_frame, text="â", text_color=TEXT_COLOR, width=35, height=35, corner_radius=17, 
             font=("Arial", 16, "bold"), fg_color="#FF6B6B", hover_color="#FF4C4C", 
             command=self.destroy # Closes the pop-up completely
         )
@@ -64,16 +64,16 @@ class HelpSlideshowPopup(ctk.CTkToplevel):
         self.footer_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent", height=50)
         self.footer_frame.pack(fill="x", side="bottom", pady=(0, 15), padx=30)
 
-        # Previous Button (◀)
-        self.prev_btn = ctk.CTkButton(self.footer_frame, text="◀", text_color=TEXT_COLOR, width=45, height=45, corner_radius=10, command=self.prev_slide)
+        # Previous Button (â€)
+        self.prev_btn = ctk.CTkButton(self.footer_frame, text="â€", text_color=TEXT_COLOR, width=45, height=45, corner_radius=10, command=self.prev_slide)
         self.prev_btn.pack(side="left")
 
         # Slide Counter (e.g., "1 / 3")
         self.counter_label = ctk.CTkLabel(self.footer_frame, text="1 / X", text_color=TEXT_COLOR, font=("Arial", 16, "bold"))
         self.counter_label.pack(side="left", expand=True)
 
-        # Next Button (▶)
-        self.next_btn = ctk.CTkButton(self.footer_frame, text="▶", text_color=TEXT_COLOR, width=45, height=45, corner_radius=10, command=self.next_slide)
+        # Next Button (â¶)
+        self.next_btn = ctk.CTkButton(self.footer_frame, text="â¶", text_color=TEXT_COLOR, width=45, height=45, corner_radius=10, command=self.next_slide)
         self.next_btn.pack(side="right")
 
         # Load the very first slide upon opening
@@ -159,7 +159,7 @@ class HelpPage(SC):
         scaled_close_font = ("Arial", scaled_close_font_size, "bold")
 
         self.create_button(
-            text="✕",  # Using a clean Unicode cross instead of a standard keyboard 'X'
+            text="â",  # Using a clean Unicode cross instead of a standard keyboard 'X'
             x=735, y=21,  # Shifted right so it aligns with where the old wide button ended
             width=40, height=40,  # Equal width and height for a perfect square footprint
             anchor="center",

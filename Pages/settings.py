@@ -9,6 +9,7 @@ import psutil
 from shared_components import SharedComponents as SC, custom_font_bold, custom_font_regular, TEXT_COLOR 
 
 BRIGHTNESS_FILE = "Page_files/brightness_state.txt"
+THEME_FILE = "Page_files/theme_state.txt" # --- NEW: File to store theme state ---
 
 class SettingsPage(SC):
     
@@ -32,7 +33,7 @@ class SettingsPage(SC):
             self.root, 
             text="Agrivision v1.0", 
             font=self.scaled_12pt_font, 
-            text_color=TEXT_COLOR # ---> REPLACED "white" <---
+            text_color=TEXT_COLOR 
         )
         label.place(x=scale_x(123), y=scale_y(430)) 
         
@@ -40,7 +41,6 @@ class SettingsPage(SC):
         self.create_brightness_slider() 
         self.load_saved_brightness()
         
-        # ---> CALL THE NEW TOGGLE FUNCTION <---
         self.create_appearance_toggle()
 
     def create_appearance_toggle(self):
@@ -73,12 +73,40 @@ class SettingsPage(SC):
 
     def toggle_appearance(self):
         """Flipped when the user clicks the switch."""
+        
+        # 1. Change the internal CTk mode and SAVE it
         if self.mode_switch.get() == 1:
             ctk.set_appearance_mode("Dark")
             self.mode_switch.configure(text="Dark Mode")
+            self.save_theme("Dark") # --- NEW: Save choice ---
         else:
             ctk.set_appearance_mode("Light")
             self.mode_switch.configure(text="Light Mode")
+            self.save_theme("Light") # --- NEW: Save choice ---
+            
+        # 2. Force the UI to refresh by reloading the dashboard
+        print(f"Theme switched to {ctk.get_appearance_mode()}. Reloading UI...")
+        
+        # Give the switch a tiny moment to finish its animation
+        self.root.after(150, self.force_ui_reload)
+
+    # --- NEW: Save theme function ---
+    def save_theme(self, mode):
+        """Writes the selected theme to a text file so it survives reboots."""
+        os.makedirs(os.path.dirname(THEME_FILE), exist_ok=True)
+        try:
+            with open(THEME_FILE, "w") as f:
+                f.write(mode)
+        except Exception as e:
+            print(f"Error saving theme: {e}")
+    # --------------------------------
+
+    def force_ui_reload(self):
+        """Destroys the current window and reloads the Dashboard to apply new colors."""
+        self.root.destroy()
+        from Pages.main_dashboard import MyDashboard 
+        dashboard = MyDashboard()
+        dashboard.root.mainloop()
 
     def create_memory_usage_bar(self):
         disk = psutil.disk_usage('/')
@@ -90,7 +118,7 @@ class SettingsPage(SC):
             self.root, 
             text="System Storage", 
             font=tuple(custom_font_bold), 
-            text_color=TEXT_COLOR # ---> REPLACED "white" <---
+            text_color=TEXT_COLOR 
         )
         label.place(x=self._scale_value(123, 'x'), y=self._scale_value(128, 'y'))
 
@@ -104,7 +132,7 @@ class SettingsPage(SC):
             self.root, 
             text=usage_text, 
             font=self.scaled_12pt_font, 
-            text_color=TEXT_COLOR # ---> REPLACED "white" <---
+            text_color=TEXT_COLOR 
         )
         usage_label.place(x=self._scale_value(123, 'x'), y=self._scale_value(152, 'y'))
 
@@ -113,7 +141,7 @@ class SettingsPage(SC):
             self.root, 
             text="Brightness", 
             font=tuple(custom_font_bold), 
-            text_color=TEXT_COLOR # ---> REPLACED "white" <---
+            text_color=TEXT_COLOR 
         )
         brightness_label.place(x=self._scale_value(123, 'x'), y=self._scale_value(66, 'y'))
 

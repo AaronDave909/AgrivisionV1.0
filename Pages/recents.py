@@ -135,6 +135,13 @@ class RecentDiseaseList(ctk.CTkFrame):
     Includes "drag-to-scroll" functionality.
     """
     
+    # --- ADDED: Local color helper for the Frame component ---
+    def _get_color(self, color_tuple):
+        mode = ctk.get_appearance_mode()
+        if not isinstance(color_tuple, tuple):
+            return color_tuple
+        return color_tuple[0] if mode == "Light" else color_tuple[1]
+    
     def __init__(self, master, width, height, **kwargs):
         # Initialize the main frame
         super().__init__(master, width=width, height=height, **kwargs)
@@ -148,12 +155,9 @@ class RecentDiseaseList(ctk.CTkFrame):
 
         # --- Create Scrollable Components ---
         
-        # --- Create Scrollable Components ---
-        
         # 1. Canvas for scrolling
-        # FIX: Unpack the tuple so the standard tkinter Canvas doesn't crash!
-        current_mode = ctk.get_appearance_mode()
-        canvas_bg = LEFT_PANEL_COLOR[0] if current_mode == "Light" else LEFT_PANEL_COLOR[1]
+        # FIX: Unpack the tuple safely using the new helper
+        canvas_bg = self._get_color(LEFT_PANEL_COLOR)
         
         self.canvas = ctk.CTkCanvas(self, bg=canvas_bg, highlightthickness=0)
         
@@ -261,7 +265,8 @@ class RecentDiseaseList(ctk.CTkFrame):
         sorted_data = self._load_and_sort_data()
         
         if not sorted_data:
-            label = ctk.CTkLabel(self.scrollable_frame, text="No disease records found.", text_color=TEXT_COLOR)
+            # FIX: Apply text color properly
+            label = ctk.CTkLabel(self.scrollable_frame, text="No disease records found.", text_color=self._get_color(TEXT_COLOR))
             label.pack(pady=10)
             # Bind drag events even to the "empty" label
             label.bind("<ButtonPress-1>", self._on_press)
@@ -280,25 +285,25 @@ class RecentDiseaseList(ctk.CTkFrame):
             
             timestamp = item.get("timestamp", "Unknown Date")
             
-            # Create a frame for each item
-            item_frame = ctk.CTkFrame(self.scrollable_frame, fg_color=BUTTON_COLOR, corner_radius=5)
+            # Create a frame for each item (FIX: Apply button color properly)
+            item_frame = ctk.CTkFrame(self.scrollable_frame, fg_color=self._get_color(BUTTON_COLOR), corner_radius=5)
             
-            # Disease Label
+            # Disease Label (FIX: Apply text color properly)
             disease_label = ctk.CTkLabel(
                 item_frame,
                 text=disease,
                 font=disease_font,
-                text_color=TEXT_COLOR,
+                text_color=self._get_color(TEXT_COLOR),
                 anchor="w" # Anchor to the West (left)
             )
             disease_label.pack(pady=(5, 0), padx=10, fill="x")
 
-            # Timestamp Label
+            # Timestamp Label (FIX: Apply text color properly)
             date_label = ctk.CTkLabel(
                 item_frame,
                 text=timestamp,
                 font=date_font,
-                text_color=TEXT_COLOR,
+                text_color=self._get_color(TEXT_COLOR),
                 anchor="w" # Anchor to the West (left)
             )
             # MODIFIED: Use vertical packing (default) and fill="x"
