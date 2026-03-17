@@ -218,17 +218,33 @@ class HelpPage(SC):
             compound="top"
         )
 
-        #Manage Files Button
-        futures_photo = self.load_futures_icon()
-        self.create_button(
+        #Generate Report Button
+        report_folder = "_image_assets/report gen"
+        report_folder = sorted([
+            os.path.join(report_folder, file) 
+            for file in os.listdir(report_folder) 
+            if file.lower().endswith(('.png', '.jpg', '.jpeg'))
+        ])
+        
+        image_path = "_image_assets/Futures.png"
+        img_white = Image.open(image_path).convert("RGBA")
+        img_dark = self._recolor_icon(image_path, hex_color=TEXT_COLOR[0])
+        
+        report_button_photo = ctk.CTkImage(
+            light_image=img_dark, 
+            dark_image=img_white, 
+            size=(200, 180)
+        )
+
+        self.report_button = self.create_button(
             text="Generate Report\n",
             x=422, y=75,
             width=140, height=140,
-            anchor="s",
-            command=lambda: HelpSlideshowPopup(None, "Report Generation Guide", weather_folder), 
-            image=futures_photo,
+            anchor="n",
+            command=lambda: HelpSlideshowPopup(None, "Generate Report Guide", report_folder), 
+            image=report_button_photo, 
             compound="top"
-        )        
+        )
 
         #Weather Analytics Button
         weather_folder = "_image_assets/weather"
