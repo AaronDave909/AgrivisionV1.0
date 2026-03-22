@@ -3,11 +3,17 @@ from PIL import Image
 import cv2
 import os
 from ultralytics import YOLO
-from shared_components import SharedComponents as SC, LEFT_PANEL_WIDTH
 import datetime
 import json
 import math
 import pandas as pd
+
+# IMPORT ALL COLOR CONSTANTS FROM SHARED COMPONENTS
+from shared_components import (
+    SharedComponents as SC, LEFT_PANEL_WIDTH, 
+    BG_COLOR, LEFT_PANEL_COLOR, BUTTON_COLOR, BUTTON_HOVER, TEXT_COLOR,
+    custom_font_bold, custom_font_title, custom_font_regular
+)
 
 # ===============================
 # Disease Risk Calculation Functions
@@ -62,7 +68,7 @@ def classify_risk(risk):
     return round(percent, 2), level
 
 
-# NEW: Helper function to format names
+# Helper function to format names
 def _format_name(name_str):
     """Converts snake_case names into formatted Title Case."""
     if name_str == "Downy_mildew_on_lettuce":
@@ -78,11 +84,12 @@ class AnalysisPage(SC):
     CAPTURE_SIZE = 480
     ORIGINAL_LEFT_PANEL_WIDTH = LEFT_PANEL_WIDTH
 
-    def __init__(self, image_path, view_only=False):
+    def __init__(self, image_path, view_only=False, mode="Disease"):
         super().__init__()
 
         self.image_path = image_path
         self.view_only = view_only
+        self.mode = mode
         self.analysis_data_dict = {} 
         self.annotated_image_data = None
         self.gallery_path = "Page_files/gallery_files"
@@ -109,7 +116,9 @@ class AnalysisPage(SC):
 
         self.image_label = ctk.CTkLabel(
             self.root, text=initial_text, font=("Arial", 20),
-            fg_color="#1F1F1F", width=self.display_w, height=self.display_h
+            fg_color=self._get_color(BG_COLOR), # Adjusted for Light/Dark Mode
+            text_color=self._get_color(TEXT_COLOR),
+            width=self.display_w, height=self.display_h
         )
 
         self.root.after(100, self._setup_display)
@@ -148,10 +157,16 @@ class AnalysisPage(SC):
 
     def _create_info_panel(self):
         """Creates the frame and labels for displaying analysis results."""
-        info_panel_w = self._scale_value(200, 'x')
+        info_panel_w = self._scale_value(190, 'x')
         info_panel_h = self._scale_value(480, 'y')
 
-        self.info_frame = ctk.CTkScrollableFrame(self.root, width=info_panel_w, height=info_panel_h, fg_color="#2A2E3F")
+        # Using LEFT_PANEL_COLOR for the right background creates nice symmetry
+        self.info_frame = ctk.CTkScrollableFrame(
+            self.root, 
+            width=info_panel_w, 
+            height=info_panel_h, 
+            fg_color=self._get_color(BG_COLOR) 
+        )
         
         # --- UI STYLING: Reusable Underlined Title Font ---
         title_font = ctk.CTkFont(size=16, weight="bold", underline=True)
@@ -159,20 +174,24 @@ class AnalysisPage(SC):
         # ==========================================
         # CONTAINER 1: Analysis Results
         # ==========================================
-        self.results_frame = ctk.CTkFrame(self.info_frame, fg_color="#383C4E", corner_radius=8)
+        self.results_frame = ctk.CTkFrame(
+            self.info_frame, 
+            fg_color=self._get_color(BUTTON_COLOR), 
+            corner_radius=8
+        )
         self.results_frame.pack(fill="x", padx=10, pady=(10, 10))
 
-        title = ctk.CTkLabel(self.results_frame, text="Analysis Results", font=title_font, text_color="white")
+        title = ctk.CTkLabel(self.results_frame, text="Analysis Results", font=title_font, text_color=self._get_color(TEXT_COLOR))
         title.pack(pady=(10, 5), padx=10)
 
         # Helper function to create uniform label pairs inside a parent frame
         def create_info_row(parent, label_text):
             row_frame = ctk.CTkFrame(parent, fg_color="transparent")
             
-            label_widget = ctk.CTkLabel(row_frame, text=f"{label_text}:", font=ctk.CTkFont(size=12, weight="bold"), text_color="white", anchor="w")
+            label_widget = ctk.CTkLabel(row_frame, text=f"{label_text}:", font=ctk.CTkFont(size=12, weight="bold"), text_color=self._get_color(TEXT_COLOR), anchor="w")
             label_widget.pack(side="left", padx=(10, 2))
             
-            value_label = ctk.CTkLabel(row_frame, text="---", font=ctk.CTkFont(size=12), anchor="w", text_color="white")
+            value_label = ctk.CTkLabel(row_frame, text="---", font=ctk.CTkFont(size=12), anchor="w", text_color=self._get_color(TEXT_COLOR))
             value_label.pack(side="left", expand=True, fill="x", padx=2)
             
             row_frame.pack(fill="x", pady=4)
@@ -189,17 +208,17 @@ class AnalysisPage(SC):
         # ==========================================
         # CONTAINER 2: Description (Hidden by default)
         # ==========================================
-        self.desc_frame = ctk.CTkFrame(self.info_frame, fg_color="#383C4E", corner_radius=8)
+        self.desc_frame = ctk.CTkFrame(self.info_frame, fg_color=self._get_color(BUTTON_COLOR), corner_radius=8)
         
-        desc_title = ctk.CTkLabel(self.desc_frame, text="Description", font=title_font, text_color="white")
+        desc_title = ctk.CTkLabel(self.desc_frame, text="Description", font=title_font, text_color=self._get_color(TEXT_COLOR))
         desc_title.pack(pady=(10, 5), padx=10)
         
         self.description_label = ctk.CTkLabel(
             self.desc_frame,
             text="",
-            font=ctk.CTkFont(size=12),
-            text_color="#FFFFFF",
-            wraplength=self._scale_value(140, 'x'), # Prevents text from stretching the card
+            font=ctk.CTkFont(size=11),
+            text_color="#66BB6A", # Keep Green for healthy text
+            wraplength=self._scale_value(140, 'x'), 
             justify="left",
             anchor="w"
         )
@@ -208,9 +227,9 @@ class AnalysisPage(SC):
         # ==========================================
         # CONTAINER 3: Risk Assessment (Hidden by default)
         # ==========================================
-        self.risk_frame = ctk.CTkFrame(self.info_frame, fg_color="#383C4E", corner_radius=8)
+        self.risk_frame = ctk.CTkFrame(self.info_frame, fg_color=self._get_color(BUTTON_COLOR), corner_radius=8)
 
-        risk_title = ctk.CTkLabel(self.risk_frame, text="Risk Assessment", font=title_font, text_color="white")
+        risk_title = ctk.CTkLabel(self.risk_frame, text="Risk Assessment", font=title_font, text_color=self._get_color(TEXT_COLOR))
         risk_title.pack(pady=(10, 8), padx=10)
         
         self.risk_labels = {}
@@ -222,7 +241,7 @@ class AnalysisPage(SC):
         ]
         
         for key, name, color in diseases:
-            label = ctk.CTkLabel(self.risk_frame, text=f"{name}: --", font=ctk.CTkFont(size=12), text_color=color)
+            label = ctk.CTkLabel(self.risk_frame, text=f"{name}: --", font=ctk.CTkFont(size=10), text_color=color)
             label.pack(anchor="w", padx=12, pady=2)
             self.risk_labels[key] = label
             
@@ -247,12 +266,17 @@ class AnalysisPage(SC):
         scaled_img_size = (self._scale_value(80, 'x'), self._scale_value(80, 'y'))
         scaled_hover_offset = self._scale_value(5, 'y')
 
-        save_img = Image.open("_image_assets/save.png")
-        save_photo = ctk.CTkImage(light_image=save_img, dark_image=save_img, size=scaled_img_size)
+        # Automatically recolor for dark/light mode
+        image_path = "_image_assets/save.png"
+        img_white = Image.open(image_path).convert("RGBA")
+        img_dark = self._recolor_icon(image_path, hex_color=TEXT_COLOR[0])
+        save_photo = ctk.CTkImage(light_image=img_dark, dark_image=img_white, size=scaled_img_size)
         
         btn = ctk.CTkButton(
             self.root, text="", width=scaled_width, height=scaled_height,
-            image=save_photo, compound="top", command=command, fg_color="#2A2E3F", hover_color="#2A2E3F",
+            image=save_photo, compound="top", command=command, 
+            fg_color=self._get_color(LEFT_PANEL_COLOR), 
+            hover_color=self._get_color(BUTTON_HOVER)
         )
         btn.place(x=scaled_x, y=scaled_y, anchor="center")
 
@@ -263,7 +287,7 @@ class AnalysisPage(SC):
         btn.bind("<Leave>", on_leave)
         return btn
 
-    def trash_button(self,command=None, y_offset=None):
+    def trash_button(self, command=None, y_offset=None):
         scaled_img_size = (self._scale_value(80, 'x'), self._scale_value(80, 'y'))
         scaled_width = self._scale_value(80, 'x')
         scaled_height = self._scale_value(80, 'y')
@@ -276,13 +300,18 @@ class AnalysisPage(SC):
         scaled_y = self._scale_value(y, 'y')
         scaled_hover_offset = self._scale_value(5, 'y')
 
-        trash_img = Image.open("_image_assets/trash.png")
-        trash_photo = ctk.CTkImage(light_image=trash_img, dark_image=trash_img, size=scaled_img_size)
+        # Automatically recolor for dark/light mode
+        image_path = "_image_assets/trash.png"
+        img_white = Image.open(image_path).convert("RGBA")
+        img_dark = self._recolor_icon(image_path, hex_color=TEXT_COLOR[0])
+        trash_photo = ctk.CTkImage(light_image=img_dark, dark_image=img_white, size=scaled_img_size)
         
         btn = ctk.CTkButton(
             self.root, text="", width=scaled_width, height=scaled_height,
             image=trash_photo, compound="top", command=command,
-            fg_color="#2A2E3F", hover_color="#2A2E3F", corner_radius=0
+            fg_color=self._get_color(LEFT_PANEL_COLOR), 
+            hover_color=self._get_color(BUTTON_HOVER), 
+            corner_radius=0
         )
         btn.place(x=scaled_x, y=scaled_y)
         btn.image = trash_photo
@@ -296,7 +325,11 @@ class AnalysisPage(SC):
 
     def run_yolo_analysis(self):
         try:
-            model_path = "Page_files/yolov11_models/diseases.pt"
+            if self.mode == "Disease":
+                model_path = "Page_files/yolov11_models/diseases.pt"
+            else:
+                model_path = "Page_files/yolov11_models/nutrients.pt"
+				
             model = YOLO(model_path)
             results = model(self.original_image_path)
 
@@ -361,7 +394,7 @@ class AnalysisPage(SC):
         """Populates the info panel labels from a given data dictionary."""
         
         if "disease" in data_dict:
-            self.main_info_label.configure(text="Disease:")
+            #FFFFFF
             name = data_dict.get("disease", "---")
         elif "pest" in data_dict:
             self.main_info_label.configure(text="Pest:")
@@ -378,7 +411,6 @@ class AnalysisPage(SC):
         # Format the timestamp strictly to fit the card visually
         timestamp = data_dict.get("timestamp", "---")
         if len(timestamp) > 12:
-            # Example: split "Mar 08, 2026 10:19 AM" onto two lines if needed, or keep compact
             pass 
         self.datetime_label.configure(text=timestamp)
         
@@ -391,9 +423,9 @@ class AnalysisPage(SC):
             
             # Formatted Bullet Points
             bullet_points = (
-                "• No visual signs of disease.\n\n"
-                "• Leaf structures are intact.\n\n"
-                "• Plant appears completely healthy."
+                "â€¢ No visual signs of disease.\n"
+                "â€¢ Leaf structures are intact.\n"
+                "â€¢ Plant appears completely healthy."
             )
             self.description_label.configure(text=bullet_points)
             
@@ -497,12 +529,12 @@ class AnalysisPage(SC):
 
             try:
                 cv2.imwrite(save_path_img, self.annotated_image_data)
-                print(f"✅ Annotated image saved to: {save_path_img}")
+                print(f"â Annotated image saved to: {save_path_img}")
                 
                 master_data = self._load_master_json()
                 master_data[image_filename] = self.analysis_data_dict
                 self._save_master_json(master_data)
-                print(f"✅ Analysis data saved to: {self.single_json_path}")
+                print(f"â Analysis data saved to: {self.single_json_path}")
 
                 os.remove(self.original_image_path)
                 self.return_to_capture()
@@ -513,7 +545,7 @@ class AnalysisPage(SC):
     def trash_image(self):
         if os.path.exists(self.original_image_path):
             os.remove(self.original_image_path)
-            print(f"🗑️ Image trashed: {self.original_image_path}")
+            print(f"ðï¸ Image trashed: {self.original_image_path}")
         self.return_to_capture()
 
     def return_to_capture(self):
@@ -530,7 +562,7 @@ class AnalysisPage(SC):
             # 1. Delete the image file
             if os.path.exists(self.image_path):
                 os.remove(self.image_path)
-                print(f"🗑️ Deleted image: {self.image_path}")
+                print(f"ðï¸ Deleted image: {self.image_path}")
             
             # 2. Load the master dictionary
             master_data = self._load_master_json()
@@ -538,11 +570,11 @@ class AnalysisPage(SC):
             # 3. Remove the entry for this image
             if image_filename in master_data:
                 del master_data[image_filename]
-                print(f"🗑️ Deleted data for {image_filename} from {self.single_json_path}")
+                print(f"ðï¸ Deleted data for {image_filename} from {self.single_json_path}")
                 # 4. Save the modified master dictionary
                 self._save_master_json(master_data)
             else:
-                print(f"⚠️ Warning: No data found for {image_filename} in master JSON.")
+                print(f"â ï¸ Warning: No data found for {image_filename} in master JSON.")
                 
         except Exception as e:
             # FIX 1: Replaced Unicode character with basic ASCII string
@@ -556,3 +588,8 @@ class AnalysisPage(SC):
         from Pages.gallery import GalleryPage 
         gallery_app = GalleryPage()
         gallery_app.root.mainloop()
+
+# --- To run this page directly for testing (if needed) ---
+if __name__ == "__main__":
+    app = AnalysisPage("test_image.jpg", view_only=True)
+    app.root.mainloop()
