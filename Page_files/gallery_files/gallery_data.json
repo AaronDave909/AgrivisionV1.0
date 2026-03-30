@@ -154,5 +154,12 @@
         "accuracy": "86.15%",
         "count": "38",
         "timestamp": "Mar 07, 2026 03:53 PM"
+    },
+    "capture_20260323_122558.jpg": {
+        "disease": "N_deficiency",
+        "accuracy": "66.81%",
+        "count": "1",
+        "timestamp": "Mar 23, 2026 12:25 PM",
+        "is_healthy": false
     }
 }

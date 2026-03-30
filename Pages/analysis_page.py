@@ -22,11 +22,9 @@ def gaussian_temp(T, T_opt, sigma):
     """Gaussian temperature response function"""
     return math.exp(-((T - T_opt) ** 2) / (2 * (sigma ** 2)))
 
-
 def logistic_humidity(RH, k, RH_mid):
     """Logistic humidity response function"""
     return 1 / (1 + math.exp(-k * (RH - RH_mid)))
-
 
 def powdery_mildew_risk(T, RH):
     """Calculate Powdery Mildew risk"""
@@ -34,13 +32,11 @@ def powdery_mildew_risk(T, RH):
     humidity_risk = logistic_humidity(RH, k=0.18, RH_mid=85)
     return temp_risk * humidity_risk
 
-
 def downy_mildew_risk(T, RH):
     """Calculate Downy Mildew risk"""
     temp_risk = gaussian_temp(T, T_opt=19, sigma=3.5)
     humidity_risk = logistic_humidity(RH, k=0.25, RH_mid=90)
     return temp_risk * humidity_risk
-
 
 def bls_risk(T, RH):
     """Calculate Bacterial Leaf Spot risk"""
@@ -48,13 +44,11 @@ def bls_risk(T, RH):
     humidity_risk = logistic_humidity(RH, k=0.45, RH_mid=88)
     return temp_risk * humidity_risk
 
-
 def lmv_risk(T, RH):
     """Calculate Lettuce Mosaic Virus risk"""
     temp_risk = gaussian_temp(T, T_opt=25, sigma=5)
     humidity_factor = logistic_humidity(RH, k=0.15, RH_mid=55)
     return temp_risk * humidity_factor
-
 
 def classify_risk(risk):
     """Convert risk value to percentage and classification level"""
@@ -68,16 +62,30 @@ def classify_risk(risk):
     return round(percent, 2), level
 
 
-# Helper function to format names
+# Helper function to format names cleanly for the UI
 def _format_name(name_str):
-    """Converts snake_case names into formatted Title Case."""
-    if name_str == "Downy_mildew_on_lettuce":
-        return "Downy Mildew"
-    if name_str == "Powdery_mildew_on_lettuce":
-        return "Powdery Mildew"
+    """Converts raw JSON names into clean, readable Title Case."""
+    if not name_str:
+        return ""
+        
+    name_str = name_str.replace("_", " ").title()
     
-    # General rule for all others (pests and diseases)
-    return name_str.replace("_", " ").title()
+    # Specific cleanups based on the JSON file
+    replacements = {
+        "N Deficiency": "Nitrogen Deficiency",
+        "P Deficiency": "Phosphorus Deficiency",
+        "K Deficiency": "Potassium Deficiency",
+        "Ca Deficiency": "Calcium Deficiency",
+        "Mg Deficiency": "Magnesium Deficiency",
+        "Downy Mildew On Lettuce": "Downy Mildew",
+        "Powdery Mildew On Lettuce": "Powdery Mildew",
+        "Bacterial": "Bacterial Leaf Spot"
+    }
+    
+    for old, new in replacements.items():
+        name_str = name_str.replace(old, new)
+        
+    return name_str.strip()
 
 
 class AnalysisPage(SC):
@@ -102,7 +110,7 @@ class AnalysisPage(SC):
         # --- UI Setup ---
         self.create_left_panel()
         self.create_leaf_image()
-        self._create_info_panel() # Create info panel first
+        self._create_info_panel() 
 
         if self.view_only:
             self.undo_button(command=self.return_to_gallery)
@@ -116,7 +124,7 @@ class AnalysisPage(SC):
 
         self.image_label = ctk.CTkLabel(
             self.root, text=initial_text, font=("Arial", 20),
-            fg_color=self._get_color(BG_COLOR), # Adjusted for Light/Dark Mode
+            fg_color=self._get_color(BG_COLOR),
             text_color=self._get_color(TEXT_COLOR),
             width=self.display_w, height=self.display_h
         )
@@ -124,7 +132,6 @@ class AnalysisPage(SC):
         self.root.after(100, self._setup_display)
 
     def _load_master_json(self):
-        """Loads the master JSON file. Returns an empty dict if it doesn't exist."""
         try:
             if os.path.exists(self.single_json_path):
                 with open(self.single_json_path, 'r') as f:
@@ -139,7 +146,6 @@ class AnalysisPage(SC):
             return {}
 
     def _save_master_json(self, data):
-        """Saves the provided dictionary to the master JSON file."""
         try:
             with open(self.single_json_path, 'w') as f:
                 json.dump(data, f, indent=4)
@@ -147,53 +153,37 @@ class AnalysisPage(SC):
             print(f"--- ERROR writing master JSON: {e}")
 
     def _setup_display(self):
-        """Places the UI elements and then runs the correct process."""
         self._place_ui_elements()
-        
         if self.view_only:
             self.load_and_display_data()
         else:
             self.run_yolo_analysis()
 
     def _create_info_panel(self):
-        """Creates the frame and labels for displaying analysis results."""
         info_panel_w = self._scale_value(190, 'x')
         info_panel_h = self._scale_value(480, 'y')
 
-        # Using LEFT_PANEL_COLOR for the right background creates nice symmetry
         self.info_frame = ctk.CTkScrollableFrame(
-            self.root, 
-            width=info_panel_w, 
-            height=info_panel_h, 
-            fg_color=self._get_color(BG_COLOR) 
+            self.root, width=info_panel_w, height=info_panel_h, fg_color=self._get_color(BG_COLOR) 
         )
         
-        # --- UI STYLING: Reusable Underlined Title Font ---
         title_font = ctk.CTkFont(size=16, weight="bold", underline=True)
 
         # ==========================================
         # CONTAINER 1: Analysis Results
         # ==========================================
-        self.results_frame = ctk.CTkFrame(
-            self.info_frame, 
-            fg_color=self._get_color(BUTTON_COLOR), 
-            corner_radius=8
-        )
+        self.results_frame = ctk.CTkFrame(self.info_frame, fg_color=self._get_color(BUTTON_COLOR), corner_radius=8)
         self.results_frame.pack(fill="x", padx=10, pady=(10, 10))
 
         title = ctk.CTkLabel(self.results_frame, text="Analysis Results", font=title_font, text_color=self._get_color(TEXT_COLOR))
         title.pack(pady=(10, 5), padx=10)
 
-        # Helper function to create uniform label pairs inside a parent frame
         def create_info_row(parent, label_text):
             row_frame = ctk.CTkFrame(parent, fg_color="transparent")
-            
             label_widget = ctk.CTkLabel(row_frame, text=f"{label_text}:", font=ctk.CTkFont(size=12, weight="bold"), text_color=self._get_color(TEXT_COLOR), anchor="w")
             label_widget.pack(side="left", padx=(10, 2))
-            
             value_label = ctk.CTkLabel(row_frame, text="---", font=ctk.CTkFont(size=12), anchor="w", text_color=self._get_color(TEXT_COLOR))
             value_label.pack(side="left", expand=True, fill="x", padx=2)
-            
             row_frame.pack(fill="x", pady=4)
             return label_widget, value_label
 
@@ -202,33 +192,38 @@ class AnalysisPage(SC):
         _, self.count_label = create_info_row(self.results_frame, "Detections")
         _, self.datetime_label = create_info_row(self.results_frame, "Timestamp")
         
-        # Add slight padding at the bottom of the container
         ctk.CTkFrame(self.results_frame, fg_color="transparent", height=5).pack()
 
         # ==========================================
-        # CONTAINER 2: Description (Hidden by default)
+        # CONTAINER: Detected Symptoms
+        # ==========================================
+        self.symptoms_frame = ctk.CTkFrame(self.info_frame, fg_color=self._get_color(BUTTON_COLOR), corner_radius=8)
+        self.symptoms_title = ctk.CTkLabel(self.symptoms_frame, text="Detected Symptoms", font=title_font, text_color=self._get_color(TEXT_COLOR))
+        self.symptoms_title.pack(pady=(10, 5), padx=10)
+
+        self.symptoms_label = ctk.CTkLabel(
+            self.symptoms_frame, text="", font=ctk.CTkFont(size=11), text_color="#FFD54F", 
+            wraplength=self._scale_value(140, 'x'), justify="left", anchor="w"
+        )
+        self.symptoms_label.pack(pady=(0, 10), padx=15, fill="x")
+
+        # ==========================================
+        # CONTAINER 2: Description
         # ==========================================
         self.desc_frame = ctk.CTkFrame(self.info_frame, fg_color=self._get_color(BUTTON_COLOR), corner_radius=8)
-        
-        desc_title = ctk.CTkLabel(self.desc_frame, text="Description", font=title_font, text_color=self._get_color(TEXT_COLOR))
-        desc_title.pack(pady=(10, 5), padx=10)
+        self.desc_title = ctk.CTkLabel(self.desc_frame, text="Description", font=title_font, text_color=self._get_color(TEXT_COLOR))
+        self.desc_title.pack(pady=(10, 5), padx=10)
         
         self.description_label = ctk.CTkLabel(
-            self.desc_frame,
-            text="",
-            font=ctk.CTkFont(size=11),
-            text_color="#66BB6A", # Keep Green for healthy text
-            wraplength=self._scale_value(140, 'x'), 
-            justify="left",
-            anchor="w"
+            self.desc_frame, text="", font=ctk.CTkFont(size=11), text_color="#66BB6A", 
+            wraplength=self._scale_value(140, 'x'), justify="left", anchor="w"
         )
         self.description_label.pack(pady=(0, 10), padx=15, fill="x")
 
         # ==========================================
-        # CONTAINER 3: Risk Assessment (Hidden by default)
+        # CONTAINER 3: Risk Assessment
         # ==========================================
         self.risk_frame = ctk.CTkFrame(self.info_frame, fg_color=self._get_color(BUTTON_COLOR), corner_radius=8)
-
         risk_title = ctk.CTkLabel(self.risk_frame, text="Risk Assessment", font=title_font, text_color=self._get_color(TEXT_COLOR))
         risk_title.pack(pady=(10, 8), padx=10)
         
@@ -245,16 +240,12 @@ class AnalysisPage(SC):
             label.pack(anchor="w", padx=12, pady=2)
             self.risk_labels[key] = label
             
-        # Add slight padding at the bottom of the risk container
         ctk.CTkFrame(self.risk_frame, fg_color="transparent", height=5).pack()
 
     def _place_ui_elements(self):
-        """Calculates and places the image label and the info panel."""
         self.root.update_idletasks()
-        
         x_pos_image = self._scale_value(self.ORIGINAL_LEFT_PANEL_WIDTH, 'x')
         self.image_label.place(x=x_pos_image, y=0, anchor="nw")
-        
         x_pos_info = x_pos_image + self.display_w
         self.info_frame.place(x=x_pos_info, y=0, anchor="nw")
 
@@ -266,7 +257,6 @@ class AnalysisPage(SC):
         scaled_img_size = (self._scale_value(80, 'x'), self._scale_value(80, 'y'))
         scaled_hover_offset = self._scale_value(5, 'y')
 
-        # Automatically recolor for dark/light mode
         image_path = "_image_assets/save.png"
         img_white = Image.open(image_path).convert("RGBA")
         img_dark = self._recolor_icon(image_path, hex_color=TEXT_COLOR[0])
@@ -275,14 +265,12 @@ class AnalysisPage(SC):
         btn = ctk.CTkButton(
             self.root, text="", width=scaled_width, height=scaled_height,
             image=save_photo, compound="top", command=command, 
-            fg_color=self._get_color(LEFT_PANEL_COLOR), 
-            hover_color=self._get_color(BUTTON_HOVER)
+            fg_color=self._get_color(LEFT_PANEL_COLOR), hover_color=self._get_color(BUTTON_HOVER)
         )
         btn.place(x=scaled_x, y=scaled_y, anchor="center")
 
         def on_enter(event): btn.place_configure(y=scaled_y - scaled_hover_offset) 
         def on_leave(event): btn.place_configure(y=scaled_y) 
-
         btn.bind("<Enter>", on_enter)
         btn.bind("<Leave>", on_leave)
         return btn
@@ -292,15 +280,11 @@ class AnalysisPage(SC):
         scaled_width = self._scale_value(80, 'x')
         scaled_height = self._scale_value(80, 'y')
         x, y = 5, 380
-
-        if y_offset is not None:
-            y = y_offset
-        
+        if y_offset is not None: y = y_offset
         scaled_x = self._scale_value(x, 'x')
         scaled_y = self._scale_value(y, 'y')
         scaled_hover_offset = self._scale_value(5, 'y')
 
-        # Automatically recolor for dark/light mode
         image_path = "_image_assets/trash.png"
         img_white = Image.open(image_path).convert("RGBA")
         img_dark = self._recolor_icon(image_path, hex_color=TEXT_COLOR[0])
@@ -309,16 +293,13 @@ class AnalysisPage(SC):
         btn = ctk.CTkButton(
             self.root, text="", width=scaled_width, height=scaled_height,
             image=trash_photo, compound="top", command=command,
-            fg_color=self._get_color(LEFT_PANEL_COLOR), 
-            hover_color=self._get_color(BUTTON_HOVER), 
-            corner_radius=0
+            fg_color=self._get_color(LEFT_PANEL_COLOR), hover_color=self._get_color(BUTTON_HOVER), corner_radius=0
         )
         btn.place(x=scaled_x, y=scaled_y)
         btn.image = trash_photo
 
         def on_enter(event): btn.place_configure(y=scaled_y - scaled_hover_offset)
         def on_leave(event): btn.place_configure(y=scaled_y)
-
         btn.bind("<Enter>", on_enter)
         btn.bind("<Leave>", on_leave)
         return btn
@@ -329,13 +310,12 @@ class AnalysisPage(SC):
                 model_path = "Page_files/yolov11_models/diseases.pt"
             else:
                 model_path = "Page_files/yolov11_models/nutrients.pt"
-				
+                
             model = YOLO(model_path)
             results = model(self.original_image_path)
 
             self.annotated_image_data = results[0].plot()
             self.display_image(self.annotated_image_data)
-
             self.update_info_panel(results)
 
         except Exception as e:
@@ -346,14 +326,22 @@ class AnalysisPage(SC):
             self.count_label.configure(text="---")
 
     def update_info_panel(self, results):
-        """Extracts data from YOLO results and populates the panel."""
         now = datetime.datetime.now()
         timestamp = now.strftime("%b %d, %Y %I:%M %p")
 
         if results and len(results[0].boxes) > 0:
-            top_detection = results[0].boxes[0]
-            detection_name = results[0].names[int(top_detection.cls)]
-            accuracy = f"{top_detection.conf.item()*100:.2f}%"
+            detected_names = []
+            max_conf = 0.0
+            for box in results[0].boxes:
+                cls_name = results[0].names[int(box.cls)]
+                conf = box.conf.item()
+                if cls_name not in detected_names:
+                    detected_names.append(cls_name)
+                if conf > max_conf:
+                    max_conf = conf
+
+            detection_name = ", ".join(detected_names)
+            accuracy = f"{max_conf*100:.2f}%" 
             detection_count = str(len(results[0].boxes))
             is_healthy = False
         else:
@@ -373,120 +361,220 @@ class AnalysisPage(SC):
         self.populate_info_panel(self.analysis_data_dict)
 
     def get_latest_weather_data(self):
-        """Reads the latest temperature and humidity from weather.csv."""
         try:
             csv_path = "Page_files/weather.csv"
-            if not os.path.exists(csv_path):
-                return None, None
-            
+            if not os.path.exists(csv_path): return None, None
             df = pd.read_csv(csv_path)
-            if df.empty or 'Temperature' not in df.columns or 'Humidity' not in df.columns:
-                return None, None
-            
-            latest_temp = df['Temperature'].iloc[-1]
-            latest_humidity = df['Humidity'].iloc[-1]
-            return latest_temp, latest_humidity
+            if df.empty or 'Temperature' not in df.columns or 'Humidity' not in df.columns: return None, None
+            return df['Temperature'].iloc[-1], df['Humidity'].iloc[-1]
         except Exception as e:
             print(f"Error reading weather data: {e}")
             return None, None
 
     def populate_info_panel(self, data_dict):
-        """Populates the info panel labels from a given data dictionary."""
+        # 1. Reset dynamic frames safely
+        self.symptoms_frame.pack_forget()
+        self.desc_frame.pack_forget()
+        self.risk_frame.pack_forget()
         
-        if "disease" in data_dict:
-            #FFFFFF
-            name = data_dict.get("disease", "---")
-        elif "pest" in data_dict:
+        # --- BULLETPROOF NAME EXTRACTION ---
+        disease_val = data_dict.get("disease", "")
+        pest_val = data_dict.get("pest_name", "") or data_dict.get("pest", "")
+
+        if pest_val and str(pest_val).strip() != "" and pest_val != "---":
             self.main_info_label.configure(text="Pest:")
-            name = data_dict.get("pest", "---")
+            name = str(pest_val)
+        elif disease_val and str(disease_val).strip() != "" and disease_val != "---":
+            self.main_info_label.configure(text="Detection:")
+            name = str(disease_val)
         else:
             self.main_info_label.configure(text="Detection:")
             name = "Unknown"
             
         self.main_value_label.configure(text=_format_name(name))
-        
         self.accuracy_label.configure(text=data_dict.get("accuracy", "---"))
         self.count_label.configure(text=data_dict.get("count", "---"))
+        self.datetime_label.configure(text=data_dict.get("timestamp", "---"))
+
+        DEFICIENCY_SYMPTOMS = {
+            "Nitrogen": "• Older leaves turn pale green or yellow\n• Stunted growth\n• Thin and weak stems",
+            "Phosphorus": "• Dark green or purplish leaves\n• Delayed growth\n• Poor root development",
+            "Potassium": "• Leaf edges turn yellow or brown (scorching)\n• Weak stems\n• Increased susceptibility to disease",
+            "Calcium": "• New leaves are deformed or curled\n• Tip burn (especially in lettuce)\n• Poor root growth",
+            "Magnesium": "• Yellowing between leaf veins (chlorosis)\n• Older leaves affected first\n• Leaves may curl upward"
+        }
         
-        # Format the timestamp strictly to fit the card visually
-        timestamp = data_dict.get("timestamp", "---")
-        if len(timestamp) > 12:
-            pass 
-        self.datetime_label.configure(text=timestamp)
+        DEFICIENCY_TREATMENTS = {
+            "Nitrogen": "• Fast: Add Liquid Fish Emulsion and Coffee grounds to the soil\n• Long-Term: Add blood meal or compost.",
+            "Phosphorus": "• Fast: High-P Water Soluble Feed\n• Long-Term: Bone meal & check pH.",
+            "Potassium": "• Fast: Add Banana peels an inch into the soil\n• Add Seaweed Extract\n• Long-Term: Greensand or kelp meal.",
+            "Calcium": "• Fast: Add eggshells into the soil and water consistently\n• Long-Term: Gypsum or Dolomitic Lime.",
+            "Magnesium": "• Fast: Epsom Salt foliar spray before watering the soil\n• Long-Term: Dolomitic Lime."
+        }
+
+        DISEASE_SYMPTOMS = {
+            "Powdery Mildew": "• White powdery spots on leaves and stems\n• Curling or yellowing of leaves\n• Stunted plant growth",
+            "Downy Mildew": "• Light green or yellow spots on top of leaves\n• Fluffy grayish/purplish growth on leaf undersides",
+            "Bacterial Leaf Spot": "• Small, dark, water-soaked spots\n• Lesions may have a yellow halo\n• Spots may merge, killing large leaf areas",
+            "Lettuce Mosaic Virus": "• Mottled green and yellow leaf pattern\n• Stunted growth and ruffled leaf edges\n• Vein clearing or yellowing"
+        }
+
+        DISEASE_TREATMENTS = {
+            "Powdery Mildew": "• Fast: Apply Neem oil or Potassium Bicarbonate.\n• Long-Term: Improve airflow and reduce humidity.",
+            "Downy Mildew": "• Fast: Apply Copper-based fungicide.\n• Long-Term: Ensure proper plant spacing and avoid overhead watering.",
+            "Bacterial Leaf Spot": "• Fast: Apply Copper bactericides.\n• Long-Term: Remove diseased plants and debris immediately.",
+            "Lettuce Mosaic Virus": "• Fast: Remove and destroy infected plants immediately (No cure).\n• Long-Term: Control aphids (vectors) and use certified disease-free seed."
+        }
         
-        # Handle healthy classification with UI cards
-        is_healthy = data_dict.get("is_healthy", False)
+        PEST_SYMPTOMS = {
+            "Aphids": "• Small, clustered insects on leaf undersides\n• Leaves may curl, yellow, or become distorted\n• Sticky honeydew residue on leaves",
+            "Caterpillars": "• Large, irregular chewed holes in leaves\n• Dark droppings (frass) left on the plant\n• Rapid defoliation of the lettuce head",
+            "Slugs": "• Irregular holes chewed in the middle of leaves\n• Shiny, silvery slime trails left behind\n• Mostly active at night or in very damp conditions"
+        }
+
+        PEST_TREATMENTS = {
+            "Aphids": "• Fast: Spray with insecticidal soap or Neem oil.\n• Long-Term: Introduce beneficial insects like ladybugs.",
+            "Caterpillars": "• Fast: Handpick them off or apply Bt (Bacillus thuringiensis) spray.\n• Long-Term: Use floating row covers to prevent egg-laying.",
+            "Slugs": "• Fast: Set up shallow beer traps or apply diatomaceous earth.\n• Long-Term: Reduce surface moisture and use copper tape barriers."
+        }
         
+        DROPLET_WARNING = "• WARNING: Prolonged moisture on leaves creates an ideal breeding ground for fungal diseases (like Downy Mildew) and attracts pests like slugs."
+        DROPLET_ACTION = "• Fast: Gently shake or wipe excess water from the leaves.\n• Long-Term: Water lettuce at the base of the plant early in the morning, and improve airflow."
+        
+        # --- PARSE DETECTION STRING ---
+        clean_words = name.lower().replace("_", " ").split()
+        
+        detected_deficiencies = []
+        NUTRIENT_ALIASES = {
+            "Nitrogen": ["nitrogen", "n"],
+            "Phosphorus": ["phosphorus", "p"],
+            "Potassium": ["potassium", "k"],
+            "Calcium": ["calcium", "ca"],
+            "Magnesium": ["magnesium", "mg"]
+        }
+        for nutrient, aliases in NUTRIENT_ALIASES.items():
+            if name.lower() in aliases or any(alias in clean_words for alias in aliases):
+                detected_deficiencies.append(nutrient)
+
+        detected_diseases = []
+        DISEASE_ALIASES = {
+            "Powdery Mildew": ["powdery", "powdery_mildew"],
+            "Downy Mildew": ["downy", "downy_mildew"],
+            "Bacterial Leaf Spot": ["bls", "bacterial", "bacterial_leaf_spot"],
+            "Lettuce Mosaic Virus": ["lmv", "mosaic", "lettuce_mosaic", "lettuce_mosaic_virus"]
+        }
+        for disease, aliases in DISEASE_ALIASES.items():
+            if name.lower() in aliases or any(alias in clean_words for alias in aliases):
+                detected_diseases.append(disease)
+
+        detected_pests = []
+        PEST_ALIASES = {
+            "Aphids": ["aphid", "aphids"],
+            "Caterpillars": ["caterpillar", "caterpillars", "worm", "looper"],
+            "Slugs": ["slug", "slugs", "snail"]
+        }
+        for pest, aliases in PEST_ALIASES.items():
+            if name.lower() in aliases or any(alias in clean_words for alias in aliases):
+                detected_pests.append(pest)
+                
+        has_droplets = "droplet" in name.lower() or "water" in name.lower()
+
+        # Check health status explicitly
+        is_healthy = name.lower() == "healthy" or name == "No Disease Detected" or data_dict.get("is_healthy", False)
+        
+        # --- UI DISPLAY LOGIC ---
         if is_healthy:
-            # Show the Description Card
             self.desc_frame.pack(fill="x", padx=10, pady=(0, 10))
+            self.desc_title.configure(text="Description")
+            bullet_points = "• No visual signs of disease.\n• Leaf structures are intact.\n• Plant appears completely healthy."
+            self.description_label.configure(text=bullet_points, text_color="#66BB6A")
             
-            # Formatted Bullet Points
-            bullet_points = (
-                "â€¢ No visual signs of disease.\n"
-                "â€¢ Leaf structures are intact.\n"
-                "â€¢ Plant appears completely healthy."
-            )
-            self.description_label.configure(text=bullet_points)
-            
-            # Show the Risk Assessment Card
             if not self.risk_frame.winfo_ismapped():
                 self.risk_frame.pack(fill="x", padx=10, pady=(0, 10))
             
-            # Get current weather data and calculate risks
             temp, humidity = self.get_latest_weather_data()
-            
             if temp is not None and humidity is not None:
-                # Calculate risks
                 powdery = classify_risk(powdery_mildew_risk(temp, humidity))
                 downy = classify_risk(downy_mildew_risk(temp, humidity))
                 bls = classify_risk(bls_risk(temp, humidity))
                 lmv = classify_risk(lmv_risk(temp, humidity))
                 
-                def get_color(level):
-                    return "#FF1744" if level == "HIGH" else "#FFA500" if level == "MODERATE" else "#66BB6A"
+                def get_color(level): return "#FF1744" if level == "HIGH" else "#FFA500" if level == "MODERATE" else "#66BB6A"
                 
-                self.risk_labels["powdery"].configure(
-                    text=f"Powdery Mildew: {powdery[0]}% ({powdery[1]})",
-                    text_color=get_color(powdery[1])
-                )
-                self.risk_labels["downy"].configure(
-                    text=f"Downy Mildew: {downy[0]}% ({downy[1]})",
-                    text_color=get_color(downy[1])
-                )
-                self.risk_labels["bls"].configure(
-                    text=f"Bacterial Leaf Spot: {bls[0]}% ({bls[1]})",
-                    text_color=get_color(bls[1])
-                )
-                self.risk_labels["lmv"].configure(
-                    text=f"Lettuce Mosaic Virus: {lmv[0]}% ({lmv[1]})",
-                    text_color=get_color(lmv[1])
-                )
+                self.risk_labels["powdery"].configure(text=f"Powdery Mildew: {powdery[0]}% ({powdery[1]})", text_color=get_color(powdery[1]))
+                self.risk_labels["downy"].configure(text=f"Downy Mildew: {downy[0]}% ({downy[1]})", text_color=get_color(downy[1]))
+                self.risk_labels["bls"].configure(text=f"Bacterial Leaf Spot: {bls[0]}% ({bls[1]})", text_color=get_color(bls[1]))
+                self.risk_labels["lmv"].configure(text=f"Lettuce Mosaic Virus: {lmv[0]}% ({lmv[1]})", text_color=get_color(lmv[1]))
             else:
-                # Show placeholder if weather data unavailable
-                names = {
-                    "powdery": "Powdery Mildew",
-                    "downy": "Downy Mildew",
-                    "bls": "Bacterial Leaf Spot",
-                    "lmv": "Lettuce Mosaic Virus"
-                }
+                names = {"powdery": "Powdery Mildew", "downy": "Downy Mildew", "bls": "Bacterial Leaf Spot", "lmv": "Lettuce Mosaic Virus"}
+                for key in self.risk_labels: self.risk_labels[key].configure(text=f"{names[key]}: Data unavailable")
 
-                for key in self.risk_labels:
-                    self.risk_labels[key].configure(text=f"{names[key]}: Data unavailable")
+        elif detected_deficiencies:
+            self.symptoms_frame.pack(fill="x", padx=10, pady=(0, 10))
+            self.symptoms_title.configure(text="Detected Symptoms")
+            combined_symptoms = ""
+            for d in detected_deficiencies:
+                combined_symptoms += f"--- {d.upper()} ---\n{DEFICIENCY_SYMPTOMS[d]}\n\n"
+            self.symptoms_label.configure(text=combined_symptoms.strip())
+
+            self.desc_frame.pack(fill="x", padx=10, pady=(0, 10))
+            self.desc_title.configure(text="Treatment Plan")
+            combined_treatments = ""
+            for d in detected_deficiencies:
+                combined_treatments += f"--- {d.upper()} ---\n{DEFICIENCY_TREATMENTS[d]}\n\n"
+            self.description_label.configure(text=combined_treatments.strip(), text_color="#FFA500")
+
+        elif detected_diseases:
+            self.symptoms_frame.pack(fill="x", padx=10, pady=(0, 10))
+            self.symptoms_title.configure(text="Detected Symptoms")
+            combined_symptoms = ""
+            for d in detected_diseases:
+                combined_symptoms += f"--- {d.upper()} ---\n{DISEASE_SYMPTOMS[d]}\n\n"
+            self.symptoms_label.configure(text=combined_symptoms.strip())
+
+            self.desc_frame.pack(fill="x", padx=10, pady=(0, 10))
+            self.desc_title.configure(text="Treatment Plan")
+            combined_treatments = ""
+            for d in detected_diseases:
+                combined_treatments += f"--- {d.upper()} ---\n{DISEASE_TREATMENTS[d]}\n\n"
+            self.description_label.configure(text=combined_treatments.strip(), text_color="#FF6B6B")
+
+        elif detected_pests:
+            self.symptoms_frame.pack(fill="x", padx=10, pady=(0, 10))
+            self.symptoms_title.configure(text="Pest Symptoms")
+            combined_symptoms = ""
+            for p in detected_pests:
+                combined_symptoms += f"--- {p.upper()} ---\n{PEST_SYMPTOMS[p]}\n\n"
+            self.symptoms_label.configure(text=combined_symptoms.strip(), text_color="#FFD54F")
+
+            self.desc_frame.pack(fill="x", padx=10, pady=(0, 10))
+            self.desc_title.configure(text="Pest Control Plan")
+            combined_treatments = ""
+            for p in detected_pests:
+                combined_treatments += f"--- {p.upper()} ---\n{PEST_TREATMENTS[p]}\n\n"
+            self.description_label.configure(text=combined_treatments.strip(), text_color="#FF6B6B")
+
+        elif has_droplets:
+            self.symptoms_frame.pack(fill="x", padx=10, pady=(0, 10))
+            self.symptoms_title.configure(text="Moisture Warning")
+            self.symptoms_label.configure(text=DROPLET_WARNING, text_color="#00BFFF")
+
+            self.desc_frame.pack(fill="x", padx=10, pady=(0, 10))
+            self.desc_title.configure(text="Recommended Action")
+            self.description_label.configure(text=DROPLET_ACTION, text_color="#66BB6A")
+
         else:
-            # Hide Description and Risk frames entirely for diseased plants
-            self.desc_frame.pack_forget()
-            self.risk_frame.pack_forget()
+            # Catch-all if something doesn't map to a specific dictionary
+            self.symptoms_frame.pack(fill="x", padx=10, pady=(0, 10))
+            self.symptoms_title.configure(text="Information")
+            self.symptoms_label.configure(text=f"Detected: {name.title()}\nNo specific treatment data mapped.", text_color="#FFFFFF")
         
         self.root.update_idletasks()
 
     def load_and_display_data(self):
-        """Loads annotated image and analysis JSON from gallery paths."""
         try:
             image_filename = os.path.basename(self.image_path)
-            
             if not os.path.exists(self.image_path):
-                print(f"--- ERROR: Missing image file.")
                 self.image_label.configure(text="Error: File not found.", text_color="red")
                 return
 
@@ -497,19 +585,15 @@ class AnalysisPage(SC):
             image_specific_data = master_data.get(image_filename)
 
             if image_specific_data:
-                # Determine if this is a healthy classification
-                disease_name = image_specific_data.get("disease", "")
+                disease_name = image_specific_data.get("disease", "") or image_specific_data.get("pest_name", "") or image_specific_data.get("pest", "")
                 is_healthy = disease_name.lower() == "healthy" or disease_name == "No Disease Detected"
                 image_specific_data["is_healthy"] = is_healthy
                 self.populate_info_panel(image_specific_data)
             else:
-                print(f"--- ERROR: No data found for {image_filename} in {self.single_json_path}")
                 self.populate_info_panel({}) 
 
         except Exception as e:
-            print(f"--- ERROR loading gallery data: {e}")
             self.image_label.configure(text="Error loading data.", text_color="red")
-
 
     def display_image(self, image_data_bgr):
         image_rgb = cv2.cvtColor(image_data_bgr, cv2.COLOR_BGR2RGB)
@@ -529,13 +613,9 @@ class AnalysisPage(SC):
 
             try:
                 cv2.imwrite(save_path_img, self.annotated_image_data)
-                print(f"â Annotated image saved to: {save_path_img}")
-                
                 master_data = self._load_master_json()
                 master_data[image_filename] = self.analysis_data_dict
                 self._save_master_json(master_data)
-                print(f"â Analysis data saved to: {self.single_json_path}")
-
                 os.remove(self.original_image_path)
                 self.return_to_capture()
 
@@ -543,9 +623,7 @@ class AnalysisPage(SC):
                 print(f"--- ERROR saving files: {e}")
 
     def trash_image(self):
-        if os.path.exists(self.original_image_path):
-            os.remove(self.original_image_path)
-            print(f"ðï¸ Image trashed: {self.original_image_path}")
+        if os.path.exists(self.original_image_path): os.remove(self.original_image_path)
         self.return_to_capture()
 
     def return_to_capture(self):
@@ -555,32 +633,18 @@ class AnalysisPage(SC):
         capture_app.root.mainloop()
 
     def delete_gallery_entry(self):
-        """Deletes the .jpg and its entry from the master .json file."""
         try:
             image_filename = os.path.basename(self.image_path)
-            
-            # 1. Delete the image file
-            if os.path.exists(self.image_path):
-                os.remove(self.image_path)
-                print(f"ðï¸ Deleted image: {self.image_path}")
-            
-            # 2. Load the master dictionary
+            if os.path.exists(self.image_path): os.remove(self.image_path)
             master_data = self._load_master_json()
             
-            # 3. Remove the entry for this image
             if image_filename in master_data:
                 del master_data[image_filename]
-                print(f"ðï¸ Deleted data for {image_filename} from {self.single_json_path}")
-                # 4. Save the modified master dictionary
                 self._save_master_json(master_data)
-            else:
-                print(f"â ï¸ Warning: No data found for {image_filename} in master JSON.")
                 
         except Exception as e:
-            # FIX 1: Replaced Unicode character with basic ASCII string
             print(f"--- ERROR deleting files: {e}")
         
-        # FIX 2: Call return_to_gallery without destroying immediately in this context
         self.root.after(0, self.return_to_gallery) 
 
     def return_to_gallery(self):
@@ -589,7 +653,6 @@ class AnalysisPage(SC):
         gallery_app = GalleryPage()
         gallery_app.root.mainloop()
 
-# --- To run this page directly for testing (if needed) ---
 if __name__ == "__main__":
     app = AnalysisPage("test_image.jpg", view_only=True)
     app.root.mainloop()

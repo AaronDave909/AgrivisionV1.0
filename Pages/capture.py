@@ -73,6 +73,8 @@ class CapturePage(SC):
             text="Disease",
             width=button_width,
             height=button_height,
+            hover=False,
+            font=("Arial", self._scale_value(18, 'y'), "bold"),
             command=lambda: self.set_mode("Disease")
         )
         self.disease_btn.place(
@@ -86,6 +88,8 @@ class CapturePage(SC):
             text="Nutrient",
             width=button_width,
             height=button_height,
+            hover=False,
+            font=("Arial", self._scale_value(18, 'y'), "bold"),
             command=lambda: self.set_mode("Nutrient")
         )
         self.nutrient_btn.place(
@@ -106,11 +110,11 @@ class CapturePage(SC):
 
     def update_button_styles(self):
         if self.capture_mode == "Disease":
-            self.disease_btn.configure(fg_color="#4CAF50")
-            self.nutrient_btn.configure(fg_color="#444")
+            self.disease_btn.configure(fg_color="#383C4E")
+            self.nutrient_btn.configure(fg_color="#2A2E3F")
         else:
-            self.nutrient_btn.configure(fg_color="#2196F3")
-            self.disease_btn.configure(fg_color="#444")
+            self.nutrient_btn.configure(fg_color="#383C4E")
+            self.disease_btn.configure(fg_color="#2A2E3F")
 
     # =============================
     # CAMERA
