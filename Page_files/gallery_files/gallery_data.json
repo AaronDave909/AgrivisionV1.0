@@ -161,5 +161,12 @@
         "count": "1",
         "timestamp": "Mar 23, 2026 12:25 PM",
         "is_healthy": false
+    },
+    "capture_20260411_092618.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Apr 11, 2026 09:26 AM",
+        "is_healthy": true
     }
 }

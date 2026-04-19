@@ -1,10 +1,10 @@
 [Desktop Entry]
 Version=1.0
 Name=Agrivision
-Comment= RUN " chmod +x /home/red/AgrivisionV1.0/start.sh " on cmd first
 Type=Application
-Terminal=False
+Terminal=True
 Exec=/home/red/AgrivisionV1.0/start.sh
 Path=/home/red/AgrivisionV1.0
-Icon=/home/red/AgrivisionV1.0/_image_assets/Leaf.png
-
+Icon=agrivision
+StartupWMClass=Tk
+Categories=Utility;

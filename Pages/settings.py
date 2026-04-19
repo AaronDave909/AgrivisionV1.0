@@ -4,9 +4,12 @@ import time
 import threading
 import customtkinter as ctk
 import psutil
-from shared_components import SharedComponents as SC, custom_font_bold, custom_font_regular # Import scaled fonts
+
+# ---> IMPORT TEXT_COLOR HERE <---
+from shared_components import SharedComponents as SC, custom_font_bold, custom_font_regular, TEXT_COLOR 
 
 BRIGHTNESS_FILE = "Page_files/brightness_state.txt"
+THEME_FILE = "Page_files/theme_state.txt" # --- NEW: File to store theme state ---
 
 class SettingsPage(SC):
     
@@ -22,23 +25,88 @@ class SettingsPage(SC):
         self.create_leaf_image()
         self.undo_button(command=self.go_back_to_dashboard)
         
-        # Define a scaled font for smaller text (12pt original)
-        # We reuse the scaling factor from SC to ensure consistency
         scaled_12pt_size = self._scale_value(12, 'y')
         self.scaled_12pt_font = ("Arial", scaled_12pt_size)
 
-        # Place version label using scaled coordinates and font
+        # Version Label
         label = ctk.CTkLabel(
             self.root, 
             text="Agrivision v1.0", 
-            font=self.scaled_12pt_font, # Use scaled font
-            text_color="white"
+            font=self.scaled_12pt_font, 
+            text_color=TEXT_COLOR 
         )
-        label.place(x=scale_x(123), y=scale_y(430)) # Use scaled position
+        label.place(x=scale_x(123), y=scale_y(430)) 
         
         self.create_memory_usage_bar()
         self.create_brightness_slider() 
         self.load_saved_brightness()
+        
+        self.create_appearance_toggle()
+
+    def create_appearance_toggle(self):
+        """Creates the Light/Dark mode toggle switch."""
+        # 1. Section Title
+        appearance_label = ctk.CTkLabel(
+            self.root, 
+            text="App Appearance", 
+            font=tuple(custom_font_bold), 
+            text_color=TEXT_COLOR 
+        )
+        appearance_label.place(x=self._scale_value(123, 'x'), y=self._scale_value(230, 'y'))
+
+        # 2. The Switch Widget
+        self.mode_switch = ctk.CTkSwitch(
+            self.root,
+            text="Dark Mode" if ctk.get_appearance_mode() == "Dark" else "Light Mode",
+            font=self.scaled_12pt_font,
+            text_color=TEXT_COLOR,
+            progress_color="#FF6B6B", # Turns soft red when active!
+            command=self.toggle_appearance
+        )
+        self.mode_switch.place(x=self._scale_value(123, 'x'), y=self._scale_value(265, 'y'))
+
+        # 3. Set initial switch position based on current mode
+        if ctk.get_appearance_mode() == "Dark":
+            self.mode_switch.select()
+        else:
+            self.mode_switch.deselect()
+
+    def toggle_appearance(self):
+        """Flipped when the user clicks the switch."""
+        
+        # 1. Change the internal CTk mode and SAVE it
+        if self.mode_switch.get() == 1:
+            ctk.set_appearance_mode("Dark")
+            self.mode_switch.configure(text="Dark Mode")
+            self.save_theme("Dark") # --- NEW: Save choice ---
+        else:
+            ctk.set_appearance_mode("Light")
+            self.mode_switch.configure(text="Light Mode")
+            self.save_theme("Light") # --- NEW: Save choice ---
+            
+        # 2. Force the UI to refresh by reloading the dashboard
+        print(f"Theme switched to {ctk.get_appearance_mode()}. Reloading UI...")
+        
+        # Give the switch a tiny moment to finish its animation
+        self.root.after(150, self.force_ui_reload)
+
+    # --- NEW: Save theme function ---
+    def save_theme(self, mode):
+        """Writes the selected theme to a text file so it survives reboots."""
+        os.makedirs(os.path.dirname(THEME_FILE), exist_ok=True)
+        try:
+            with open(THEME_FILE, "w") as f:
+                f.write(mode)
+        except Exception as e:
+            print(f"Error saving theme: {e}")
+    # --------------------------------
+
+    def force_ui_reload(self):
+        """Destroys the current window and reloads the Dashboard to apply new colors."""
+        self.root.destroy()
+        from Pages.main_dashboard import MyDashboard 
+        dashboard = MyDashboard()
+        dashboard.root.mainloop()
 
     def create_memory_usage_bar(self):
         disk = psutil.disk_usage('/')
@@ -46,42 +114,37 @@ class SettingsPage(SC):
         free_gb = disk.free / (1024 ** 3)
         percent_used = disk.percent
 
-        # Scale position and use scaled font
         label = ctk.CTkLabel(
             self.root, 
             text="System Storage", 
-            font=tuple(custom_font_bold), # Use imported scaled font
-            text_color="white"
+            font=tuple(custom_font_bold), 
+            text_color=TEXT_COLOR 
         )
         label.place(x=self._scale_value(123, 'x'), y=self._scale_value(128, 'y'))
 
-        # Scale width and position of progress bar
         scaled_bar_width = self._scale_value(300, 'x')
-        self.storage_bar = ctk.CTkProgressBar(self.root, width=scaled_bar_width, progress_color="white")
+        self.storage_bar = ctk.CTkProgressBar(self.root, width=scaled_bar_width, progress_color="#A9DFFF")
         self.storage_bar.place(x=self._scale_value(123, 'x'), y=self._scale_value(185, 'y'))
         self.storage_bar.set(percent_used / 100)
 
-        # Scale position and font of usage text
         usage_text = f"Used: {used_gb:.1f} GB | Free: {free_gb:.1f} GB"
         usage_label = ctk.CTkLabel(
             self.root, 
             text=usage_text, 
-            font=self.scaled_12pt_font, # Use scaled 12pt font
-            text_color="white"
+            font=self.scaled_12pt_font, 
+            text_color=TEXT_COLOR 
         )
         usage_label.place(x=self._scale_value(123, 'x'), y=self._scale_value(152, 'y'))
 
     def create_brightness_slider(self):
-        # Scale position and use scaled font
         brightness_label = ctk.CTkLabel(
             self.root, 
             text="Brightness", 
-            font=tuple(custom_font_bold), # Use imported scaled font
-            text_color="white"
+            font=tuple(custom_font_bold), 
+            text_color=TEXT_COLOR 
         )
         brightness_label.place(x=self._scale_value(123, 'x'), y=self._scale_value(66, 'y'))
 
-        # Scale width and position of slider
         scaled_slider_width = self._scale_value(300, 'x')
         self.brightness_slider = ctk.CTkSlider(
             self.root,
@@ -89,53 +152,44 @@ class SettingsPage(SC):
             from_=0,
             to=100,
             command=self.set_brightness,
-            button_color="white",
-            button_hover_color="lightgray",
-            progress_color="white"
+            button_color="#A9DFFF", 
+            button_hover_color="#89BFEF",
+            progress_color="#A9DFFF"
         )
         self.brightness_slider.place(x=self._scale_value(123, 'x'), y=self._scale_value(105, 'y'))
 
     def load_saved_brightness(self):
-        """Load brightness value from file and apply it."""
         if os.path.exists(BRIGHTNESS_FILE):
             try:
                 with open(BRIGHTNESS_FILE, "r") as f:
                     value = float(f.read().strip())
             except:
-                value = 50.0  # Fallback
+                value = 50.0  
         else:
-            value = 50.0  # Default if file doesn't exist
+            value = 50.0  
 
         self.brightness_slider.set(value)
         self.apply_brightness(value)
 
-    # --- (set_brightness, save_brightness, and apply_brightness methods remain unchanged) ---
     def set_brightness(self, value):
-        """Triggered when slider is moved."""
         self.save_brightness(value)
         self.apply_brightness(value)
 
     def save_brightness(self, value):
-        """Save brightness to txt file."""
         os.makedirs(os.path.dirname(BRIGHTNESS_FILE), exist_ok=True)
         with open(BRIGHTNESS_FILE, "w") as f:
             f.write(str(value))
 
     def apply_brightness(self, target_value):
-        """Smoothly transition brightness to target value."""
-
         def fade():
             system = platform.system()
-
-            # Read current brightness (real for Pi, virtual for Mac)
             if system == "Linux" and os.path.exists("/sys/class/backlight/rpi_backlight/brightness"):
                 try:
                     with open("/sys/class/backlight/rpi_backlight/brightness", "r") as f:
-                        current = int(f.read().strip()) / 2.55  # Convert 0-255 → 0-100
+                        current = int(f.read().strip()) / 2.55  
                 except:
                     current = target_value
             else:
-                # Simulate brightness on unsupported systems (Mac/Windows)
                 current = getattr(self, "_virtual_brightness", target_value)
 
             step = 1 if target_value > current else -1
@@ -147,12 +201,12 @@ class SettingsPage(SC):
                     try:
                         with open("/sys/class/backlight/rpi_backlight/brightness", "w") as f:
                             f.write(str(hardware_value))
-                        time.sleep(0.01)  # Smooth delay
+                        time.sleep(0.01)  
                     except PermissionError:
                         print("Permission denied: run with sudo")
                         break
                 else:
-                    self._virtual_brightness = level  # Store fake brightness
-                    time.sleep(0.01)  # Smooth delay
+                    self._virtual_brightness = level  
+                    time.sleep(0.01)  
 
         threading.Thread(target=fade, daemon=True).start()

@@ -180,7 +180,7 @@ class RecentDiseaseList(ctk.CTkFrame):
         
         # 1. Canvas for scrolling
         # FIX: Unpack the tuple safely using the new helper
-        canvas_bg = self._get_color(LEFT_PANEL_COLOR)
+        canvas_bg = self._get_color(BUTTON_COLOR)
         
         self.canvas = ctk.CTkCanvas(self, bg=canvas_bg, highlightthickness=0)
         
@@ -301,7 +301,7 @@ class RecentDiseaseList(ctk.CTkFrame):
         date_font = ctk.CTkFont(family="Arial", size=12)
 
         # MODIFIED: Loop now gets filename and item
-        for filename, item in sorted_data:
+        for filename, item in sorted_data[:15]:
             # This code is now safe because we know "item" is a disease entry
             raw_disease = item.get("disease", "Unknown Disease")
             disease = _format_disease_name(raw_disease) # <-- Use standalone

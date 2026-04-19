@@ -3,7 +3,6 @@ from PIL import Image
 import datetime
 import cv2
 import os
-from picamera2 import Picamera2 
 from shared_components import SharedComponents as SC, LEFT_PANEL_WIDTH 
 
 class CapturePage(SC):
@@ -12,62 +11,61 @@ class CapturePage(SC):
     def __init__(self):
         super().__init__()
 
+        # Camera dimensions
         self.fixed_w = 480 
         self.fixed_h = 480
-        self.picam2 = None 
+        
+        # Camera & State variables
+        self.cap = None 
         self.running = False
         self.current_frame = None 
+        self.capture_mode = "Disease" # Default mode
+        
+        # Filesystem
         self.save_path = "Page_files/captured_images"
         os.makedirs(self.save_path, exist_ok=True)
 
-        # Default mode
-        self.capture_mode = "Disease"
-
+        # UI Setup
         self.create_left_panel()
         self.create_leaf_image()
         self.create_battery_indicator(x=15, y=100)
 
-        # Create camera + buttons
+        # Setup Camera and Mode Buttons
         self.setup_layout()
 
+        # Global Buttons
         self.undo_button(command=self.navigate_to_dashboard) 
         self.record_button = self.create_record_button(
             x=53.5, y=480 / 2, command=self.capture_image
         )
         self.record_button.configure(state="disabled")
 
+        # Initialize Camera
         self.root.after(100, self.open_camera)
 
-    # =============================
-    # NEW LAYOUT (Camera + Buttons)
-    # =============================
     def setup_layout(self):
+        """Creates the camera display and the mode selection buttons."""
         self.root.update_idletasks()
-
         scaled_panel_w = self._scale_value(self.ORIGINAL_LEFT_PANEL_WIDTH, 'x')
 
-        # Camera position (RIGHT NEXT TO PANEL)
+        # Camera positioning
         self.camera_w = self._scale_value(self.fixed_w, 'x')
         self.camera_h = self._scale_value(self.fixed_h, 'y')
-
         self.camera_x = scaled_panel_w
         self.camera_y = 0
 
-        # Camera display
+        # Camera Display Label
         self.camera_label = ctk.CTkLabel(
-            self.root, text="", width=self.camera_w, height=self.camera_h
+            self.root, text="", width=self.camera_w, height=self.camera_h, fg_color="#1F1F1F"
         )
         self.camera_label.place(x=self.camera_x, y=self.camera_y)
 
-        # =============================
-        # RIGHT SIDE BUTTONS
-        # =============================
+        # Right Side Button Area
         button_area_x = self.camera_x + self.camera_w + self._scale_value(20, 'x')
-
         button_width = self._scale_value(160, 'x')
         button_height = self._scale_value(60, 'y')
 
-        # Disease Button
+        # Disease Mode Button
         self.disease_btn = ctk.CTkButton(
             self.root,
             text="Disease",
@@ -77,12 +75,9 @@ class CapturePage(SC):
             font=("Arial", self._scale_value(18, 'y'), "bold"),
             command=lambda: self.set_mode("Disease")
         )
-        self.disease_btn.place(
-            x=button_area_x,
-            y=self._scale_value(150, 'y')
-        )
+        self.disease_btn.place(x=button_area_x, y=self._scale_value(150, 'y'))
 
-        # Nutrient Button
+        # Nutrient Mode Button
         self.nutrient_btn = ctk.CTkButton(
             self.root,
             text="Nutrient",
@@ -92,12 +87,8 @@ class CapturePage(SC):
             font=("Arial", self._scale_value(18, 'y'), "bold"),
             command=lambda: self.set_mode("Nutrient")
         )
-        self.nutrient_btn.place(
-            x=button_area_x,
-            y=self._scale_value(230, 'y')
-        )
+        self.nutrient_btn.place(x=button_area_x, y=self._scale_value(230, 'y'))
 
-        # Highlight default
         self.update_button_styles()
 
     # =============================
@@ -109,6 +100,7 @@ class CapturePage(SC):
         self.update_button_styles()
 
     def update_button_styles(self):
+        """Changes button colors based on active mode."""
         if self.capture_mode == "Disease":
             self.disease_btn.configure(fg_color="#383C4E")
             self.nutrient_btn.configure(fg_color="#2A2E3F")
@@ -117,23 +109,21 @@ class CapturePage(SC):
             self.disease_btn.configure(fg_color="#2A2E3F")
 
     # =============================
-    # CAMERA
+    # CAMERA LOGIC (Computer Compatible)
     # =============================
     def open_camera(self):
-        try:
-            self.picam2 = Picamera2()
-            config = self.picam2.create_video_configuration(
-                main={"size": (1280, 720), "format": "RGB888"}
-            )
-            self.picam2.configure(config)
-            self.picam2.start()
+        if self.cap and self.cap.isOpened():
+             self.cap.release()
+        
+        self.cap = cv2.VideoCapture(0) # Standard USB/Laptop webcam
+        
+        if not self.cap.isOpened():
+            self.camera_label.configure(text="Camera not found", text_color="red")
+            return
 
-            self.running = True
-            self.record_button.configure(state="normal")
-            self.update_frame()
-
-        except Exception as e:
-            self.camera_label.configure(text=f"Camera Error: {e}")
+        self.running = True
+        self.record_button.configure(state="normal")
+        self.update_frame()
 
     def _crop_center_square(self, frame):
         h, w, _ = frame.shape
@@ -143,63 +133,60 @@ class CapturePage(SC):
         return frame[start_y:start_y + min_dim, start_x:start_x + min_dim]
 
     def update_frame(self):
-        if self.running and self.picam2:
-            try:
-                raw_frame = self.picam2.capture_array() 
-                rotated = cv2.rotate(raw_frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-                square = self._crop_center_square(rotated)
+        if self.running and self.cap and self.cap.isOpened():
+            ret, frame = self.cap.read()
+            if ret:
+                # 1. Process: Crop to square and rotate if necessary 
+                # (Removed Pi's 90-degree rotate unless your laptop camera is sideways)
+                square_frame = self._crop_center_square(frame)
+                self.current_frame = square_frame.copy()
 
-                self.current_frame = square.copy()
-
-                rgb = cv2.cvtColor(square, cv2.COLOR_BGR2RGB)
+                # 2. Convert for CustomTkinter
+                rgb = cv2.cvtColor(square_frame, cv2.COLOR_BGR2RGB)
                 img = Image.fromarray(rgb)
-                img = img.resize((self.camera_w, self.camera_h))
-
+                
+                # 3. Resize and Display
                 ctk_img = ctk.CTkImage(light_image=img, size=(self.camera_w, self.camera_h))
-
                 self.camera_label.configure(image=ctk_img, text="")
                 self.camera_label.image = ctk_img
 
                 self.root.after(10, self.update_frame)
-
-            except:
+            else:
                 self.running = False
 
     # =============================
-    # CAPTURE
+    # CAPTURE & NAVIGATION
     # =============================
     def capture_image(self):
         if self.current_frame is not None:
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             path = os.path.join(self.save_path, f"capture_{timestamp}.jpg")
 
+            # Save the processed square frame
             cv2.imwrite(path, self.current_frame)
-
             print(f"[{self.capture_mode}] Captured: {path}")
 
             self.cleanup_camera()
             self.root.destroy()
 
+            # Import here to avoid circular imports
             from Pages.analysis_page import AnalysisPage
             analysis_app = AnalysisPage(
                 image_path=path,
                 view_only=False,
-                mode=self.capture_mode
+                mode=self.capture_mode # Pass the selected mode!
             )
             analysis_app.root.mainloop()
 
     def cleanup_camera(self):
         self.running = False
-        if self.picam2:
-            try:
-                self.picam2.stop()
-                self.picam2.close()
-            except:
-                pass
+        if self.cap and self.cap.isOpened():
+            self.cap.release()
+            print("✅ Camera released.")
 
     def navigate_to_dashboard(self):
         self.cleanup_camera()
         self.root.destroy()
         from Pages.main_dashboard import MyDashboard 
         dashboard = MyDashboard()
-        dashboard.root.mainloop()
+        dashboard.run()

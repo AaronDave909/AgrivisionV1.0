@@ -102,7 +102,7 @@ class SharedComponents:
     # ---------------------------------------------------------
     def __init__(self):
         self.root = ctk.CTk()
-
+        
         theme_file = "Page_files/theme_state.txt"
         if os.path.exists(theme_file):
             try:
@@ -112,9 +112,24 @@ class SharedComponents:
                         ctk.set_appearance_mode(saved_theme)
             except Exception as e:
                 print(f"Failed to load saved theme: {e}")
-
+        
         self.root.title("Agrivision")
         self.root.configure(fg_color=self._get_color(BG_COLOR))
+        
+        try:
+            icon_path = "_image_assets/Leaf.png"
+            if os.path.exists(icon_path):
+                # Load the image using PIL and convert to a Tkinter-compatible PhotoImage
+                icon_img = ImageTk.PhotoImage(file=icon_path)
+                self.icon_img = icon_img
+                
+                # Apply the icon to the window. 
+                # True means it applies to all future TopLevel windows too.
+                self.root.wm_iconphoto(True, self.icon_img)
+            else:
+                print(f"Icon not found at: {icon_path}")
+        except Exception as e:
+            print(f"Error setting application icon: {e}")
         
         # Missing variable initialized to prevent crashes in cleanup_camera
         self.cap = None 
@@ -325,7 +340,7 @@ class SharedComponents:
         self.root.destroy()
         from Pages.main_dashboard import MyDashboard 
         dashboard = MyDashboard()
-        dashboard.root.mainloop()
+        dashboard.run()
     
     def camera_to_dashboard(self):
         self.cleanup_camera()
@@ -547,7 +562,7 @@ class SharedComponents:
         scaled_y = self._scale_value(y, 'y')
         text_c = self._get_color(TEXT_COLOR)
 
-        self.battery_container = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.battery_container = ctk.CTkFrame(self.root, fg_color=LEFT_PANEL_COLOR)
         self.battery_container.place(x=scaled_x, y=scaled_y)
 
         self.battery_body = ctk.CTkFrame(
