@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from PIL import Image
+from language_manager import get_text
 import cv2
 import os
 from ultralytics import YOLO
@@ -7,6 +8,7 @@ import datetime
 import json
 import math
 import pandas as pd
+
 
 # IMPORT ALL COLOR CONSTANTS FROM SHARED COMPONENTS
 from shared_components import (
@@ -175,7 +177,7 @@ class AnalysisPage(SC):
         self.results_frame = ctk.CTkFrame(self.info_frame, fg_color=self._get_color(BUTTON_COLOR), corner_radius=8)
         self.results_frame.pack(fill="x", padx=10, pady=(10, 10))
 
-        title = ctk.CTkLabel(self.results_frame, text="Analysis Results", font=title_font, text_color=self._get_color(TEXT_COLOR))
+        title = ctk.CTkLabel(self.results_frame, text=get_text("title_analysis"), font=title_font, text_color=self._get_color(TEXT_COLOR))
         title.pack(pady=(10, 5), padx=10)
 
         def create_info_row(parent, label_text):
@@ -187,18 +189,18 @@ class AnalysisPage(SC):
             row_frame.pack(fill="x", pady=4)
             return label_widget, value_label
 
-        self.main_info_label, self.main_value_label = create_info_row(self.results_frame, "Detection") 
-        _, self.accuracy_label = create_info_row(self.results_frame, "Accuracy")
-        _, self.count_label = create_info_row(self.results_frame, "Detections")
-        _, self.datetime_label = create_info_row(self.results_frame, "Timestamp")
-        
+        self.main_info_label, self.main_value_label = create_info_row(self.results_frame, get_text("lbl_detection"))
+        _, self.accuracy_label = create_info_row(self.results_frame, get_text("lbl_accuracy"))
+        _, self.count_label = create_info_row(self.results_frame, get_text("lbl_detections"))
+        _, self.datetime_label = create_info_row(self.results_frame, get_text("lbl_timestamp"))
+
         ctk.CTkFrame(self.results_frame, fg_color="transparent", height=5).pack()
 
         # ==========================================
         # CONTAINER: Detected Symptoms
         # ==========================================
         self.symptoms_frame = ctk.CTkFrame(self.info_frame, fg_color=self._get_color(BUTTON_COLOR), corner_radius=8)
-        self.symptoms_title = ctk.CTkLabel(self.symptoms_frame, text="Detected Symptoms", font=title_font, text_color=self._get_color(TEXT_COLOR))
+        self.symptoms_title = ctk.CTkLabel(self.symptoms_frame, text=get_text("lbl_detected_symptoms"), font=title_font, text_color=self._get_color(TEXT_COLOR))
         self.symptoms_title.pack(pady=(10, 5), padx=10)
 
         self.symptoms_label = ctk.CTkLabel(
@@ -211,7 +213,7 @@ class AnalysisPage(SC):
         # CONTAINER 2: Description
         # ==========================================
         self.desc_frame = ctk.CTkFrame(self.info_frame, fg_color=self._get_color(BUTTON_COLOR), corner_radius=8)
-        self.desc_title = ctk.CTkLabel(self.desc_frame, text="Description", font=title_font, text_color=self._get_color(TEXT_COLOR))
+        self.desc_title = ctk.CTkLabel(self.desc_frame, text=get_text("lbl_description"), font=title_font, text_color=self._get_color(TEXT_COLOR))
         self.desc_title.pack(pady=(10, 5), padx=10)
         
         self.description_label = ctk.CTkLabel(
@@ -224,7 +226,7 @@ class AnalysisPage(SC):
         # CONTAINER 3: Risk Assessment
         # ==========================================
         self.risk_frame = ctk.CTkFrame(self.info_frame, fg_color=self._get_color(BUTTON_COLOR), corner_radius=8)
-        risk_title = ctk.CTkLabel(self.risk_frame, text="Risk Assessment", font=title_font, text_color=self._get_color(TEXT_COLOR))
+        risk_title = ctk.CTkLabel(self.risk_frame, text=get_text("lbl_risk_assessment"), font=title_font, text_color=self._get_color(TEXT_COLOR))
         risk_title.pack(pady=(10, 8), padx=10)
         
         self.risk_labels = {}
@@ -319,9 +321,17 @@ class AnalysisPage(SC):
             self.update_info_panel(results)
 
         except Exception as e:
-            print(f"--- ERROR during YOLO analysis: {e}")
-            self.image_label.configure(text=f"Error analyzing image.", text_color="red")
-            self.main_value_label.configure(text="Analysis Failed")
+            # Localized console log for you to see in the terminal
+            print(f"--- {get_text('log_err_yolo')}: {e}")
+            
+            # Localized UI message for the user
+            self.image_label.configure(
+                text=get_text("err_analysis_failed"), 
+                text_color="red"
+            )
+            
+            # Using the localized "Unknown" or "Failed" labels we created earlier
+            self.main_value_label.configure(text=get_text("lbl_unknown"))
             self.accuracy_label.configure(text="---")
             self.count_label.configure(text="---")
 
@@ -396,51 +406,6 @@ class AnalysisPage(SC):
         self.count_label.configure(text=data_dict.get("count", "---"))
         self.datetime_label.configure(text=data_dict.get("timestamp", "---"))
 
-        DEFICIENCY_SYMPTOMS = {
-            "Nitrogen": "• Older leaves turn pale green or yellow\n• Stunted growth\n• Thin and weak stems",
-            "Phosphorus": "• Dark green or purplish leaves\n• Delayed growth\n• Poor root development",
-            "Potassium": "• Leaf edges turn yellow or brown (scorching)\n• Weak stems\n• Increased susceptibility to disease",
-            "Calcium": "• New leaves are deformed or curled\n• Tip burn (especially in lettuce)\n• Poor root growth",
-            "Magnesium": "• Yellowing between leaf veins (chlorosis)\n• Older leaves affected first\n• Leaves may curl upward"
-        }
-        
-        DEFICIENCY_TREATMENTS = {
-            "Nitrogen": "• Fast: Add Liquid Fish Emulsion and Coffee grounds to the soil\n• Long-Term: Add blood meal or compost.",
-            "Phosphorus": "• Fast: High-P Water Soluble Feed\n• Long-Term: Bone meal & check pH.",
-            "Potassium": "• Fast: Add Banana peels an inch into the soil\n• Add Seaweed Extract\n• Long-Term: Greensand or kelp meal.",
-            "Calcium": "• Fast: Add eggshells into the soil and water consistently\n• Long-Term: Gypsum or Dolomitic Lime.",
-            "Magnesium": "• Fast: Epsom Salt foliar spray before watering the soil\n• Long-Term: Dolomitic Lime."
-        }
-
-        DISEASE_SYMPTOMS = {
-            "Powdery Mildew": "• White powdery spots on leaves and stems\n• Curling or yellowing of leaves\n• Stunted plant growth",
-            "Downy Mildew": "• Light green or yellow spots on top of leaves\n• Fluffy grayish/purplish growth on leaf undersides",
-            "Bacterial Leaf Spot": "• Small, dark, water-soaked spots\n• Lesions may have a yellow halo\n• Spots may merge, killing large leaf areas",
-            "Lettuce Mosaic Virus": "• Mottled green and yellow leaf pattern\n• Stunted growth and ruffled leaf edges\n• Vein clearing or yellowing"
-        }
-
-        DISEASE_TREATMENTS = {
-            "Powdery Mildew": "• Fast: Apply Neem oil or Potassium Bicarbonate.\n• Long-Term: Improve airflow and reduce humidity.",
-            "Downy Mildew": "• Fast: Apply Copper-based fungicide.\n• Long-Term: Ensure proper plant spacing and avoid overhead watering.",
-            "Bacterial Leaf Spot": "• Fast: Apply Copper bactericides.\n• Long-Term: Remove diseased plants and debris immediately.",
-            "Lettuce Mosaic Virus": "• Fast: Remove and destroy infected plants immediately (No cure).\n• Long-Term: Control aphids (vectors) and use certified disease-free seed."
-        }
-        
-        PEST_SYMPTOMS = {
-            "Aphids": "• Small, clustered insects on leaf undersides\n• Leaves may curl, yellow, or become distorted\n• Sticky honeydew residue on leaves",
-            "Caterpillars": "• Large, irregular chewed holes in leaves\n• Dark droppings (frass) left on the plant\n• Rapid defoliation of the lettuce head",
-            "Slugs": "• Irregular holes chewed in the middle of leaves\n• Shiny, silvery slime trails left behind\n• Mostly active at night or in very damp conditions"
-        }
-
-        PEST_TREATMENTS = {
-            "Aphids": "• Fast: Spray with insecticidal soap or Neem oil.\n• Long-Term: Introduce beneficial insects like ladybugs.",
-            "Caterpillars": "• Fast: Handpick them off or apply Bt (Bacillus thuringiensis) spray.\n• Long-Term: Use floating row covers to prevent egg-laying.",
-            "Slugs": "• Fast: Set up shallow beer traps or apply diatomaceous earth.\n• Long-Term: Reduce surface moisture and use copper tape barriers."
-        }
-        
-        DROPLET_WARNING = "• WARNING: Prolonged moisture on leaves creates an ideal breeding ground for fungal diseases (like Downy Mildew) and attracts pests like slugs."
-        DROPLET_ACTION = "• Fast: Gently shake or wipe excess water from the leaves.\n• Long-Term: Water lettuce at the base of the plant early in the morning, and improve airflow."
-        
         # --- PARSE DETECTION STRING ---
         clean_words = name.lower().replace("_", " ").split()
         
@@ -485,9 +450,18 @@ class AnalysisPage(SC):
         # --- UI DISPLAY LOGIC ---
         if is_healthy:
             self.desc_frame.pack(fill="x", padx=10, pady=(0, 10))
-            self.desc_title.configure(text="Description")
-            bullet_points = "• No visual signs of disease.\n• Leaf structures are intact.\n• Plant appears completely healthy."
-            self.description_label.configure(text=bullet_points, text_color="#66BB6A")
+            self.desc_title.configure(text=get_text("lbl_description"))
+            
+            for widget in self.desc_frame.winfo_children():
+                if widget != self.desc_title:
+                    widget.destroy()
+            
+            lbl_desc = ctk.CTkLabel(
+                self.desc_frame, text=get_text("desc_healthy_bullets"), 
+                font=ctk.CTkFont(size=11), text_color="#66BB6A", 
+                justify="left", anchor="w", wraplength=self._scale_value(140, 'x')
+            )
+            lbl_desc.pack(fill="x", padx=15, pady=(5, 10))
             
             if not self.risk_frame.winfo_ismapped():
                 self.risk_frame.pack(fill="x", padx=10, pady=(0, 10))
@@ -500,82 +474,238 @@ class AnalysisPage(SC):
                 lmv = classify_risk(lmv_risk(temp, humidity))
                 
                 def get_color(level): return "#FF1744" if level == "HIGH" else "#FFA500" if level == "MODERATE" else "#66BB6A"
+                # Localize the HIGH/MODERATE/LOW text
+                def get_level_text(level): return get_text(f"status_{level.lower()}")
                 
-                self.risk_labels["powdery"].configure(text=f"Powdery Mildew: {powdery[0]}% ({powdery[1]})", text_color=get_color(powdery[1]))
-                self.risk_labels["downy"].configure(text=f"Downy Mildew: {downy[0]}% ({downy[1]})", text_color=get_color(downy[1]))
-                self.risk_labels["bls"].configure(text=f"Bacterial Leaf Spot: {bls[0]}% ({bls[1]})", text_color=get_color(bls[1]))
-                self.risk_labels["lmv"].configure(text=f"Lettuce Mosaic Virus: {lmv[0]}% ({lmv[1]})", text_color=get_color(lmv[1]))
+                self.risk_labels["powdery"].configure(text=f"Powdery Mildew: {powdery[0]}% ({get_level_text(powdery[1])})", text_color=get_color(powdery[1]))
+                self.risk_labels["downy"].configure(text=f"Downy Mildew: {downy[0]}% ({get_level_text(downy[1])})", text_color=get_color(downy[1]))
+                self.risk_labels["bls"].configure(text=f"Bacterial Leaf Spot: {bls[0]}% ({get_level_text(bls[1])})", text_color=get_color(bls[1]))
+                self.risk_labels["lmv"].configure(text=f"Lettuce Mosaic Virus: {lmv[0]}% ({get_level_text(lmv[1])})", text_color=get_color(lmv[1]))
             else:
                 names = {"powdery": "Powdery Mildew", "downy": "Downy Mildew", "bls": "Bacterial Leaf Spot", "lmv": "Lettuce Mosaic Virus"}
-                for key in self.risk_labels: self.risk_labels[key].configure(text=f"{names[key]}: Data unavailable")
+                for key in self.risk_labels: 
+                    self.risk_labels[key].configure(text=f"{names[key]}: {get_text('lbl_data_unavailable')}")
 
         elif detected_deficiencies:
             self.symptoms_frame.pack(fill="x", padx=10, pady=(0, 10))
-            self.symptoms_title.configure(text="Detected Symptoms")
-            combined_symptoms = ""
+            self.symptoms_title.configure(text=get_text("lbl_detected_symptoms"))
+            
+            # 1. Clear old text labels to prevent overlapping
+            for widget in self.symptoms_frame.winfo_children():
+                if widget != self.symptoms_title:
+                    widget.destroy()
+
+            # 2. Dynamically create a BOLD header and REGULAR bullets
             for d in detected_deficiencies:
-                combined_symptoms += f"--- {d.upper()} ---\n{DEFICIENCY_SYMPTOMS[d]}\n\n"
-            self.symptoms_label.configure(text=combined_symptoms.strip())
+                clean_key = "_".join(d.lower().split())
+                header_name = get_text(f"status_{clean_key}_deficiency").upper()
+                
+                # --- BOLD HEADER ---
+                lbl_header = ctk.CTkLabel(
+                    self.symptoms_frame, 
+                    text=header_name, 
+                    font=ctk.CTkFont(size=12, weight="bold"), # BOLD FONT
+                    text_color="#FFA500", 
+                    anchor="w"
+                )
+                lbl_header.pack(fill="x", padx=15, pady=(5, 0))
+                
+                # --- REGULAR BULLETS ---
+                lbl_bullets = ctk.CTkLabel(
+                    self.symptoms_frame, 
+                    text=get_text(f'symptom_{clean_key}'), 
+                    font=ctk.CTkFont(size=11), # REGULAR FONT
+                    text_color="#FFD54F", 
+                    justify="left", 
+                    anchor="w", 
+                    wraplength=self._scale_value(140, 'x')
+                )
+                lbl_bullets.pack(fill="x", padx=15, pady=(0, 10))
 
             self.desc_frame.pack(fill="x", padx=10, pady=(0, 10))
-            self.desc_title.configure(text="Treatment Plan")
-            combined_treatments = ""
+            self.desc_title.configure(text=get_text("lbl_treatment_plan"))
+            
+            for widget in self.desc_frame.winfo_children():
+                if widget != self.desc_title:
+                    widget.destroy()
+
             for d in detected_deficiencies:
-                combined_treatments += f"--- {d.upper()} ---\n{DEFICIENCY_TREATMENTS[d]}\n\n"
-            self.description_label.configure(text=combined_treatments.strip(), text_color="#FFA500")
+                clean_key = "_".join(d.lower().split())
+                header_name = get_text(f"status_{clean_key}_deficiency").upper()
+                
+                lbl_treatment_header = ctk.CTkLabel(
+                    self.desc_frame, 
+                    text=header_name, 
+                    font=ctk.CTkFont(size=12, weight="bold"), 
+                    text_color="#FFA500", 
+                    anchor="w"
+                )
+                lbl_treatment_header.pack(fill="x", padx=15, pady=(5, 0))
+                
+                lbl_treatments = ctk.CTkLabel(
+                    self.desc_frame, 
+                    text=get_text(f'treatment_{clean_key}'), 
+                    font=ctk.CTkFont(size=11), 
+                    text_color="#FFA500", 
+                    justify="left", 
+                    anchor="w", 
+                    wraplength=self._scale_value(140, 'x')
+                )
+                lbl_treatments.pack(fill="x", padx=15, pady=(0, 10))
 
         elif detected_diseases:
             self.symptoms_frame.pack(fill="x", padx=10, pady=(0, 10))
-            self.symptoms_title.configure(text="Detected Symptoms")
-            combined_symptoms = ""
+            self.symptoms_title.configure(text=get_text("lbl_detected_symptoms"))
+            
+            for widget in self.symptoms_frame.winfo_children():
+                if widget != self.symptoms_title:
+                    widget.destroy()
+
             for d in detected_diseases:
-                combined_symptoms += f"--- {d.upper()} ---\n{DISEASE_SYMPTOMS[d]}\n\n"
-            self.symptoms_label.configure(text=combined_symptoms.strip())
+                clean_key = "_".join(d.lower().split())
+                header_name = get_text(f"status_{clean_key}").upper()
+                
+                lbl_header = ctk.CTkLabel(
+                    self.symptoms_frame, text=header_name, 
+                    font=ctk.CTkFont(size=12, weight="bold"), text_color="#FF6B6B", anchor="w"
+                )
+                lbl_header.pack(fill="x", padx=15, pady=(5, 0))
+                
+                lbl_bullets = ctk.CTkLabel(
+                    self.symptoms_frame, text=get_text(f'symptom_{clean_key}'), 
+                    font=ctk.CTkFont(size=11), text_color="#FFFFFF", # White for readability
+                    justify="left", anchor="w", wraplength=self._scale_value(140, 'x')
+                )
+                lbl_bullets.pack(fill="x", padx=15, pady=(0, 10))
 
             self.desc_frame.pack(fill="x", padx=10, pady=(0, 10))
-            self.desc_title.configure(text="Treatment Plan")
-            combined_treatments = ""
+            self.desc_title.configure(text=get_text("lbl_treatment_plan"))
+            
+            for widget in self.desc_frame.winfo_children():
+                if widget != self.desc_title:
+                    widget.destroy()
+
             for d in detected_diseases:
-                combined_treatments += f"--- {d.upper()} ---\n{DISEASE_TREATMENTS[d]}\n\n"
-            self.description_label.configure(text=combined_treatments.strip(), text_color="#FF6B6B")
+                clean_key = "_".join(d.lower().split())
+                header_name = get_text(f"status_{clean_key}").upper()
+                
+                lbl_treatment_header = ctk.CTkLabel(
+                    self.desc_frame, text=header_name, 
+                    font=ctk.CTkFont(size=12, weight="bold"), text_color="#FF6B6B", anchor="w"
+                )
+                lbl_treatment_header.pack(fill="x", padx=15, pady=(5, 0))
+                
+                lbl_treatments = ctk.CTkLabel(
+                    self.desc_frame, text=get_text(f'treatment_{clean_key}'), 
+                    font=ctk.CTkFont(size=11), text_color="#FF6B6B", 
+                    justify="left", anchor="w", wraplength=self._scale_value(140, 'x')
+                )
+                lbl_treatments.pack(fill="x", padx=15, pady=(0, 10))
 
         elif detected_pests:
             self.symptoms_frame.pack(fill="x", padx=10, pady=(0, 10))
-            self.symptoms_title.configure(text="Pest Symptoms")
-            combined_symptoms = ""
+            self.symptoms_title.configure(text=get_text("lbl_pest_symptoms"))
+            
+            for widget in self.symptoms_frame.winfo_children():
+                if widget != self.symptoms_title:
+                    widget.destroy()
+
             for p in detected_pests:
-                combined_symptoms += f"--- {p.upper()} ---\n{PEST_SYMPTOMS[p]}\n\n"
-            self.symptoms_label.configure(text=combined_symptoms.strip(), text_color="#FFD54F")
+                clean_key = "_".join(p.lower().split())
+                header_val = get_text(f"status_{clean_key}")
+                header_name = header_val.upper() if header_val != f"status_{clean_key}" else p.upper()
+                
+                lbl_header = ctk.CTkLabel(
+                    self.symptoms_frame, text=header_name, 
+                    font=ctk.CTkFont(size=12, weight="bold"), text_color="#FFD54F", anchor="w"
+                )
+                lbl_header.pack(fill="x", padx=15, pady=(5, 0))
+                
+                lbl_bullets = ctk.CTkLabel(
+                    self.symptoms_frame, text=get_text(f'symptom_{clean_key}'), 
+                    font=ctk.CTkFont(size=11), text_color="#FFD54F", 
+                    justify="left", anchor="w", wraplength=self._scale_value(140, 'x')
+                )
+                lbl_bullets.pack(fill="x", padx=15, pady=(0, 10))
 
             self.desc_frame.pack(fill="x", padx=10, pady=(0, 10))
-            self.desc_title.configure(text="Pest Control Plan")
-            combined_treatments = ""
+            self.desc_title.configure(text=get_text("lbl_pest_control_plan"))
+            
+            for widget in self.desc_frame.winfo_children():
+                if widget != self.desc_title:
+                    widget.destroy()
+
             for p in detected_pests:
-                combined_treatments += f"--- {p.upper()} ---\n{PEST_TREATMENTS[p]}\n\n"
-            self.description_label.configure(text=combined_treatments.strip(), text_color="#FF6B6B")
+                clean_key = "_".join(p.lower().split())
+                header_val = get_text(f"status_{clean_key}")
+                header_name = header_val.upper() if header_val != f"status_{clean_key}" else p.upper()
+                
+                lbl_treatment_header = ctk.CTkLabel(
+                    self.desc_frame, text=header_name, 
+                    font=ctk.CTkFont(size=12, weight="bold"), text_color="#FF6B6B", anchor="w"
+                )
+                lbl_treatment_header.pack(fill="x", padx=15, pady=(5, 0))
+                
+                lbl_treatments = ctk.CTkLabel(
+                    self.desc_frame, text=get_text(f'treatment_{clean_key}'), 
+                    font=ctk.CTkFont(size=11), text_color="#FF6B6B", 
+                    justify="left", anchor="w", wraplength=self._scale_value(140, 'x')
+                )
+                lbl_treatments.pack(fill="x", padx=15, pady=(0, 10))
 
         elif has_droplets:
             self.symptoms_frame.pack(fill="x", padx=10, pady=(0, 10))
-            self.symptoms_title.configure(text="Moisture Warning")
-            self.symptoms_label.configure(text=DROPLET_WARNING, text_color="#00BFFF")
+            self.symptoms_title.configure(text=get_text("lbl_moisture_warning"))
+            
+            for widget in self.symptoms_frame.winfo_children():
+                if widget != self.symptoms_title:
+                    widget.destroy()
+
+            lbl_warning = ctk.CTkLabel(
+                self.symptoms_frame, text=get_text("droplet_warning"), 
+                font=ctk.CTkFont(size=11), text_color="#00BFFF", 
+                justify="left", anchor="w", wraplength=self._scale_value(140, 'x')
+            )
+            lbl_warning.pack(fill="x", padx=15, pady=(5, 10))
 
             self.desc_frame.pack(fill="x", padx=10, pady=(0, 10))
-            self.desc_title.configure(text="Recommended Action")
-            self.description_label.configure(text=DROPLET_ACTION, text_color="#66BB6A")
+            self.desc_title.configure(text=get_text("lbl_recommended_action"))
+            
+            for widget in self.desc_frame.winfo_children():
+                if widget != self.desc_title:
+                    widget.destroy()
+                    
+            lbl_action = ctk.CTkLabel(
+                self.desc_frame, text=get_text("droplet_action"), 
+                font=ctk.CTkFont(size=11), text_color="#66BB6A", 
+                justify="left", anchor="w", wraplength=self._scale_value(140, 'x')
+            )
+            lbl_action.pack(fill="x", padx=15, pady=(5, 10))
 
         else:
-            # Catch-all if something doesn't map to a specific dictionary
             self.symptoms_frame.pack(fill="x", padx=10, pady=(0, 10))
-            self.symptoms_title.configure(text="Information")
-            self.symptoms_label.configure(text=f"Detected: {name.title()}\nNo specific treatment data mapped.", text_color="#FFFFFF")
-        
+            self.symptoms_title.configure(text=get_text("lbl_info"))
+            
+            for widget in self.symptoms_frame.winfo_children():
+                if widget != self.symptoms_title:
+                    widget.destroy()
+                    
+            unknown_text = f"{get_text('lbl_detection')}: {name.title()}\n{get_text('lbl_no_mapped_data')}"
+            
+            lbl_unknown = ctk.CTkLabel(
+                self.symptoms_frame, text=unknown_text, 
+                font=ctk.CTkFont(size=11), text_color="#FFFFFF", 
+                justify="left", anchor="w", wraplength=self._scale_value(140, 'x')
+            )
+            lbl_unknown.pack(fill="x", padx=15, pady=(5, 10))
+            
         self.root.update_idletasks()
 
     def load_and_display_data(self):
         try:
             image_filename = os.path.basename(self.image_path)
             if not os.path.exists(self.image_path):
-                self.image_label.configure(text="Error: File not found.", text_color="red")
+                self.image_label.configure(text=get_text("error_file_not_found"), text_color="red")
                 return
 
             self.annotated_image_data = cv2.imread(self.image_path)
@@ -593,7 +723,7 @@ class AnalysisPage(SC):
                 self.populate_info_panel({}) 
 
         except Exception as e:
-            self.image_label.configure(text="Error loading data.", text_color="red")
+            self.image_label.configure(text=get_text("error_loading_data"), text_color="red")
 
     def display_image(self, image_data_bgr):
         image_rgb = cv2.cvtColor(image_data_bgr, cv2.COLOR_BGR2RGB)
@@ -620,7 +750,7 @@ class AnalysisPage(SC):
                 self.return_to_capture()
 
             except Exception as e:
-                print(f"--- ERROR saving files: {e}")
+                print(f"--- {get_text('log_err_saving')}: {e}")
 
     def trash_image(self):
         if os.path.exists(self.original_image_path): os.remove(self.original_image_path)
@@ -643,7 +773,7 @@ class AnalysisPage(SC):
                 self._save_master_json(master_data)
                 
         except Exception as e:
-            print(f"--- ERROR deleting files: {e}")
+            print(f"--- {get_text('log_err_delete')}: {e}")
         
         self.root.after(0, self.return_to_gallery) 
 

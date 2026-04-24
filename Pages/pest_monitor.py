@@ -1,12 +1,13 @@
 import customtkinter as ctk
 from shared_components import SharedComponents as SC, LEFT_PANEL_WIDTH, BG_COLOR
+import json
+from language_manager import get_text
 import cv2
 from PIL import Image
 from ultralytics import YOLO
 import time
 import datetime
 import os
-import json
 
 class PestMonitorPage(SC):
     
@@ -36,21 +37,21 @@ class PestMonitorPage(SC):
         try:
             model_path = "Page_files/yolov11_models/pests.pt"
             self.model = YOLO(model_path)
-            print(f"✅ Successfully loaded pest model from {model_path}")
+            print(f"✅ {get_text('log_model_success')}")
         except Exception as e:
-            print(f"❌ CRITICAL ERROR: Could not load pest model: {e}")
+            print(f"❌ {get_text('log_model_error')}: {e}")
             self.model = None
 
         # --- Standard Page Setup ---
         self.create_left_panel()
         self.create_leaf_image()
-        self.create_title(text="Pest Monitor", x=119, y=0)
+        self.create_title(text=get_text("lbl_pest_monitor"), x=119, y=0)
         self.create_battery_indicator(x=15, y=100)
         self.undo_button(command=self.navigate_to_dashboard) 
 
         # --- Sleep Screen Button ---
         self.sleep_btn = self.create_button(
-            text="Sleep\nScreen",
+            text=get_text("btn_sleep_screen"),
             x=LEFT_PANEL_WIDTH / 2,
             y=160,
             width=85,
@@ -71,7 +72,7 @@ class PestMonitorPage(SC):
 
         self.cam_label = ctk.CTkLabel(
             self.root, 
-            text="Initializing Camera...", 
+            text=get_text("lbl_cam_init"), 
             font=("Arial", 20), 
             fg_color="#1F1F1F",
             width=self.cam_w, 
@@ -87,7 +88,7 @@ class PestMonitorPage(SC):
         if self.black_overlay is not None:
             return
             
-        print("💻 Software Sleep Mode Active (AI monitoring continues)...")
+        print(f"💻 {get_text('log_sleep_active')}...")
         self.black_overlay = ctk.CTkToplevel(self.root)
         self.black_overlay.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}+0+0")
         self.black_overlay.overrideredirect(True) 
@@ -98,7 +99,7 @@ class PestMonitorPage(SC):
         # Note: Hardware brightness calls (rpi_backlight) are skipped on PC to prevent errors.
 
     def wake_screen(self, event=None):
-        print("💻 Screen Woken Up.")
+        print(f"💻 {get_text('log_screen_wake')}.")
         if self.black_overlay:
             self.black_overlay.destroy()
             self.black_overlay = None
@@ -186,7 +187,8 @@ class PestMonitorPage(SC):
             if self.detection_start_time is None or self.last_detected_pest != pest_name:
                 self.detection_start_time = current_time
                 self.last_detected_pest = pest_name
-                print(f"Target locked: {pest_name}. Waiting 5s...")
+                log_msg = get_text("log_target_lock").replace("{pest}", pest_name)
+                print(f"🎯 {log_msg}...")
             else:
                 if (current_time - self.detection_start_time) >= self.monitoring_duration:
                     self._save_pest_capture(annotated_frame, results, target_box)
@@ -227,7 +229,7 @@ class PestMonitorPage(SC):
         master = self._load_master_json()
         master[img_name] = new_data
         self._save_master_json(master)
-        print(f"✅ Saved Capture: {img_name}")
+        print(f"✅ {get_text('log_saved_capture')}: {img_name}")
 
     def cleanup_camera(self):
         self.is_running = False

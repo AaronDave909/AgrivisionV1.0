@@ -2,39 +2,51 @@ import customtkinter as ctk
 import os
 import json
 from datetime import datetime
+from language_manager import get_text
+from language_manager import get_text
 from shared_components import BUTTON_COLOR, TEXT_COLOR, LEFT_PANEL_COLOR, BUTTON_HOVER
 
 # --- Standalone Helper Function ---
 def _format_disease_name(name_str):
-    """Converts raw JSON names into clean, readable Title Case with newlines for long names."""
+    """Converts raw JSON names into clean, localized Title Case with newlines."""
     if not name_str:
-        return "Unknown"
+        return get_text("lbl_unknown") # Ensure you have an "Unknown" key
         
+    # Standardize the input string
     name_str = name_str.replace("_", " ").title()
     
-    # Specific cleanups based on the JSON file, intentionally adding \n for Deficiencies
+    # 1. Handle "No Disease Detected"
+    if "No Disease" in name_str:
+        return get_text("lbl_no_disease")
+
+    # 2. Localized mapping for Deficiencies and Mildews
     replacements = {
-        "N Deficiency": "Nitrogen\nDeficiency",
-        "P Deficiency": "Phosphorus\nDeficiency",
-        "K Deficiency": "Potassium\nDeficiency",
-        "Ca Deficiency": "Calcium\nDeficiency",
-        "Mg Deficiency": "Magnesium\nDeficiency",
-        "Calcium Deficiency": "Calcium\nDeficiency",
-        "Magnesium Deficiency": "Magnesium\nDeficiency",
-        "Phosphorus Deficiency": "Phosphorus\nDeficiency",
-        "Potassium Deficiency": "Potassium\nDeficiency",
-        "Nitrogen Deficiency": "Nitrogen\nDeficiency",
+        "Nitrogen Deficiency": get_text("lbl_n_def"),
+        "N Deficiency": get_text("lbl_n_def"),
+        "Phosphorus Deficiency": get_text("lbl_p_def"),
+        "P Deficiency": get_text("lbl_p_def"),
+        "Potassium Deficiency": get_text("lbl_k_def"),
+        "K Deficiency": get_text("lbl_k_def"),
+        "Calcium Deficiency": get_text("lbl_ca_def"),
+        "Ca Deficiency": get_text("lbl_ca_def"),
+        "Magnesium Deficiency": get_text("lbl_mg_def"),
+        "Mg Deficiency": get_text("lbl_mg_def"),
         "Downy Mildew On Lettuce": "Downy Mildew",
         "Powdery Mildew On Lettuce": "Powdery Mildew",
         "Bacterial": "Bacterial Leaf Spot"
     }
     
     for old, new in replacements.items():
-        name_str = name_str.replace(old, new)
-        
-    # Catch-all for any other generic deficiencies that might pop up
-    if " Deficiency" in name_str and "\n" not in name_str:
-        name_str = name_str.replace(" Deficiency", "\nDeficiency")
+        if old in name_str:
+            return new
+            
+    # Catch-all for generic deficiencies not in the mapping
+    if "Deficiency" in name_str:
+        # e.g., "Iron Deficiency" -> "Kakulangan sa Iron" (if using tl.json logic)
+        element = name_str.replace("Deficiency", "").strip()
+        # Fallback if no specific key exists: "Kakulangan sa [Element]"
+        prefix = "Kakulangan sa" if ctk.get_appearance_mode() == "Dark" else "Deficiency" # Use actual lang logic here
+        return f"{prefix} {element}" if get_text("lbl_n_def").startswith("Kakulangan") else f"{element}\nDeficiency"
         
     return name_str.strip()
 

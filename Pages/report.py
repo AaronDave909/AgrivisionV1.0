@@ -1,3 +1,4 @@
+from language_manager import get_text
 from shared_components import (
     SharedComponents as SC, custom_font_bold, custom_font_regular, 
     LEFT_PANEL_WIDTH, LEFT_PANEL_COLOR, BUTTON_COLOR, BUTTON_HOVER, TEXT_COLOR, BG_COLOR
@@ -30,7 +31,7 @@ class ReportPage(SC):
         self._drag_start_y = 0 
         self._left_drag_start_y = 0 
         
-        self.create_title(text="Report Generation", x=119, y=0)
+        self.create_title(text=get_text("title_report"), x=119, y=0)
         self.create_left_panel()
         self.create_leaf_image()
         self.undo_button(command=self.go_back_to_dashboard)
@@ -96,7 +97,7 @@ class ReportPage(SC):
                     return json.load(f)
             return {}
         except Exception as e:
-            print(f"Error loading JSON: {e}")
+            print(f"{get_text('err_loading_json')}: {e}")
             return {}
 
     def get_unique_months(self):
@@ -138,7 +139,7 @@ class ReportPage(SC):
         btn_font = ("Arial", 14)
         
         self.create_tab_btn = ctk.CTkButton(
-            self.left_panel, text="Create", 
+            self.left_panel, text=get_text("btn_create"), 
             width=scaled_button_width, height=scaled_button_height,
             command=self.show_create_view,
             fg_color=self._get_color(BUTTON_HOVER), 
@@ -148,7 +149,7 @@ class ReportPage(SC):
         self.create_tab_btn.place(x=x_pos, y=y_create, anchor="center")
         
         self.view_tab_btn = ctk.CTkButton(
-            self.left_panel, text="View", 
+            self.left_panel, text=get_text("btn_view"), 
             width=scaled_button_width, height=scaled_button_height,
             command=self.show_view_list,
             fg_color=self._get_color(LEFT_PANEL_COLOR), 
@@ -171,7 +172,7 @@ class ReportPage(SC):
         
         self.viewer_placeholder = ctk.CTkLabel(
             self.viewer_frame, 
-            text="Select or generate a report to view.", 
+            text=get_text("viewer_placeholder"),
             text_color="gray"
         )
         self.viewer_placeholder.pack(pady=50)
@@ -204,7 +205,7 @@ class ReportPage(SC):
         # --- FIXED BOTTOM BUTTONS ---
         self.gen_btn = ctk.CTkButton(
             self.filter_frame,
-            text="Generate Report",
+            text=get_text("btn_gen_report"),
             font=tuple(custom_font_bold),
             fg_color=self._get_color(BUTTON_COLOR),
             hover_color=self._get_color(BUTTON_HOVER),
@@ -218,7 +219,7 @@ class ReportPage(SC):
         # Bluetooth Share Button (Left Side)
         self.share_btn = ctk.CTkButton(
             self.filter_frame,
-            text="Share",
+            text=get_text("btn_share"),
             font=tuple(custom_font_bold),
             fg_color="#2980b9", # Bluetooth Blue
             hover_color="#3498db",
@@ -231,7 +232,7 @@ class ReportPage(SC):
         # Delete Button (Right Side)
         self.del_btn = ctk.CTkButton(
             self.filter_frame,
-            text="Delete",
+            text=get_text("btn_delete"),
             font=tuple(custom_font_bold),
             fg_color="#CC0000", # Red
             hover_color="#FF4C4C",
@@ -243,10 +244,10 @@ class ReportPage(SC):
 
     def build_create_ui(self):
         """Builds the Date Range and Checkboxes inside the Create Container."""
-        lbl_date = ctk.CTkLabel(self.create_container, text="Date Range:", font=tuple(custom_font_bold), text_color=self._get_color(TEXT_COLOR))
+        lbl_date = ctk.CTkLabel(self.create_container, text=get_text("lbl_date_range"), font=tuple(custom_font_bold), text_color=self._get_color(TEXT_COLOR))
         lbl_date.pack(anchor="w", pady=(10, 5), padx=10)
         
-        lbl_from = ctk.CTkLabel(self.create_container, text="From:", font=tuple(custom_font_regular), text_color=self._get_color(TEXT_COLOR))
+        lbl_from = ctk.CTkLabel(self.create_container, text=get_text("lbl_from"), font=tuple(custom_font_regular), text_color=self._get_color(TEXT_COLOR))
         lbl_from.pack(anchor="w", pady=(0, 2), padx=10)
         
         menu_bg = self._get_color(BUTTON_COLOR)
@@ -269,7 +270,7 @@ class ReportPage(SC):
         )
         month_from_dropdown.pack(fill="x", pady=(0, 10), padx=10)
         
-        lbl_to = ctk.CTkLabel(self.create_container, text="To:", font=tuple(custom_font_regular), text_color=self._get_color(TEXT_COLOR))
+        lbl_to = ctk.CTkLabel(self.create_container, text=get_text("lbl_to"), font=tuple(custom_font_regular), text_color=self._get_color(TEXT_COLOR))
         lbl_to.pack(anchor="w", pady=(0, 2), padx=10)
         
         self.month_to_var = ctk.StringVar(value=self.months[-1] if self.months else "")
@@ -288,7 +289,7 @@ class ReportPage(SC):
         )
         month_to_dropdown.pack(fill="x", pady=(0, 15), padx=10)
 
-        lbl_dis = ctk.CTkLabel(self.create_container, text="Select Diseases:", font=tuple(custom_font_bold), text_color=self._get_color(TEXT_COLOR))
+        lbl_dis = ctk.CTkLabel(self.create_container, text=get_text("lbl_select_diseases"), font=tuple(custom_font_bold), text_color=self._get_color(TEXT_COLOR))
         lbl_dis.pack(anchor="w", pady=(0, 5), padx=10)
         
         disease_frame = ctk.CTkScrollableFrame(self.create_container, height=self._scale_value(65, 'y'), fg_color=self._get_color(BUTTON_COLOR))
@@ -301,9 +302,9 @@ class ReportPage(SC):
                 cb.pack(anchor="w", pady=3, padx=5)
                 self.selected_diseases[disease] = var
         else:
-            ctk.CTkLabel(disease_frame, text="No diseases found", text_color="gray").pack()
+            ctk.CTkLabel(disease_frame, text=get_text("lbl_no_diseases"), text_color="gray").pack()
 
-        lbl_pest = ctk.CTkLabel(self.create_container, text="Select Pests:", font=tuple(custom_font_bold), text_color=self._get_color(TEXT_COLOR))
+        lbl_pest = ctk.CTkLabel(self.create_container, text=get_text("lbl_select_pests"), font=tuple(custom_font_bold), text_color=self._get_color(TEXT_COLOR))
         lbl_pest.pack(anchor="w", pady=(0, 5), padx=10)
         
         pest_frame = ctk.CTkScrollableFrame(self.create_container, height=self._scale_value(65, 'y'), fg_color=self._get_color(BUTTON_COLOR))
@@ -316,7 +317,7 @@ class ReportPage(SC):
                 cb.pack(anchor="w", pady=3, padx=5)
                 self.selected_pests[pest] = var
         else:
-            ctk.CTkLabel(pest_frame, text="No pests found", text_color="gray").pack()
+            ctk.CTkLabel(pest_frame, text=get_text("lbl_no_pests"), text_color="gray").pack()
 
         self._bind_scrolling(self.create_container)
 
@@ -365,14 +366,19 @@ class ReportPage(SC):
         self.root.update_idletasks()
 
         try:
-            # Popen runs the system tool without freezing your Python app
             subprocess.Popen(['blueman-sendto', self.current_viewed_report])
-            print(f"✓ Launched Bluetooth share for: {self.current_viewed_report}")
+            
+            print(f"✓ {get_text('log_bluetooth_launched')}: {self.current_viewed_report}")
+            
         except FileNotFoundError:
-            # If blueman-sendto isn't installed on the OS
             for widget in self.viewer_frame.winfo_children():
                 widget.destroy()
-            lbl = ctk.CTkLabel(self.viewer_frame, text="Error: Bluetooth tools missing.\nRun 'sudo apt install blueman' on the Pi.", text_color="red")
+            
+            lbl = ctk.CTkLabel(
+                self.viewer_frame, 
+                text=get_text("err_bluetooth_tools_missing"), 
+                text_color="red"
+            )
             lbl.pack(pady=20)
         
         # Reset the button back to normal after 2 seconds
@@ -389,7 +395,7 @@ class ReportPage(SC):
         reports.sort(reverse=True)
 
         if not reports:
-            lbl = ctk.CTkLabel(self.view_container, text="No reports generated yet.", text_color="gray")
+            lbl = ctk.CTkLabel(self.view_container, text=get_text("lbl_no_reports"), text_color="gray")
             lbl.pack(pady=20)
             self._bind_scrolling(lbl)
             return
@@ -427,7 +433,7 @@ class ReportPage(SC):
         y = self.root.winfo_y() + (self.root.winfo_height() // 2) - (popup_height // 2)
 
         popup = ctk.CTkToplevel(self.root)
-        popup.title("Delete Report")
+        popup.title(get_text("title_delete_report"))
         popup.geometry(f"{popup_width}x{popup_height}+{x}+{y}")
         popup.configure(fg_color=self._get_color(BG_COLOR))
         popup.transient(self.root)
@@ -436,7 +442,8 @@ class ReportPage(SC):
 
         label = ctk.CTkLabel(
             popup, 
-            text=f"Delete '{report_filename}'?", 
+            # In your UI code:
+            text = get_text("msg_confirm_delete").replace("{filename}", report_filename), 
             text_color=self._get_color(TEXT_COLOR), 
             font=("Arial", scale_val(12, 'y'), "bold")
         )
@@ -449,31 +456,32 @@ class ReportPage(SC):
             try:
                 report_path = os.path.join("_reports_", report_filename)
                 os.remove(report_path)
-                print(f"✓ Deleted report: {report_path}")
+                print(f"✓ {get_text('log_report_deleted')}: {report_path}")
                 
                 if self.current_viewed_report == report_path:
                     for widget in self.viewer_frame.winfo_children():
                         widget.destroy()
-                    self.viewer_placeholder = ctk.CTkLabel(self.viewer_frame, text="Select or generate a report to view.", text_color="gray")
+                    self.viewer_placeholder = ctk.CTkLabel(self.viewer_frame, text=get_text("viewer_placeholder"), text_color="gray")
                     self.viewer_placeholder.pack(pady=50)
                     self.viewer_placeholder.bind("<ButtonPress-1>", self._start_pan)
                     self.viewer_placeholder.bind("<B1-Motion>", self._pan)
                     self.current_viewed_report = None
                     
             except Exception as e:
-                print(f"⚠︎ Error deleting report: {e}")
+                print(f"⚠︎ {get_text('log_err_delete_report')}: {e}")
+                
             
             popup.destroy()
             self.refresh_reports_list()
 
         del_btn = ctk.CTkButton(
-            btn_frame, text="Delete", fg_color="#FF4C4C", hover_color="#CC0000", 
+            btn_frame, text=get_text("btn_delete"), fg_color="#FF4C4C", hover_color="#CC0000", 
             text_color="white", width=scale_val(100, 'x'), command=on_delete
         )
         del_btn.pack(side="left", expand=True, padx=5)
 
         cancel_btn = ctk.CTkButton(
-            btn_frame, text="Cancel", fg_color=self._get_color(BUTTON_COLOR), hover_color=self._get_color(BUTTON_HOVER), 
+            btn_frame, text=get_text("btn_cancel"), fg_color=self._get_color(BUTTON_COLOR), hover_color=self._get_color(BUTTON_HOVER), 
             text_color=self._get_color(TEXT_COLOR), width=scale_val(100, 'x'), command=popup.destroy
         )
         cancel_btn.pack(side="right", expand=True, padx=5)
@@ -504,7 +512,7 @@ class ReportPage(SC):
             if self.viewer_frame:
                 for widget in self.viewer_frame.winfo_children():
                     widget.destroy()
-                lbl = ctk.CTkLabel(self.viewer_frame, text="⚠︎ Error parsing date range", text_color="red")
+                lbl = ctk.CTkLabel(self.viewer_frame, text=get_text("err_date_range"), text_color="red")
                 lbl.pack()
                 lbl.bind("<ButtonPress-1>", self._start_pan)
                 lbl.bind("<B1-Motion>", self._pan)
@@ -535,7 +543,7 @@ class ReportPage(SC):
             if self.viewer_frame:
                 for widget in self.viewer_frame.winfo_children():
                     widget.destroy()
-                lbl = ctk.CTkLabel(self.viewer_frame, text="No data found for selected filters", text_color="orange")
+                lbl = ctk.CTkLabel(self.viewer_frame, text=get_text("lbl_no_data"), text_color="orange")
                 lbl.pack(pady=20)
                 lbl.bind("<ButtonPress-1>", self._start_pan)
                 lbl.bind("<B1-Motion>", self._pan)
@@ -561,19 +569,19 @@ class ReportPage(SC):
         y = self.root.winfo_y() + (self.root.winfo_height() // 2) - (popup_height // 2)
 
         popup = ctk.CTkToplevel(self.root)
-        popup.title("Name Your Report")
+        popup.title(get_text("title_report_name"))
         popup.geometry(f"{popup_width}x{popup_height}+{x}+{y}")
         popup.configure(fg_color=self._get_color(BG_COLOR))
         popup.transient(self.root)
 
         popup.after(50, lambda: (popup.lift(), popup.focus_force(), popup.grab_set()))
 
-        label = ctk.CTkLabel(popup, text="Enter report name:", text_color=self._get_color(TEXT_COLOR), font=scaled_label_font)
+        label = ctk.CTkLabel(popup, text=get_text("lbl_enter_report_name"), text_color=self._get_color(TEXT_COLOR), font=scaled_label_font)
         label.pack(pady=scaled_pady_10)
 
         entry = ctk.CTkEntry(
             popup, justify="center", fg_color=self._get_color(BUTTON_COLOR), text_color=self._get_color(TEXT_COLOR),
-            width=scaled_button_width, font=scaled_label_font, placeholder_text="e.g., Weekly Report"
+            width=scaled_button_width, font=scaled_label_font, placeholder_text=get_text("lbl_placeholder_report_name")
         )
         entry.pack(pady=scaled_pady_5)
 
@@ -581,7 +589,7 @@ class ReportPage(SC):
             report_name = entry.get().strip()
             if not report_name:
                 entry.delete(0, "end")
-                entry.insert(0, "Name cannot be empty")
+                entry.insert(0, get_text("lbl_report_name_empty"))
                 entry.configure(text_color="#FF6B6B")
                 return
             
@@ -608,7 +616,7 @@ class ReportPage(SC):
         entry.bind("<Return>", on_confirm)
 
         confirm_btn = ctk.CTkButton(
-            popup, text="Generate Report", command=on_confirm,
+            popup, text=get_text("btn_gen_report"), command=on_confirm,
             fg_color=self._get_color(BUTTON_COLOR), hover_color=self._get_color(BUTTON_HOVER), 
             text_color=self._get_color(TEXT_COLOR), height=scaled_button_height,
             width=scaled_button_width, font=scaled_label_font
@@ -616,7 +624,7 @@ class ReportPage(SC):
         confirm_btn.pack(pady=scaled_pady_10)
 
         cancel_btn = ctk.CTkButton(
-            popup, text="Cancel", command=popup.destroy,
+            popup, text=get_text("btn_cancel"), command=popup.destroy,
             fg_color=self._get_color(BUTTON_COLOR), hover_color=self._get_color(BUTTON_HOVER), 
             text_color=self._get_color(TEXT_COLOR), height=scaled_button_height,
             width=scaled_button_width, font=scaled_label_font
@@ -715,7 +723,11 @@ class ReportPage(SC):
                 lbl.bind("<B1-Motion>", self._pan)
             doc.close()
         except Exception as e:
-            ctk.CTkLabel(self.viewer_frame, text=f"Error rendering PDF:\n{e}", text_color="red").pack()
+            ctk.CTkLabel(
+                self.viewer_frame, 
+                text=f"{get_text('err_pdf_render')}:\n{e}", 
+                text_color="red"
+            ).pack()
 
     def go_back_to_dashboard(self):
         self.root.destroy()

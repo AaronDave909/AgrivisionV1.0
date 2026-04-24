@@ -6,6 +6,7 @@ import os
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+from language_manager import get_text
 import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
 import matplotlib.colors as mcolors
@@ -62,11 +63,11 @@ def classify_risk(risk):
     percent = risk * 100
 
     if percent < 40:
-        level = "LOW"
+        level = get_text("status_low")
     elif percent < 70:
-        level = "MODERATE"
+        level = get_text("status_moderate")
     else:
-        level = "HIGH"
+        level = get_text("status_high")
 
     return round(percent, 2), level
 
@@ -92,7 +93,7 @@ class PredictPage(SC):
         # Title
         self.title_label = ctk.CTkLabel(
             self.root, 
-            text="Environmental Risk Index", 
+            text=get_text("title_risk_index"), 
             font=tuple(custom_font_title), 
             text_color=self._get_color(TEXT_COLOR)
         )
@@ -114,7 +115,7 @@ class PredictPage(SC):
             self.undo_icon = load_dual_icon("_image_assets/Undo.png")
        
         except Exception as e:
-            print(f"Error loading button icons: {e}. Please check _image_assets folder.")
+            print(f"--- {get_text('err_loading_icons')}: {e}")
             self.undo_icon = None
         
         x_pos = self._scale_value(LEFT_PANEL_WIDTH / 2, 'x')
@@ -129,7 +130,7 @@ class PredictPage(SC):
         btn_text = self._get_color(TEXT_COLOR)
         
         self.manual_button = ctk.CTkButton(
-            self.left_panel, text="Manual Input",
+            self.left_panel, text=get_text("btn_manual_input"),
             width=scaled_button_width, height=scaled_button_height,
             command=lambda: self.show_view("manual"),
             fg_color=btn_fg, hover_color=btn_hover,
@@ -138,7 +139,7 @@ class PredictPage(SC):
         self.manual_button.place(x=x_pos, y=y_manual, anchor="center")
         
         self.auto_button = ctk.CTkButton(
-            self.left_panel, text="Auto Weather",
+            self.left_panel, text=get_text("btn_auto_weather"),
             width=scaled_button_width, height=scaled_button_height,
             command=lambda: self.show_view("auto"),
             fg_color=btn_fg, hover_color=btn_hover,
@@ -147,7 +148,7 @@ class PredictPage(SC):
         self.auto_button.place(x=x_pos, y=y_auto, anchor="center")
         
         self.return_button = ctk.CTkButton(
-            self.left_panel, text="Return",
+            self.left_panel, text=get_text("btn_return"),
             width=scaled_button_width, height=scaled_button_height,
             image=self.undo_icon, command=self.go_back_to_dashboard,
             fg_color=btn_fg, hover_color=btn_hover,
@@ -184,18 +185,18 @@ class PredictPage(SC):
         input_frame = ctk.CTkFrame(self.manual_frame, fg_color=self._get_color(BUTTON_COLOR), corner_radius=8)
         input_frame.pack(fill="x", pady=(0, 15), padx=10)
 
-        input_label = ctk.CTkLabel(input_frame, text="Input Environmental Data", font=("Arial", 12, "bold"), text_color=self._get_color(TEXT_COLOR))
+        input_label = ctk.CTkLabel(input_frame, text=get_text("lbl_data_input"), font=("Arial", 12, "bold"), text_color=self._get_color(TEXT_COLOR))
         input_label.pack(anchor="w", padx=12, pady=(10, 8))
 
         # Temperature Input
-        temp_label = ctk.CTkLabel(input_frame, text="Temperature (°C):", font=("Arial", 11), text_color=self._get_color(TEXT_COLOR))
+        temp_label = ctk.CTkLabel(input_frame, text=get_text("lbl_temperature"), font=("Arial", 11), text_color=self._get_color(TEXT_COLOR))
         temp_label.pack(anchor="w", padx=12, pady=(0, 3))
         
         self.temp_entry = ctk.CTkEntry(input_frame, placeholder_text="e.g., 22.5")
         self.temp_entry.pack(anchor="w", padx=12, pady=(0, 10), fill="x")
 
         # Humidity Input
-        humidity_label = ctk.CTkLabel(input_frame, text="Relative Humidity (%):", font=("Arial", 11), text_color=self._get_color(TEXT_COLOR))
+        humidity_label = ctk.CTkLabel(input_frame, text=get_text("lbl_humidity"), font=("Arial", 11), text_color=self._get_color(TEXT_COLOR))
         humidity_label.pack(anchor="w", padx=12, pady=(0, 3))
         
         self.humidity_entry = ctk.CTkEntry(input_frame, placeholder_text="e.g., 75")
@@ -204,7 +205,7 @@ class PredictPage(SC):
         # Calculate Button
         calc_button = ctk.CTkButton(
             input_frame, 
-            text="Calculate Risk", 
+            text=get_text("btn_calculate_risk"), 
             fg_color=self._get_color(BUTTON_HOVER), 
             hover_color=self._get_color(BUTTON_HOVER), 
             text_color=self._get_color(TEXT_COLOR),
@@ -216,7 +217,7 @@ class PredictPage(SC):
         results_frame = ctk.CTkFrame(self.manual_frame, fg_color=self._get_color(BUTTON_COLOR), corner_radius=8)
         results_frame.pack(fill="x", pady=(0, 10), padx=10)
 
-        results_label = ctk.CTkLabel(results_frame, text="Risk Assessment Results", font=("Arial", 12, "bold"), text_color=self._get_color(TEXT_COLOR))
+        results_label = ctk.CTkLabel(results_frame, text=get_text("lbl_risk_results"), font=("Arial", 12, "bold"), text_color=self._get_color(TEXT_COLOR))
         results_label.pack(anchor="w", padx=12, pady=(10, 5))
 
         # --- Grid Container for 2 Columns ---
@@ -241,7 +242,7 @@ class PredictPage(SC):
         self.lmv_label.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
 
         # Status message
-        self.status_label = ctk.CTkLabel(results_frame, text="Enter values and click Calculate", font=("Arial", 9), text_color=self._get_color(TEXT_COLOR))
+        self.status_label = ctk.CTkLabel(results_frame, text=get_text("lbl_status"), font=("Arial", 9), text_color=self._get_color(TEXT_COLOR))
         self.status_label.pack(anchor="w", padx=12, pady=(0, 10))
 
         # --- Auto Weather View (Chart) ---
@@ -309,8 +310,8 @@ class PredictPage(SC):
             ax.spines['bottom'].set_color(text_hex)
             ax.tick_params(colors=text_hex, labelsize=9)
         
-        self.ax_temp.set_title("Temperature (°C)", color=text_hex, fontsize=11, fontweight='bold')
-        self.ax_hum.set_title("Humidity (%)", color=text_hex, fontsize=11, fontweight='bold')
+        self.ax_temp.set_title(get_text("lbl_temperature"), color=text_hex, fontsize=11, fontweight='bold')
+        self.ax_hum.set_title(get_text("lbl_humidity"), color=text_hex, fontsize=11, fontweight='bold')
         
         self.fig.tight_layout()
         
@@ -322,7 +323,7 @@ class PredictPage(SC):
         info_frame = ctk.CTkFrame(self.auto_frame, fg_color=self._get_color(BUTTON_COLOR), corner_radius=8)
         info_frame.pack(fill="x", padx=10, pady=(0, 10))
         
-        info_label = ctk.CTkLabel(info_frame, text="Current Values & Risk Index", font=("Arial", 11, "bold"), text_color=self._get_color(TEXT_COLOR))
+        info_label = ctk.CTkLabel(info_frame, text=get_text("lbl_current_values"), font=("Arial", 11, "bold"), text_color=self._get_color(TEXT_COLOR))
         info_label.pack(anchor="w", padx=12, pady=(10, 8))
         
         # Current values
@@ -331,10 +332,10 @@ class PredictPage(SC):
         stats_grid.columnconfigure(0, weight=1)
         stats_grid.columnconfigure(1, weight=1)
 
-        self.auto_temp_label = ctk.CTkLabel(stats_grid, text="Latest Temp: -- °C", font=("Arial", 10, "bold"), text_color=self._get_color(TEXT_COLOR), anchor="w")
+        self.auto_temp_label = ctk.CTkLabel(stats_grid, text=get_text("lbl_latest_temp"), font=("Arial", 10, "bold"), text_color=self._get_color(TEXT_COLOR), anchor="w")
         self.auto_temp_label.grid(row=0, column=0, sticky="ew", padx=5)
         
-        self.auto_hum_label = ctk.CTkLabel(stats_grid, text="Latest Humidity: -- %", font=("Arial", 10, "bold"), text_color=self._get_color(TEXT_COLOR), anchor="w")
+        self.auto_hum_label = ctk.CTkLabel(stats_grid, text=get_text("lbl_latest_hum"), font=("Arial", 10, "bold"), text_color=self._get_color(TEXT_COLOR), anchor="w")
         self.auto_hum_label.grid(row=0, column=1, sticky="ew", padx=5)
         
         # Risk labels
@@ -363,7 +364,7 @@ class PredictPage(SC):
             label.grid(row=row, column=col, sticky="ew", padx=5, pady=2)
             self.auto_risk_labels[key] = label
         
-        ctk.CTkLabel(info_frame, text="(Auto-updating every 10 seconds)", font=("Arial", 8), text_color=self._get_color(TEXT_COLOR)).pack(anchor="w", padx=12, pady=(8, 10))
+        ctk.CTkLabel(info_frame, text=get_text("lbl_auto_update"), font=("Arial", 8), text_color=self._get_color(TEXT_COLOR)).pack(anchor="w", padx=12, pady=(8, 10))
 
     def update_auto_data(self):
         """Read CSV and update plots periodically"""
@@ -391,7 +392,7 @@ class PredictPage(SC):
             self._update_plot_data(df_today)
             
         except Exception as e:
-            print(f"Error updating auto data: {e}")
+            print(f"--- {get_text('log_err_auto_data')}: {e}")
         
         # Reschedule
         self.after_id = self.root.after(self.UPDATE_INTERVAL, self.update_auto_data)
@@ -414,8 +415,15 @@ class PredictPage(SC):
 
         # 1. Update Latest Value Labels
         latest_temp, latest_hum = temps[-1], hums[-1]
-        self.auto_temp_label.configure(text=f"Latest Temp: {latest_temp:.1f} °C")
-        self.auto_hum_label.configure(text=f"Latest Humidity: {latest_hum:.1f} %")
+                # Temperature Label
+        self.auto_temp_label.configure(
+            text=f"{get_text('lbl_latest_temp_1')}: {latest_temp:.1f} °C"
+        )
+
+        # Humidity Label
+        self.auto_hum_label.configure(
+            text=f"{get_text('lbl_latest_hum_1')}: {latest_hum:.1f} %"
+        )
         
         # 2. Risk Calculations
         powdery = classify_risk(powdery_mildew_risk(latest_temp, latest_hum))
@@ -499,8 +507,8 @@ class PredictPage(SC):
                 ax.set_facecolor(ax_bg)
 
         # Apply the Gradient View
-        apply_gradient_plot(self.ax_temp, timestamps, temps, "Temperature Profile", '#E74C3C')
-        apply_gradient_plot(self.ax_hum, timestamps, hums, "Humidity Profile", '#3498DB')
+        apply_gradient_plot(self.ax_temp, timestamps, temps, get_text("lbl_temp_graph"), '#E74C3C')
+        apply_gradient_plot(self.ax_hum, timestamps, hums, get_text("lbl_hum_graph"), '#3498DB')
 
         self.fig.autofmt_xdate(rotation=0, ha='center')
         self.fig.tight_layout()
@@ -514,10 +522,10 @@ class PredictPage(SC):
 
             # Validate ranges
             if temperature < -50 or temperature > 60:
-                self.status_label.configure(text="Temperature should be -50 to 60°C", text_color="#FF6B6B")
+                self.status_label.configure(text=get_text("err_temp_range"), text_color="#FF6B6B")
                 return
             if humidity < 0 or humidity > 100:
-                self.status_label.configure(text="Humidity should be 0-100%", text_color="#FF6B6B")
+                self.status_label.configure(text=get_text("err_humidity_range"), text_color="#FF6B6B")
                 return
 
             # Calculate risks
@@ -558,7 +566,7 @@ class PredictPage(SC):
             )
 
         except ValueError:
-            self.status_label.configure(text="Please enter valid numbers", text_color="#FF6B6B")
+            self.status_label.configure(text=get_text("err_invalid_input"), text_color="#FF6B6B")
 
     def go_back_to_dashboard(self):
         """Navigate back to the main dashboard"""

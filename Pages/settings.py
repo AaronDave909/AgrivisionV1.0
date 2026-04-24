@@ -4,12 +4,15 @@ import time
 import threading
 import customtkinter as ctk
 import psutil
+from language_manager import get_text, i18n
+import json # Used to save the language safely
 
 # ---> IMPORT TEXT_COLOR HERE <---
 from shared_components import SharedComponents as SC, custom_font_bold, custom_font_regular, TEXT_COLOR 
 
 BRIGHTNESS_FILE = "Page_files/brightness_state.txt"
 THEME_FILE = "Page_files/theme_state.txt" # --- NEW: File to store theme state ---
+LANG_FILE = "Page_files/lang_state.txt"
 
 class SettingsPage(SC):
     
@@ -42,13 +45,14 @@ class SettingsPage(SC):
         self.load_saved_brightness()
         
         self.create_appearance_toggle()
+        self.create_language_toggle() # <--- NEW: Call the function
 
     def create_appearance_toggle(self):
         """Creates the Light/Dark mode toggle switch."""
         # 1. Section Title
         appearance_label = ctk.CTkLabel(
             self.root, 
-            text="App Appearance", 
+            text=get_text("lbl_app_appearance"), 
             font=tuple(custom_font_bold), 
             text_color=TEXT_COLOR 
         )
@@ -90,6 +94,80 @@ class SettingsPage(SC):
         # Give the switch a tiny moment to finish its animation
         self.root.after(150, self.force_ui_reload)
 
+    def create_language_toggle(self):
+        """Creates the side-by-side Tagalog and English toggle buttons."""
+        
+        # 1. Section Title
+        lang_label = ctk.CTkLabel(
+            self.root, 
+            text=get_text("lbl_lang"), # A nice bilingual title!
+            font=tuple(custom_font_bold), 
+            text_color=TEXT_COLOR 
+        )
+        lang_label.place(x=self._scale_value(123, 'x'), y=self._scale_value(320, 'y')) # Placed just below Appearance
+
+        # 2. Define Colors (Matches your Image)
+        # Using magic tuples so they adapt slightly if you switch dark/light mode
+        ACTIVE_COLOR = ("#2CC9F5", "#1CA3C6") 
+        INACTIVE_COLOR = ("gray60", "gray40") 
+        TEXT_COLOR_BTN = ("white", "white")
+
+        # 3. Create the Buttons side-by-side
+        # Place English on the LEFT (Default)
+        self.btn_english = ctk.CTkButton(
+            self.root,
+            text="English",
+            font=("Arial", self._scale_value(18, 'y'), "bold"),
+            text_color=TEXT_COLOR_BTN,
+            width=self._scale_value(140, 'x'),
+            height=self._scale_value(40, 'y'),
+            corner_radius=8,
+            fg_color=ACTIVE_COLOR if i18n.current_lang == "en" else INACTIVE_COLOR,
+            command=lambda: self.change_language("en")
+        )
+        self.btn_english.place(x=self._scale_value(123, 'x'), y=self._scale_value(355, 'y'))
+
+        # Place Tagalog on the RIGHT
+        self.btn_tagalog = ctk.CTkButton(
+            self.root,
+            text="Tagalog",
+            font=("Arial", self._scale_value(18, 'y'), "bold"),
+            text_color=TEXT_COLOR_BTN,
+            width=self._scale_value(140, 'x'),
+            height=self._scale_value(40, 'y'),
+            corner_radius=8,
+            fg_color=ACTIVE_COLOR if i18n.current_lang == "tl" else INACTIVE_COLOR,
+            command=lambda: self.change_language("tl")
+        )
+        # (123 + 140 width + 10 padding = 273)
+        self.btn_tagalog.place(x=self._scale_value(273, 'x'), y=self._scale_value(355, 'y'))
+
+    def change_language(self, lang_code):
+        """Swaps dictionaries, updates colors, and saves the choice."""
+        # 1. Tell the engine to swap
+        i18n.set_language(lang_code)
+
+        # 2. Update Button Colors (The "Seesaw")
+        ACTIVE_COLOR = ("#2CC9F5", "#1CA3C6") 
+        INACTIVE_COLOR = ("gray60", "gray40") 
+
+        if lang_code == "tl":
+            self.btn_tagalog.configure(fg_color=ACTIVE_COLOR)
+            self.btn_english.configure(fg_color=INACTIVE_COLOR)
+        else:
+            self.btn_tagalog.configure(fg_color=INACTIVE_COLOR)
+            self.btn_english.configure(fg_color=ACTIVE_COLOR)
+        
+        # 3. Save the choice to file
+        os.makedirs(os.path.dirname(LANG_FILE), exist_ok=True)
+        try:
+            with open(LANG_FILE, "w") as f:
+                f.write(lang_code)
+        except Exception as e:
+            print(f"Error saving language: {e}")
+            
+        print(f"Language switched to {lang_code}.")
+
     # --- NEW: Save theme function ---
     def save_theme(self, mode):
         """Writes the selected theme to a text file so it survives reboots."""
@@ -116,7 +194,7 @@ class SettingsPage(SC):
 
         label = ctk.CTkLabel(
             self.root, 
-            text="System Storage", 
+            text=get_text("lbl_system_storage"), 
             font=tuple(custom_font_bold), 
             text_color=TEXT_COLOR 
         )
@@ -127,7 +205,8 @@ class SettingsPage(SC):
         self.storage_bar.place(x=self._scale_value(123, 'x'), y=self._scale_value(185, 'y'))
         self.storage_bar.set(percent_used / 100)
 
-        usage_text = f"Used: {used_gb:.1f} GB | Free: {free_gb:.1f} GB"
+        usage_text = f"{i18n.get_text('lbl_used')}: {used_gb:.1f} GB | {i18n.get_text('lbl_free')}: {free_gb:.1f} GB"
+        
         usage_label = ctk.CTkLabel(
             self.root, 
             text=usage_text, 

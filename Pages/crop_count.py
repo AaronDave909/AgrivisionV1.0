@@ -1,7 +1,8 @@
 import os
 import customtkinter as ctk
 
-# The function now accepts the scaling factors and the scaled font
+from language_manager import get_text
+
 def show_crop_input_popup(root, target_button, scale_x_factor, scale_y_factor, scaled_title_font):
 
     # --- Scaling Helper ---
@@ -57,7 +58,7 @@ def show_crop_input_popup(root, target_button, scale_x_factor, scale_y_factor, s
     y = root_y + (root_height // 2) - (popup_height // 2)
 
     popup = ctk.CTkToplevel(root)
-    popup.title("Crops in Monitor")
+    popup.title(get_text("win_crops_monitor"))
     popup.geometry(f"{popup_width}x{popup_height}+{x}+{y}")
     popup.configure(fg_color="#202332")
     popup.transient(root) 
@@ -68,7 +69,11 @@ def show_crop_input_popup(root, target_button, scale_x_factor, scale_y_factor, s
         popup.grab_set()                 
     ))
 
-    label = ctk.CTkLabel(popup, text="Enter number of crops:", text_color="white", font=scaled_label_font)
+    label = ctk.CTkLabel(
+        popup, 
+        text=get_text("lbl_enter_crops_count"), 
+        text_color="white", 
+        font=scaled_label_font)
     label.pack(pady=scaled_pady_10)
 
     entry = ctk.CTkEntry(
@@ -107,20 +112,20 @@ def show_crop_input_popup(root, target_button, scale_x_factor, scale_y_factor, s
             num_label.pack()
             target_button.number_frame = frame
 
-            target_button.configure(text="Crops in Monitor\n")
+            target_button.configure(text=f"{get_text('lbl_crops_monitor')}\n")
             popup.destroy()
 
         else:
             entry.delete(0, "end")
-            entry.insert(0, "Enter number only")
-            entry.configure(text_color="white")
+            entry.insert(0, get_text("err_number_only")) 
+            entry.configure(text_color="red")
 
     entry.bind("<Return>", on_enter)
 
     # Both buttons now use the same, calculated width and height
     submit_btn = ctk.CTkButton(
         popup,
-        text="Enter",
+        text=get_text("btn_enter_submit"),
         command=on_enter,
         fg_color="#2A2E3F",
         hover_color="#383C4E",
@@ -135,7 +140,7 @@ def show_crop_input_popup(root, target_button, scale_x_factor, scale_y_factor, s
 
     return_btn = ctk.CTkButton(
         popup,
-        text="Return to Dashboard",
+        text=get_text("btn_back_to_dashboard"),
         command=return_to_dashboard,
         fg_color="#2A2E3F",
         hover_color="#383C4E",

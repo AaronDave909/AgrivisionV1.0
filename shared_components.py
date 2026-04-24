@@ -608,43 +608,22 @@ class SharedComponents:
         self._update_battery_loop()
 
     def _update_battery_loop(self):
-        """Reads the Raspberry Pi battery level directly via I2C."""
-        p = 100.0  # Default fallback
+        """Simulates battery reading for development/testing without hardware."""
+        # Check if we are in a 'simulation' state, if not, initialize it
+        if not hasattr(self, '_sim_battery_percent'):
+            self._sim_battery_percent = 100.0
+            print("🚀 Battery Simulation Started (Development Mode)")
+
+        # --- SIMULATION LOGIC ---
+        # Slowly decrease the battery by 1% each time the loop runs
+        self._sim_battery_percent -= 1.0
+        if self._sim_battery_percent < 0:
+            self._sim_battery_percent = 100.0 # Reset to full once it hits 0
+            
+        p = self._sim_battery_percent
         text_c = self._get_color(TEXT_COLOR)
 
-        try:
-            import struct
-            import smbus2 
-            
-            # Open I2C bus 1
-            bus = smbus2.SMBus(1)
-            address = 0x36
-            
-            # --- 1. Read Capacity (Percentage) ---
-            read_cap = bus.read_word_data(address, 4)
-            swapped_cap = struct.unpack("<H", struct.pack(">H", read_cap))[0]
-            p = swapped_cap / 256.0
-            p = max(0.0, min(100.0, float(p))) 
-            
-            # --- 2. Read Voltage (For Safe Shutdown) ---
-            read_vol = bus.read_word_data(address, 2)
-            swapped_vol = struct.unpack("<H", struct.pack(">H", read_vol))[0]
-            voltage = swapped_vol * 1.25 / 1000.0 / 16.0
-            
-            # --- 3. Safety Shutdown Logic ---
-            if voltage < 3.20:
-                print("Critical Battery Voltage (Under 3.20V)! Shutting down Agrivision...")
-                os.system("sudo nohup shutdown -h now")
-
-        except Exception as e:
-            print(f"Hardware battery read error: {e}")
-            if hasattr(self, 'battery_label') and self.battery_label.winfo_exists():
-                self.battery_label.configure(text="ERR") 
-                self.battery_bar.configure(fg_color="#F44336") 
-                self.root.after(30000, self._update_battery_loop)
-            return  
-
-        # --- 4. Update the UI safely ---
+        # --- 4. Update the UI safely (Same as your original UI logic) ---
         if hasattr(self, 'battery_label') and self.battery_label.winfo_exists():
             self.battery_label.configure(text=f"{int(p)}%")
 
@@ -666,5 +645,5 @@ class SharedComponents:
                 self.battery_body.configure(border_color="#F44336")
                 self.battery_label.configure(text_color="#F44336")
                 
-            # Update every 30 seconds
-            self.root.after(30000, self._update_battery_loop)
+            # Update faster (every 1 second) during testing so you can see it move
+            self.root.after(1000, self._update_battery_loop)

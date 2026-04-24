@@ -15,6 +15,8 @@ import matplotlib.colors as mcolors
 from Pages.gallery import gallery_preview
 from PIL import Image
 import io
+from language_manager import get_text
+from Pages.recents import recent_disease_preview
 
 #DIALOGUE BOX CONTENT
 class HelpSlideshowPopup(ctk.CTkToplevel):
@@ -112,7 +114,7 @@ class HelpPage(SC):
     def __init__(self):
         super().__init__()
         self.root.update_idletasks()
-        self.create_title(text="Help", x=119, y=0)
+        self.create_title(text=get_text("title_help"), x=119, y=0)
         self.create_left_panel()
         self.create_leaf_image()
         
@@ -124,7 +126,7 @@ class HelpPage(SC):
         scaled_badge_font = ("Arial", scaled_badge_font_size, "bold")
 
         self.create_button(
-            text="Help Mode is Active", # Using the Unicode lightbulb icon
+            text=get_text("notice_help"), # Using the Unicode lightbulb icon
             x=250, y=20,  # IMPORTANT: Adjust the 'x' value so it sits perfectly right of your "Help" title
             width=220, height=35,
             anchor="center",
@@ -142,7 +144,7 @@ class HelpPage(SC):
             for file in os.listdir(capture_folder) 
             if file.lower().endswith(('.png', '.jpg', '.jpeg'))
         ])
-        self.create_record_button(x=107 / 2, y=480 / 2, command=lambda: HelpSlideshowPopup(None, "Capture Button Guide", capture_folder))
+        self.create_record_button(x=107 / 2, y=480 / 2, command=lambda: HelpSlideshowPopup(None, get_text("title_capture_guide"), capture_folder))
         
 
         #Setting Button
@@ -152,7 +154,7 @@ class HelpPage(SC):
             for file in os.listdir(setting_folder) 
             if file.lower().endswith(('.png', '.jpg', '.jpeg'))
         ])
-        self.settings_button(command=lambda: HelpSlideshowPopup(None, "Setting Guide", setting_folder)) 
+        self.settings_button(command=lambda: HelpSlideshowPopup(None, get_text("title_setting_guide"), setting_folder)) 
 
         #Return/Close Button
         scaled_close_font_size = self._scale_value(22, 'y') 
@@ -186,46 +188,63 @@ class HelpPage(SC):
         )
 
         self.crops_button = self.create_button(
-            text="Crops in Monitor\n", 
+            text=f"{get_text('lbl_crops_monitor')}\n",
             x=118, y=75,
             width=140, height=140,
-            anchor="n", 
-            command=lambda: HelpSlideshowPopup(None, "Crop Monitor Guide", monitor_folder), 
-            image=monitor_button_photo, 
-            compound="top"
+            anchor="s", 
+            command=lambda: HelpSlideshowPopup(None, get_text("title_monitor_guide"), monitor_folder), 
+            image=monitor_button_photo
         )
 
-        #Recent Diseases Button
+        # Recent Disease Button
         recent_images = ["_image_assets/Recent Diseases.png"] 
-        
-        icon_for_dark_mode = Image.open("_image_assets/recent_inside.png") 
-        icon_for_light_mode = Image.open("_image_assets/recent_inside_light.png").resize(icon_for_dark_mode.size)
-        
-        monitor_button_photo = ctk.CTkImage(
-            light_image=icon_for_light_mode, 
-            dark_image=icon_for_dark_mode, 
-            size=(150, 100)
-        )
+        disease_name, date_str, time_str, image_path = recent_disease_preview()
 
-        btn_text = "Recent Disease\n Detected"
+        raw_lower = disease_name.lower()
+        
+        if "nitrogen" in raw_lower or "n deficiency" in raw_lower:
+            disease_key = "status_n_def"
+        elif "phosphorus" in raw_lower or "p deficiency" in raw_lower:
+            disease_key = "status_p_def"
+        elif "potassium" in raw_lower or "k deficiency" in raw_lower:
+            disease_key = "status_k_def"
+        elif "no disease" in raw_lower:
+            disease_key = "status_no_disease"
+        else:
+            # For specific diseases like Powdery Mildew, we use the standard sanitizer
+            clean_name = "_".join(raw_lower.split())
+            disease_key = f"status_{clean_name}"
+        
+        # Now get the translation (will return Tagalog if active, English if not)
+        translated_disease = get_text(disease_key)
+        # ---------------------------------
+
+        dynamic_text = translated_disease
+        btn_command = None 
+
+        if date_str and time_str and image_path:
+            # Use the translated disease
+            dynamic_text = f"{translated_disease}\n{date_str}\n{time_str}"
+            btn_command = lambda path=image_path: self.open_analysis_view(path)
+
+        # Inject the translated label at the bottom (Huling Sakit na Natukoy)
+        btn_text = f"{dynamic_text}\n\n{get_text('lbl_recent_disease')}\n"
         self.create_button(
             text=btn_text,
             x=270, y=75,
             width=140, height=140,
             anchor="s",
-            command=lambda: HelpSlideshowPopup(None, "Recent Disease Detected Guide", recent_images),
-            image=monitor_button_photo, 
-            compound="top"
+            command=lambda: HelpSlideshowPopup(None, get_text("title_recent_disease_guide"), recent_images),
         )
 
         #Manage Files Button
         futures_photo = self.load_futures_icon()
         self.create_button(
-            text="Generate Report\n",
+            text = f"{get_text('btn_generate_report')}\n",
             x=422, y=75,
             width=140, height=140,
             anchor="s",
-            command=lambda: HelpSlideshowPopup(None, "Report Generation Guide", weather_folder), 
+            command=lambda: HelpSlideshowPopup(None, get_text("title_report_guide"), weather_folder), 
             image=futures_photo,
             compound="top"
         )        
@@ -247,13 +266,13 @@ class HelpPage(SC):
             size=(200, 200)
         )
         
-        btn_text = "\nAnalytics"
+        btn_text = f"\n{get_text('lbl_analytics')}"
         self.weather_button = self.create_button(
             text=btn_text,
             x=121, y=232,
             width=205, height=220,
             anchor="n",
-            command=lambda: HelpSlideshowPopup(None, "Weather Analytics Guide", weather_folder),
+            command=lambda: HelpSlideshowPopup(None, get_text("title_analytics_guide"), weather_folder),
             image=monitor_button_photo, 
             compound="bottom"
         )
@@ -275,13 +294,13 @@ class HelpPage(SC):
             size=(200, 200)
         )
         
-        btn_text = "\nCapture Gallery"
+        btn_text = f"\n{get_text('lbl_capture_gallery')}"
         self.gallery_button = self.create_button(
             text=btn_text, 
             x=340, y=232,
             width=222, height=220,
             anchor="n",
-            command=lambda: HelpSlideshowPopup(None, "Capture Gallery Guide", gallery_folder), 
+            command=lambda: HelpSlideshowPopup(None, get_text("title_gallery_guide"), gallery_folder), 
             image=monitor_button_photo, 
             compound="bottom"
         )
@@ -299,11 +318,11 @@ class HelpPage(SC):
         )
 
         self.create_button(
-            text="\nDisease Record History",
+            text = f"\n{get_text('lbl_disease_history')}",
             x=572, y=75,
             anchor="n",
             width=217, height=275,
-            command=lambda: HelpSlideshowPopup(None, "Disease Record History Guide", history_images), 
+            command=lambda: HelpSlideshowPopup(None, get_text("title_history_guide"), history_images), 
             image=history_photo,
             compound="bottom"
         )
@@ -321,7 +340,7 @@ class HelpPage(SC):
                     width=217, height=37,
                     anchor="center",
                     font=tuple(custom_font_bold),
-                    command=lambda: HelpSlideshowPopup(None, "Dock Mode Button Guide", dock_folder), 
+                    command=lambda: HelpSlideshowPopup(None, get_text("title_dock_guide"), dock_folder), 
                 )
         
         #Risk Check Button
@@ -332,10 +351,10 @@ class HelpPage(SC):
             if file.lower().endswith(('.png', '.jpg', '.jpeg'))
         ])
         self.create_button(
-            text="Risk Check", 
+            text=get_text("btn_risk_check"), 
             x=572, y=414,
             width=217, height=37,
             anchor="center",
             font=tuple(custom_font_bold), 
-            command=lambda: HelpSlideshowPopup(None, "Risk Check Guide", risk_folder), #to change
+            command=lambda: HelpSlideshowPopup(None, get_text("title_risk_guide"), risk_folder), #to change
         )

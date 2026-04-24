@@ -2,6 +2,8 @@ import os
 import json
 from datetime import datetime
 
+from language_manager import get_text
+
 class PestAnalytics:
     """
     A helper class to manage reading from and writing to
@@ -26,7 +28,8 @@ class PestAnalytics:
             else:
                 return {}
         except (json.JSONDecodeError, Exception) as e:
-            print(f"❌ Error reading pest JSON: {e}. Returning empty dict.")
+            # Localized terminal log
+            print(f"❌ {get_text('log_err_pest_json_read')}: {e}")
             return {}
 
     def _save_json(self, data):
@@ -35,27 +38,27 @@ class PestAnalytics:
             with open(self.json_path, 'w') as f:
                 json.dump(data, f, indent=4)
         except Exception as e:
-            print(f"❌ Error writing pest JSON: {e}")
+            # Localized terminal log
+            print(f"❌ {get_text('log_err_pest_json_write')}: {e}")
 
     def save_detection(self, pest_name, timestamp_obj, image_filename):
         """
         Loads the pest data, adds a new entry, and saves it.
-        The image_filename is used as the primary key, just like in gallery_data.json.
         """
         master_data = self._load_json()
-        
-        # Use the same timestamp format as your other files
         timestamp_str = timestamp_obj.strftime("%b %d, %Y %I:%M %p")
         
-        # Create the new data entry
         new_detection_data = {
             "pest_name": pest_name,
             "timestamp": timestamp_str
         }
         
-        # Add the new entry using the image filename as the key
         master_data[image_filename] = new_detection_data
-        
-        # Save the updated dictionary
         self._save_json(master_data)
-        print(f"✅ Pest detection saved: {pest_name} -> {image_filename}")
+
+        # Localized console feedback
+        # This maps the raw model output to your localized label
+        pest_key = f"lbl_pest_{pest_name.lower().replace(' ', '_')}"
+        localized_pest = get_text(pest_key)
+        
+        print(f"✅ {get_text('log_pest_saved')}: {localized_pest} -> {image_filename}")

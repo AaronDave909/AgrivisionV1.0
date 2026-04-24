@@ -13,6 +13,7 @@ from Pages.weather_page import get_latest_weather_averages
 from Pages.predict import PredictPage 
 from Pages.help import HelpPage
 from Pages.report import ReportPage
+from language_manager import get_text
 import customtkinter as ctk
 import datetime
 import os
@@ -163,7 +164,7 @@ class MyDashboard(SC):
                 # Clip the gradient image to the shape of the line chart
                 img.set_clip_path(clip_path, transform=ax.transData)
             except Exception as e:
-                print(f"Failed to create gradient: {e}") # Failsafe
+                print(f"--- {get_text('log_err_gradient')}: {e}")
 
         # --- 4. Add the grid ---
         ax.grid(True, linestyle='--', alpha=0.3, color='gray') # Subtle grid
@@ -232,15 +233,17 @@ class MyDashboard(SC):
             if self.chart_x_data:
                 most_recent_timestamp = self.chart_x_data[-1] 
                 date_str = most_recent_timestamp.strftime('%b %d')
-                self.recent_date_label.configure(text=f"Date: {date_str}")
+                # Localized "Petsa: [Date]"
+                self.recent_date_label.configure(text=f"{get_text('lbl_date')}: {date_str}") 
             else:
-                self.recent_date_label.configure(text="Date: --")
+                self.recent_date_label.configure(text=f"{get_text('lbl_date')}: --") 
         
         except Exception as e:
-            print(f"Error reading CSV for dashboard chart: {e}")
+            # Localized terminal error for CSV
+            print(f"--- {get_text('log_err_chart_csv')}: {e}")
             self.chart_x_data = []
             self.chart_y_data = []
-            self.recent_date_label.configure(text="Date: --")
+            self.recent_date_label.configure(text=f"{get_text('lbl_date')}: --")
 
         # 3. Update the chart 
         self._update_temp_chart()
@@ -262,22 +265,23 @@ class MyDashboard(SC):
             color = "#FFFFFF" 
 
             if current_month in [11, 12, 1, 2]: 
-                season = "Dry Season (Cool)"
+                season = get_text("lbl_dry_cool")
                 color = "#A9DFFF" 
             elif current_month in [3, 4, 5]: 
-                season = "Dry Season (Hot)"
+                season = get_text("lbl_dry_hot")
                 color = "#FFD1A9" 
             elif current_month in [6, 7, 8, 9, 10]: 
-                season = "Wet Season"
+                season = get_text("lbl_wet_season")
                 color = "#C8D3D5" 
             
             if hasattr(self, 'season_label'):
                 self.season_label.configure(text=season, text_color=color)
         
         except Exception as e:
-            print(f"Error updating season indicator: {e}")
+            # Localized terminal log and UI fallback
+            print(f"--- {get_text('log_err_season_indicator')}: {e}")
             if hasattr(self, 'season_label'):
-                self.season_label.configure(text="Season: Error", text_color="red")
+                self.season_label.configure(text=get_text("lbl_season_error"), text_color="red")
 
     def __init__(self):
         super().__init__()
@@ -315,7 +319,7 @@ class MyDashboard(SC):
 
         # Crops Button
         self.crops_button = self.create_button(
-            text="Crops in Monitor\n",
+            text=f"{get_text('lbl_crops_monitor')}\n",
             x=118, y=75,
             width=140, height=140,
             anchor="s", 
@@ -343,14 +347,38 @@ class MyDashboard(SC):
         
         # Recent Disease Button
         disease_name, date_str, time_str, image_path = recent_disease_preview()
-        dynamic_text = disease_name
+
+        # --- THE UPDATED SANITIZER ---
+        # We check for keywords in the raw disease_name to assign a consistent KEY
+        raw_lower = disease_name.lower()
+        
+        if "nitrogen" in raw_lower or "n deficiency" in raw_lower:
+            disease_key = "status_n_def"
+        elif "phosphorus" in raw_lower or "p deficiency" in raw_lower:
+            disease_key = "status_p_def"
+        elif "potassium" in raw_lower or "k deficiency" in raw_lower:
+            disease_key = "status_k_def"
+        elif "no disease" in raw_lower:
+            disease_key = "status_no_disease"
+        else:
+            # For specific diseases like Powdery Mildew, we use the standard sanitizer
+            clean_name = "_".join(raw_lower.split())
+            disease_key = f"status_{clean_name}"
+        
+        # Now get the translation (will return Tagalog if active, English if not)
+        translated_disease = get_text(disease_key)
+        # ---------------------------------
+
+        dynamic_text = translated_disease
         btn_command = None 
 
         if date_str and time_str and image_path:
-            dynamic_text = f"{disease_name}\n{date_str}\n{time_str}"
+            # Use the translated disease
+            dynamic_text = f"{translated_disease}\n{date_str}\n{time_str}"
             btn_command = lambda path=image_path: self.open_analysis_view(path)
 
-        btn_text = f"{dynamic_text}\n\nRecent Disease\nDetected"
+        # Inject the translated label at the bottom (Huling Sakit na Natukoy)
+        btn_text = f"{dynamic_text}\n\n{get_text('lbl_recent_disease')}\n"
         self.create_button(
             text=btn_text,
             x=270, y=75,
@@ -362,7 +390,7 @@ class MyDashboard(SC):
         # Generate Report Button with Image
         futures_photo = self.load_futures_icon()
         self.create_button(
-            text="Generate Report\n",
+            text=f"{get_text('btn_generate_report')}\n",
             x=422, y=75,
             width=140, height=140,
             anchor="s",
@@ -399,7 +427,7 @@ class MyDashboard(SC):
 
         gallery_title_label = ctk.CTkLabel(
             self.gallery_button,
-            text="Capture Gallery",
+            text=get_text("lbl_capture_gallery"),
             font=tuple(custom_font_bold), 
             text_color=self._get_color(TEXT_COLOR),
             fg_color="transparent"
@@ -471,7 +499,7 @@ class MyDashboard(SC):
 
         # Disease Record Panel
         disease_panel = self.create_panel(
-            text="\nDisease Record History",
+            text=f"\n{get_text('lbl_disease_history')}",
             x=572, y=75,
             anchor="nw",
             width=217, height=275
@@ -497,7 +525,7 @@ class MyDashboard(SC):
         
         # Dock Mode Button
         self.create_button(
-            text="Dock Mode",
+            text=get_text("btn_dock_mode"),
             x=572, y=368,
             width=217, height=37,
             anchor="center",
@@ -507,7 +535,7 @@ class MyDashboard(SC):
         
         # Diseases Button
         self.create_button(
-            text="Risk Check", 
+            text=get_text("btn_risk_check"), 
             x=572, y=414,
             width=217, height=37,
             anchor="center",
@@ -519,7 +547,7 @@ class MyDashboard(SC):
         scaled_help_font_size = self._scale_value(20, 'y') 
         scaled_help_font = ("Arial", scaled_help_font_size, "bold")
         self.create_button(
-            text="Help",
+            text=get_text("btn_help"),
             x=674, y=21,
             width=114, height=37,
             anchor="center",

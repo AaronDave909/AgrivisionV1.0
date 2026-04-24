@@ -3,6 +3,7 @@ from PIL import Image
 import datetime
 import cv2
 import os
+from language_manager import get_text
 from shared_components import SharedComponents as SC, LEFT_PANEL_WIDTH 
 
 class CapturePage(SC):
@@ -68,7 +69,7 @@ class CapturePage(SC):
         # Disease Mode Button
         self.disease_btn = ctk.CTkButton(
             self.root,
-            text="Disease",
+            text=get_text("btn_disease"),
             width=button_width,
             height=button_height,
             hover=False,
@@ -80,7 +81,7 @@ class CapturePage(SC):
         # Nutrient Mode Button
         self.nutrient_btn = ctk.CTkButton(
             self.root,
-            text="Nutrient",
+            text=get_text("btn_nutrient"),
             width=button_width,
             height=button_height,
             hover=False,
@@ -96,7 +97,8 @@ class CapturePage(SC):
     # =============================
     def set_mode(self, mode):
         self.capture_mode = mode
-        print(f"Mode set to: {mode}")
+        mode_label = get_text("btn_disease") if mode == "Disease" else get_text("btn_nutrient")
+        print(f"--- {get_text('log_mode_set')}: {mode_label}")
         self.update_button_styles()
 
     def update_button_styles(self):
@@ -118,7 +120,7 @@ class CapturePage(SC):
         self.cap = cv2.VideoCapture(0) # Standard USB/Laptop webcam
         
         if not self.cap.isOpened():
-            self.camera_label.configure(text="Camera not found", text_color="red")
+            self.camera_label.configure(text=get_text("err_camera_not_found"), text_color="red")
             return
 
         self.running = True
@@ -164,7 +166,8 @@ class CapturePage(SC):
 
             # Save the processed square frame
             cv2.imwrite(path, self.current_frame)
-            print(f"[{self.capture_mode}] Captured: {path}")
+            mode_label = get_text("btn_disease") if self.capture_mode == "Disease" else get_text("btn_deficiency")
+            print(f"[{mode_label}] {get_text('log_captured')}: {path}")
 
             self.cleanup_camera()
             self.root.destroy()
@@ -182,7 +185,7 @@ class CapturePage(SC):
         self.running = False
         if self.cap and self.cap.isOpened():
             self.cap.release()
-            print("✅ Camera released.")
+            print(f"✅ {get_text('log_camera_released')}.")
 
     def navigate_to_dashboard(self):
         self.cleanup_camera()

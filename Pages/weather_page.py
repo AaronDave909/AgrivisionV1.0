@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from language_manager import get_text
 from shared_components import SharedComponents as SC, LEFT_PANEL_WIDTH
 import os
 import datetime 
@@ -60,7 +61,7 @@ def get_latest_weather_averages(csv_path="Page_files/weather.csv"):
             latest_date_str
         )
     except Exception as e:
-        print(f"Error reading or processing weather CSV: {e}")
+        print(f"--- {get_text('log_err_weather_csv')}: {e}")
         return None, None, None, "Error"
 
 class WeatherPage(SC):
@@ -85,7 +86,7 @@ class WeatherPage(SC):
             return
             
         self.cal_window = ctk.CTkToplevel(self.root)
-        self.cal_window.title("Select Date")
+        self.cal_window.title(get_text("title_select_date"))
         self.cal_window.attributes("-topmost", True)
         self.cal_window.resizable(False, False)
         
@@ -156,11 +157,11 @@ class WeatherPage(SC):
                         except ValueError:
                             pass
         except Exception as e:
-            print(f"Error loading dates for calendar: {e}")
+            print(f"--- {get_text('log_err_calendar_dates')}: {e}")
 
         select_btn = ctk.CTkButton(
             self.cal_window, 
-            text="Confirm Date",
+            text=get_text("btn_confirm_date"),
             command=self.confirm_date,
             font=("Arial", 20, "bold"),
             height=50,  
@@ -178,7 +179,9 @@ class WeatherPage(SC):
         else:
             self.selected_filter = picked_date
         
-        self.weather_date_btn.configure(text=f"Date: {self.selected_filter}")
+        # Update the Date Filter Button text
+        date_text = get_text("lbl_filter_date").replace("{date}", str(self.selected_filter))
+        self.weather_date_btn.configure(text=date_text)
         self._update_plot_data(force_update=True)
         self.cal_window.destroy()
 
@@ -191,23 +194,25 @@ class WeatherPage(SC):
             color = self._get_color(TEXT_COLOR) 
 
             if current_month in [11, 12, 1, 2]:
-                season = "Dry Season (Cool)"
-                sub_text = "Expect rainy and hot sunny days!"
+                season = get_text("lbl_dry_cool")
+                sub_text = get_text("sub_dry_cool")
                 color = self._get_color(("#0077B6", "#A9DFFF"))
             elif current_month in [3, 4, 5]:
-                season = "Dry Season (Hot)"
-                sub_text = "Expect extreme hot temperatures!"
+                season = get_text("lbl_dry_hot")
+                sub_text = get_text("sub_dry_hot")
                 color = self._get_color(("#D95D00", "#FFD1A9"))
             elif current_month in [6, 7, 8, 9, 10]:
-                season = "Wet Season"
-                sub_text = "Expect frequent or heavy rains!"
+                season = get_text("lbl_wet_season")
+                sub_text = get_text("sub_wet_season")
                 color = self._get_color(("#5C6B73", "#C8D3D5"))
 
             self.season_label.configure(text=season, text_color=color)
             self.season_sub_label.configure(text=sub_text, text_color=color)
+            
         except Exception as e:
-            print(f"Error updating season indicator: {e}")
-            self.season_label.configure(text="Season: Error", text_color="red")
+            # Localized terminal log
+            print(f"--- {get_text('log_err_season')}: {e}")
+            self.season_label.configure(text=get_text("lbl_season_error"), text_color="red")
             self.season_sub_label.configure(text="")
     
     def _get_available_json_months(self):
@@ -356,7 +361,7 @@ class WeatherPage(SC):
         
         self.create_left_panel() 
         self.create_leaf_image() 
-        self.create_title(text="Farm Analytics", x=119, y=0)
+        self.create_title(text=get_text("title_analytics"), x=119, y=0)
         self.create_battery_indicator(x=15, y=100)
 
         self.date_filter_frame = ctk.CTkFrame(self.root, fg_color="transparent")
@@ -367,7 +372,7 @@ class WeatherPage(SC):
 
         self.filter_label = ctk.CTkLabel(
             self.selector_row_frame, 
-            text="Select Date:",
+            text=get_text("title_select_date"),
             font=("Arial", self._scale_value(14, 'y')),
             text_color=self._get_color(TEXT_COLOR)
         )
@@ -377,9 +382,13 @@ class WeatherPage(SC):
         menu_text = self._get_color(TEXT_COLOR)
         menu_hover = self._get_color(BUTTON_HOVER)
 
+        # Determine the initial text safely
+        display_date = self.selected_filter if self.selected_filter else "--"
+        initial_btn_text = get_text("lbl_filter_date").replace("{date}", str(display_date))
+
         self.weather_date_btn = ctk.CTkButton(
             self.selector_row_frame,
-            text=f"Date: {self.selected_filter}",
+            text=initial_btn_text, # Use the pre-calculated string
             command=self.open_calendar,
             font=("Arial", self._scale_value(14, 'y')),
             fg_color=menu_bg,
@@ -410,7 +419,7 @@ class WeatherPage(SC):
         
         self.sub_type_label = ctk.CTkLabel(
             self.sub_selector_row_frame, 
-            text="Type:",
+            text=get_text("lbl_sub_type"),
             font=("Arial", self._scale_value(14, 'y')),
             text_color=self._get_color(TEXT_COLOR)
         )
@@ -474,19 +483,19 @@ class WeatherPage(SC):
         btn_hover = self._get_color(BUTTON_HOVER)
         btn_text = self._get_color(TEXT_COLOR)
 
-        self.all_button = ctk.CTkButton(self.left_panel, text=" All Data", width=scaled_button_width, height=scaled_button_height, image=self.all_icon, command=lambda: self.show_view("all"), fg_color=btn_fg, hover_color=btn_hover, corner_radius=5, text_color=btn_text, font=btn_font, anchor=btn_anchor)
+        self.all_button = ctk.CTkButton(self.left_panel, text=get_text("btn_all_data"), width=scaled_button_width, height=scaled_button_height, image=self.all_icon, command=lambda: self.show_view("all"), fg_color=btn_fg, hover_color=btn_hover, corner_radius=5, text_color=btn_text, font=btn_font, anchor=btn_anchor)
         self.all_button.place(x=x_pos, y=y_all, anchor="center")
-        self.temp_button = ctk.CTkButton(self.left_panel, text=" Temperature", width=scaled_button_width, height=scaled_button_height, image=self.temp_icon, command=lambda: self.show_view("temp"), fg_color=btn_fg, hover_color=btn_hover, corner_radius=5, text_color=btn_text, font=btn_font, anchor=btn_anchor)
+        self.temp_button = ctk.CTkButton(self.left_panel, text=get_text("btn_temp"), width=scaled_button_width, height=scaled_button_height, image=self.temp_icon, command=lambda: self.show_view("temp"), fg_color=btn_fg, hover_color=btn_hover, corner_radius=5, text_color=btn_text, font=btn_font, anchor=btn_anchor)
         self.temp_button.place(x=x_pos, y=y_temp, anchor="center")
-        self.hum_button = ctk.CTkButton(self.left_panel, text=" Humidity", width=scaled_button_width, height=scaled_button_height, image=self.hum_icon, command=lambda: self.show_view("hum"), fg_color=btn_fg, hover_color=btn_hover, corner_radius=5, text_color=btn_text, font=btn_font, anchor=btn_anchor)
+        self.hum_button = ctk.CTkButton(self.left_panel, text=get_text("btn_hum"), width=scaled_button_width, height=scaled_button_height, image=self.hum_icon, command=lambda: self.show_view("hum"), fg_color=btn_fg, hover_color=btn_hover, corner_radius=5, text_color=btn_text, font=btn_font, anchor=btn_anchor)
         self.hum_button.place(x=x_pos, y=y_hum, anchor="center")
-        self.pres_button = ctk.CTkButton(self.left_panel, text=" Pressure", width=scaled_button_width, height=scaled_button_height, image=self.pres_icon, command=lambda: self.show_view("pres"), fg_color=btn_fg, hover_color=btn_hover, corner_radius=5, text_color=btn_text, font=btn_font, anchor=btn_anchor)
+        self.pres_button = ctk.CTkButton(self.left_panel, text=get_text("btn_pres"), width=scaled_button_width, height=scaled_button_height, image=self.pres_icon, command=lambda: self.show_view("pres"), fg_color=btn_fg, hover_color=btn_hover, corner_radius=5, text_color=btn_text, font=btn_font, anchor=btn_anchor)
         self.pres_button.place(x=x_pos, y=y_pres, anchor="center")
-        self.disease_button = ctk.CTkButton(self.left_panel, text=" Diseases", width=scaled_button_width, height=scaled_button_height, image=self.disease_icon, command=lambda: self.show_view("disease"), fg_color=btn_fg, hover_color=btn_hover, corner_radius=5, text_color=btn_text, font=btn_font, anchor=btn_anchor)
+        self.disease_button = ctk.CTkButton(self.left_panel, text=get_text("btn_disease"), width=scaled_button_width, height=scaled_button_height, image=self.disease_icon, command=lambda: self.show_view("disease"), fg_color=btn_fg, hover_color=btn_hover, corner_radius=5, text_color=btn_text, font=btn_font, anchor=btn_anchor)
         self.disease_button.place(x=x_pos, y=y_disease, anchor="center")
-        self.pest_button = ctk.CTkButton(self.left_panel, text=" Pests", width=scaled_button_width, height=scaled_button_height, image=self.pest_icon, command=lambda: self.show_view("pest"), fg_color=btn_fg, hover_color=btn_hover, corner_radius=5, text_color=btn_text, font=btn_font, anchor=btn_anchor)
+        self.pest_button = ctk.CTkButton(self.left_panel, text=get_text("btn_pest"), width=scaled_button_width, height=scaled_button_height, image=self.pest_icon, command=lambda: self.show_view("pest"), fg_color=btn_fg, hover_color=btn_hover, corner_radius=5, text_color=btn_text, font=btn_font, anchor=btn_anchor)
         self.pest_button.place(x=x_pos, y=y_pest, anchor="center")
-        self.undo_button = ctk.CTkButton(self.left_panel, text=" Return", width=scaled_button_width, height=scaled_button_height, image=self.undo_icon, command=self.navigate_to_dashboard, fg_color=btn_fg, hover_color=btn_hover, corner_radius=5, text_color=btn_text, font=btn_font, anchor=btn_anchor)
+        self.undo_button = ctk.CTkButton(self.left_panel, text=get_text("btn_undo"), width=scaled_button_width, height=scaled_button_height, image=self.undo_icon, command=self.navigate_to_dashboard, fg_color=btn_fg, hover_color=btn_hover, corner_radius=5, text_color=btn_text, font=btn_font, anchor=btn_anchor)
         self.undo_button.place(x=x_pos, y=y_undo, anchor="center")
 
         self.chart_buttons = [self.all_button, self.temp_button, self.hum_button, self.pres_button, self.disease_button, self.pest_button]
@@ -541,13 +550,13 @@ class WeatherPage(SC):
             self.avg_frame.pack(side=ctk.TOP, fill="x", padx=20, pady=(5, 10))
 
             font_style = ("Arial", 20, "bold")
-            self.temp_avg_label = ctk.CTkLabel(self.avg_frame, text="Temperature Avg: -- °C", font=font_style, text_color=text_hex)
-            self.hum_avg_label = ctk.CTkLabel(self.avg_frame, text="Humidity Avg: -- %", font=font_style, text_color=text_hex)
-            self.pres_avg_label = ctk.CTkLabel(self.avg_frame, text="Pressure Avg: -- hPa", font=font_style, text_color=text_hex)
-            self.high_tide_label = ctk.CTkLabel(self.avg_frame, text="High Tide: N/A", font=font_style, text_color=text_hex)
-            self.low_tide_label = ctk.CTkLabel(self.avg_frame, text="Low Tide: N/A", font=font_style, text_color=text_hex)
-            self.disease_total_label = ctk.CTkLabel(self.avg_frame, text="Total Detections: --", font=font_style, text_color=text_hex)
-            self.pest_total_label = ctk.CTkLabel(self.avg_frame, text="Total Detections: --", font=font_style, text_color=text_hex)
+            self.temp_avg_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_temp_avg"), font=font_style, text_color=text_hex)
+            self.hum_avg_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_hum_avg"), font=font_style, text_color=text_hex)
+            self.pres_avg_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_pres_avg"), font=font_style, text_color=text_hex)
+            self.high_tide_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_high_tide"), font=font_style, text_color=text_hex)
+            self.low_tide_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_low_tide"), font=font_style, text_color=text_hex)
+            self.disease_total_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_disease_total"), font=font_style, text_color=text_hex)
+            self.pest_total_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_pest_total"), font=font_style, text_color=text_hex)
 
             self.canvas_stacked = FigureCanvasTkAgg(self.fig_stacked, master=self.chart_frame)
             self.canvas_stacked.get_tk_widget().pack(side=ctk.TOP, fill=ctk.BOTH, expand=True)
@@ -618,7 +627,7 @@ class WeatherPage(SC):
             self.season_sub_label.pack_forget()
             self.weather_date_btn.pack_forget()
             
-            self.filter_label.configure(text="Select Month:")
+            self.filter_label.configure(text=get_text("lbl_select_month"))
             self.disease_month_menu.pack(side="left", padx=(0, 10))
             
             available_months = self._get_available_json_months()
@@ -645,10 +654,15 @@ class WeatherPage(SC):
             self.season_label.pack(side="top", anchor="e", padx=(0, 10))
             self.season_sub_label.pack(side="top", anchor="e", padx=(0, 10))
             
-            self.filter_label.configure(text="Select Date:")
+            self.filter_label.configure(text=get_text("title_select_date"))
             self.weather_date_btn.pack(side="left", padx=(0, 10))
             
-            self.weather_date_btn.configure(text=f"Date: {self.selected_filter}")
+            # Safely format the date text using your translation template
+            display_date = str(self.selected_filter) if self.selected_filter else "--"
+            new_text = get_text("lbl_filter_date").replace("{date}", display_date)
+
+            # Apply to the button
+            self.weather_date_btn.configure(text=new_text)
             
             if not self.is_running:
                 self.is_running = True
@@ -708,7 +722,13 @@ class WeatherPage(SC):
 
             if self.current_view in ["all", "temp", "hum", "pres"]:
                 if not os.path.exists(self.CSV_FILE_PATH):
-                    self.status_label.configure(text=f"Error: File not found.\n{self.CSV_FILE_PATH}", text_color="red")
+                    # Localized UI Error Message
+                    error_msg = get_text("err_file_not_found").replace("{path}", self.CSV_FILE_PATH)
+
+                    self.status_label.configure(
+                        text=error_msg, 
+                        text_color="red"
+                    )
                     if not self.canvas_stacked: self.status_label.pack(expand=True)
                     if not force_update and should_auto_update: self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)
                     return
@@ -730,16 +750,16 @@ class WeatherPage(SC):
                 try:
                     if self.selected_filter == "Today":
                         target_date = datetime.date.today()
-                        avg_label_prefix = "Feels like: "
+                        avg_label_prefix = get_text("lbl_feels_like")
                     else:
                         target_date = datetime.datetime.strptime(self.selected_filter, '%Y-%m-%d').date()
-                        avg_label_prefix = "Day Avg: "
+                        avg_label_prefix = get_text("lbl_day_avg")
                     
                     filtered_df = df[df.index.date == target_date]
                 except Exception as e:
                     target_date = datetime.date.today()
                     filtered_df = df[df.index.date == target_date]
-                    avg_label_prefix = "Feels like: "
+                    avg_label_prefix = get_text("lbl_feels_like")
                 
                 is_empty_data = filtered_df.empty
                 display_color = "red" if is_empty_data else text_hex
@@ -760,21 +780,32 @@ class WeatherPage(SC):
                             avg_hum = filtered_df['Humidity'].mean()
                             avg_pres = filtered_df['Pressure'].mean()
 
+                    # 1. Temperature Logic
+                    t_val = f"{avg_temp:.1f}" if not pd.isna(avg_temp) else get_text("lbl_avg_na")
                     self.temp_avg_label.configure(
-                        text=f"{avg_label_prefix}{avg_temp:.1f} °C" if not pd.isna(avg_temp) else "Temperature Avg: N/A",
+                        text=get_text("lbl_avg_temp").replace("{val}", t_val),
                         text_color=display_color
                     )
+
+                    # 2. Humidity Logic
+                    h_val = f"{avg_hum:.1f}" if not pd.isna(avg_hum) else get_text("lbl_avg_na")
                     self.hum_avg_label.configure(
-                        text=f"Humidity Avg: {avg_hum:.1f} %" if not pd.isna(avg_hum) else "Humidity Avg: N/A",
+                        text=get_text("lbl_avg_hum").replace("{val}", h_val),
                         text_color=display_color
                     )
+
+                    # 3. Pressure Logic
+                    p_val = f"{avg_pres:.1f}" if not pd.isna(avg_pres) else get_text("lbl_avg_na")
                     self.pres_avg_label.configure(
-                        text=f"Pressure Avg: {avg_pres:.1f} hPa" if not pd.isna(avg_pres) else "Pressure Avg: N/A",
+                        text=get_text("lbl_avg_pres").replace("{val}", p_val),
                         text_color=display_color
                     )
+
                 except Exception as e:
-                    self.temp_avg_label.configure(text="Temperature Avg: Error", text_color="red")
-                    self.hum_avg_label.configure(text="Humidity Avg: Error", text_color="red")
+                    err_txt = get_text("lbl_avg_error")
+                    self.temp_avg_label.configure(text=f"Temp: {err_txt}", text_color="red")
+                    self.hum_avg_label.configure(text=f"Hum: {err_txt}", text_color="red")
+                    print(f"--- {get_text('log_err_averages')}: {e}")
                 
                 if not filtered_df.empty:
                     self.ax1.plot(filtered_df.index, filtered_df['Temperature'], color='#E74C3C', zorder=3, linewidth=2.5)
@@ -802,7 +833,7 @@ class WeatherPage(SC):
                 self.ax3.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p')); self.ax3.set_xlabel('Time', color=text_hex); plt.setp(self.ax3.get_xticklabels(), rotation=0, ha="center", color=text_hex)
                 self.fig_stacked.suptitle(f"BME280 Sensor Data ({self.selected_filter})", fontsize=14, color=text_hex)
                 
-                title = 'Sensor Data'
+                title = get_text("title_sensor_data")
                 if not filtered_df.empty:
                     if self.current_view == "temp":
                         title = f"Temperature ({self.selected_filter})"; self.ax_single.set_ylabel('Temperature (°C)', color=text_hex, labelpad=15)
@@ -839,23 +870,32 @@ class WeatherPage(SC):
                     sub_type = self.sub_type_var.get()
                     if sub_type == "Deficiencies":
                         data_to_plot = deficiency_counts
-                        title = f"Deficiency Detections ({self.selected_filter})"
+                        # Dynamic Title and Label for Deficiencies
+                        title = get_text("lbl_title_deficiency").replace("{filter}", str(self.selected_filter))
                         color = '#F1C40F' 
                         total = sum(deficiency_counts.values())
-                        self.disease_total_label.configure(text=f"Total Deficiencies: {total}")
+                        
+                        total_text = get_text("lbl_total_deficiency").replace("{val}", str(total))
+                        self.disease_total_label.configure(text=total_text)
                     else:
                         data_to_plot = disease_counts
-                        title = f"Disease Detections ({self.selected_filter})"
+                        # Dynamic Title and Label for Diseases
+                        title = get_text("lbl_title_disease").replace("{filter}", str(self.selected_filter))
                         color = '#9B59B6'
                         total = sum(disease_counts.values())
-                        self.disease_total_label.configure(text=f"Total Diseases: {total}")
+                        
+                        total_text = get_text("lbl_total_disease").replace("{val}", str(total))
+                        self.disease_total_label.configure(text=total_text)
                 
                 elif self.current_view == "pest":
                     data_to_plot = pest_counts
-                    title = f"Pest Detections ({self.selected_filter})"
+                    # Dynamic Title and Label for Pests
+                    title = get_text("lbl_title_pest").replace("{filter}", str(self.selected_filter))
                     color = '#F39C12'
                     total = sum(pest_counts.values())
-                    self.pest_total_label.configure(text=f"Total Pests: {total}")
+                    
+                    total_text = get_text("lbl_total_pest").replace("{val}", str(total))
+                    self.pest_total_label.configure(text=total_text)
 
                 if data_to_plot:
                     is_deficiency_view = (self.current_view == "disease" and self.sub_type_var.get() == "Deficiencies")
@@ -882,14 +922,14 @@ class WeatherPage(SC):
                                             ha='center', va='bottom', color=text_hex, fontsize=12)
 
                 elif self.selected_filter == "All Detections" and not data_to_plot:
-                    self.ax_single.text(0.5, 0.5, "No Detections Recorded Yet", ha='center', va='center', color='red', fontsize=18, transform=self.ax_single.transAxes)
+                    self.ax_single.text(0.5, 0.5, get_text("lbl_no_detections"), ha='center', va='center', color='red', fontsize=18, transform=self.ax_single.transAxes)
                     self.ax_single.set_ylim(bottom=0, top=1) 
                 
                 elif self.selected_filter != "All Detections" and not data_to_plot: 
-                     self.ax_single.text(0.5, 0.5, "No Detections for this month", ha='center', va='center', color='red', fontsize=18, transform=self.ax_single.transAxes)
+                     self.ax_single.text(0.5, 0.5, get_text("lbl_no_detections_month"), ha='center', va='center', color='red', fontsize=18, transform=self.ax_single.transAxes)
                      self.ax_single.set_ylim(bottom=0, top=1) 
 
-                self.ax_single.set_ylabel('Total Count', color=text_hex, labelpad=15)
+                self.ax_single.set_ylabel(get_text("lbl_total_count"), color=text_hex, labelpad=15)
                 self.ax_single.set_title("") 
                 self.fig_single.suptitle(title, fontsize=14, color=text_hex) 
 
@@ -911,7 +951,7 @@ class WeatherPage(SC):
             self.date_filter_frame.lift()
             
         except Exception as e:
-            print(f"An error occurred during plot update: {e}")
+            print(f"--- {get_text('log_err_plot_update')}: {e}")
         
         if self.is_running and not force_update and should_auto_update: 
             self.after_id = self.root.after(self.UPDATE_INTERVAL, self._update_plot_data)

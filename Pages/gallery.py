@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from PIL import Image
+from language_manager import get_text
 from shared_components import BG_COLOR, SharedComponents as SC, custom_font_regular, LEFT_PANEL_WIDTH
 import os
 import random
@@ -51,11 +52,11 @@ def gallery_preview(root):
 
             file_label = os.path.splitext(random_image)[0]
         else:
-            file_label = "No Images" 
-            print("No JPG images found in Page_files/gallery_files.")
+            file_label = get_text("lbl_no_images")
+            print(get_text("log_no_jpg"))
     else:
-        file_label = "Gallery Empty" 
-        print(f"Folder '{gallery_folder}' not found.")
+        file_label = get_text("lbl_gallery_empty")
+        print(f"{get_text('log_folder_missing')}: '{gallery_folder}'")
 
     return gallery_photo, file_label
 
@@ -68,7 +69,7 @@ class GalleryPage(SC):
     def __init__(self):
         super().__init__()
         self.root.update_idletasks()
-        self.create_title(text="Capture Gallery", x=119, y=0)
+        self.create_title(text=get_text("lbl_gallery_title"), x=119, y=0)
         self.create_left_panel()
         self.create_leaf_image()
         self.create_battery_indicator(x=15, y=100)
@@ -85,16 +86,26 @@ class GalleryPage(SC):
         menu_text = self._get_color(TEXT_COLOR)
         menu_hover = self._get_color(BUTTON_HOVER)
 
-        # 1. Category Dropdown
+        # 1. THE DICTIONARIES (Maps UI text to Backend Logic and vice versa)
+        self.cat_to_logic = {
+            get_text("opt_all"): "All",
+            get_text("opt_deficiencies"): "Deficiencies",
+            get_text("opt_diseases"): "Diseases",
+            get_text("opt_pests"): "Pests"
+        }
+        self.logic_to_cat = {v: k for k, v in self.cat_to_logic.items()}
+
+        # 2. Category Dropdown
         self.category_label = ctk.CTkLabel(
-            self.left_panel, text="Category:", font=("Arial", self._scale_value(12, 'y'), "bold"), text_color=self._get_color(TEXT_COLOR)
+            self.left_panel, text=get_text("lbl_category"), font=("Arial", self._scale_value(12, 'y'), "bold"), text_color=self._get_color(TEXT_COLOR)
         )
         self.category_label.place(x=self._scale_value(LEFT_PANEL_WIDTH / 2, 'x'), y=self._scale_value(150, 'y'), anchor="center")
 
-        self.category_var = ctk.StringVar(value=GalleryPage.saved_category)
+        # Set the variable using the localized version of the saved state
+        self.category_var = ctk.StringVar(value=self.logic_to_cat.get(GalleryPage.saved_category, get_text("opt_all")))
         self.category_dropdown = ctk.CTkOptionMenu(
             self.left_panel,
-            values=["All", "Deficiencies", "Diseases", "Pests"],
+            values=list(self.cat_to_logic.keys()), # Display localized names
             variable=self.category_var,
             command=self.on_category_changed,
             font=("Arial", self._scale_value(12, 'y')),
@@ -110,22 +121,25 @@ class GalleryPage(SC):
         )
         self.category_dropdown.place(x=self._scale_value(LEFT_PANEL_WIDTH / 2, 'x'), y=self._scale_value(180, 'y'), anchor="center")
 
-        # 2. Sub-filter Dropdown
+        # 3. Sub-filter Dropdown
         self.sub_label = ctk.CTkLabel(
-            self.left_panel, text="Filter:", font=("Arial", self._scale_value(12, 'y'), "bold"), text_color=self._get_color(TEXT_COLOR)
+            self.left_panel, text=get_text("lbl_filter"), font=("Arial", self._scale_value(12, 'y'), "bold"), text_color=self._get_color(TEXT_COLOR)
         )
         self.sub_label.place(x=self._scale_value(LEFT_PANEL_WIDTH / 2, 'x'), y=self._scale_value(230, 'y'), anchor="center")
 
-        # --- Ensure the sub-dropdown has the correct list of options on reload ---
-        initial_sub_values = ["All"]
+        # Set up sub values based on current category logic state
+        initial_sub_values = [get_text("opt_all")]
         if GalleryPage.saved_category == "Deficiencies":
-            initial_sub_values = ["All", "Calcium", "Magnesium", "Nitrogen", "Potassium", "Phosphorus"]
+            initial_sub_values = [get_text("opt_all"), "Calcium", "Magnesium", "Nitrogen", "Potassium", "Phosphorus"]
         elif GalleryPage.saved_category == "Diseases":
-            initial_sub_values = ["All", "Downy Mildew", "Powdery Mildew", "Bacterial", "Lettuce Mosaic Virus"]
-        elif GalleryPage.saved_category == "Pests": # <-- NEW: Pests sub-menu
-            initial_sub_values = ["All", "Aphids", "Caterpillars", "Slugs", "Droplets"]
+            initial_sub_values = [get_text("opt_all"), "Downy Mildew", "Powdery Mildew", "Bacterial Leaf Spot", "Lettuce Mosaic Virus"]
+        elif GalleryPage.saved_category == "Pests":
+            initial_sub_values = [get_text("opt_all"), "Aphids", "Caterpillars", "Slugs", get_text("opt_droplets")]
 
-        self.sub_var = ctk.StringVar(value=GalleryPage.saved_sub)
+        # Determine sub_var initial value
+        sub_initial = get_text("opt_all") if GalleryPage.saved_sub == "All" else get_text("opt_droplets") if GalleryPage.saved_sub == "Droplets" else GalleryPage.saved_sub
+        
+        self.sub_var = ctk.StringVar(value=sub_initial)
         self.sub_dropdown = ctk.CTkOptionMenu(
             self.left_panel,
             values=initial_sub_values,
@@ -172,25 +186,35 @@ class GalleryPage(SC):
 
     def on_category_changed(self, choice):
         """Updates the choices in the second dropdown based on the first dropdown."""
-        GalleryPage.saved_category = choice # Save the state
+        # Convert UI Tagalog back to backend English
+        internal_cat = self.cat_to_logic.get(choice, "All")
+        GalleryPage.saved_category = internal_cat 
         
-        if choice == "All":
-            new_values = ["All"]
-        elif choice == "Deficiencies":
-            new_values = ["All", "Calcium", "Magnesium", "Nitrogen", "Potassium", "Phosphorus"]
-        elif choice == "Diseases":
-            new_values = ["All", "Downy Mildew", "Powdery Mildew", "Bacterial", "Lettuce Mosaic Virus"]
-        elif choice == "Pests":
-            new_values = ["All", "Aphids", "Caterpillars", "Slugs", "Droplets"] # <-- NEW: Added options
+        if internal_cat == "All":
+            new_values = [get_text("opt_all")]
+        elif internal_cat == "Deficiencies":
+            new_values = [get_text("opt_all"), "Calcium", "Magnesium", "Nitrogen", "Potassium", "Phosphorus"]
+        elif internal_cat == "Diseases":
+            new_values = [get_text("opt_all"), "Downy Mildew", "Powdery Mildew", "Bacterial Leaf Spot", "Lettuce Mosaic Virus"]
+        elif internal_cat == "Pests":
+            new_values = [get_text("opt_all"), "Aphids", "Caterpillars", "Slugs", get_text("opt_droplets")] 
             
         self.sub_dropdown.configure(values=new_values)
-        self.sub_var.set("All")
-        GalleryPage.saved_sub = "All" # Reset the sub-filter memory when category changes
+        self.sub_var.set(get_text("opt_all"))
+        GalleryPage.saved_sub = "All" 
         self.apply_filter()
 
     def on_sub_changed(self, choice):
         """Called when the second dropdown is changed."""
-        GalleryPage.saved_sub = choice # Save the state
+        # Convert specific translated sub-filters back to English
+        if choice == get_text("opt_all"):
+            internal_sub = "All"
+        elif choice == get_text("opt_droplets"):
+            internal_sub = "Droplets"
+        else:
+            internal_sub = choice # Keep English chemical/disease names as is
+            
+        GalleryPage.saved_sub = internal_sub 
         self.apply_filter()
 
     def apply_filter(self):
@@ -261,7 +285,8 @@ class GalleryPage(SC):
             else:
                 return {} 
         except (json.JSONDecodeError, Exception) as e:
-            print(f"❌ Error reading master JSON or file is empty: {e}. Returning empty dict.")
+            # Using get_text for the main message while keeping the tech details visible
+            print(f"❌ {get_text('log_err_master_json')}: {e}. Returning empty dict.")
             return {}
 
     def load_gallery_images(self, folder_path="Page_files/gallery_files"):
@@ -281,18 +306,20 @@ class GalleryPage(SC):
         max_per_row = 3
 
         if not os.path.exists(folder_path):
-            print(f"Folder '{folder_path}' not found.")
+            # Using a colon to separate the localized message from the path
+            print(f"{get_text('log_folder_not_found')}: '{folder_path}'")
             return
 
         master_data = self._load_master_json(self.master_json_path)
 
         if not master_data:
-            print("⚠️ Warning: gallery_data.json is empty or not found. No items will be loaded.")
+            # Keeps the warning emoji for visibility
+            print(f"⚠️ Warning: {get_text('log_gallery_empty')}")
             return
             
         jpg_files = [f for f in os.listdir(folder_path) if f.lower().endswith(".jpg")]
         if not jpg_files:
-            print("No JPG images found.")
+            print(get_text("log_no_jpg_found"))
             return
 
         scaled_name_font = tuple(custom_font_regular)
@@ -315,15 +342,25 @@ class GalleryPage(SC):
             "Droplets": ["droplet", "droplets", "water"]
         }
 
-        # Current selections
-        cat = self.category_var.get()
-        sub = self.sub_var.get()
+        # Current selections (TRANSLATED BACK TO ENGLISH LOGIC)
+        ui_cat = self.category_var.get()
+        ui_sub = self.sub_var.get()
+        
+        cat = self.cat_to_logic.get(ui_cat, "All")
+        
+        if ui_sub == get_text("opt_all"):
+            sub = "All"
+        elif ui_sub == get_text("opt_droplets"):
+            sub = "Droplets"
+        else:
+            sub = ui_sub
 
         for filename in jpg_files:
+            # ... the rest of your loop remains exactly the same!
             file_path = os.path.join(folder_path, filename)
             
             if filename not in master_data:
-                print(f"⚠️ Warning: No data for {filename} in master JSON. Skipping.")
+                print(f"⚠️ Warning: {filename} - {get_text('log_no_data_skipping')}")
                 continue 
 
             item_data = master_data[filename]
