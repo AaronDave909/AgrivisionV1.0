@@ -38,6 +38,31 @@ class LanguageManager:
         """Returns the translated word, or the [key] itself if you forgot to add it to JSON."""
         return self.translations.get(key, f"[{key}]")
 
+    # ---> NEW: The folder switching logic! <---
+    def get_folder(self, base_path):
+        """Returns the localized folder path based on the current language."""
+        if self.current_lang == "tl":
+            tl_path = f"{base_path}_tl"
+            # Fall back to English if the Tagalog folder hasn't been created yet
+            if os.path.exists(tl_path):
+                return tl_path
+            else:
+                print(f"DEBUG: Tagalog folder missing: {tl_path}. Using English.")
+        
+        return base_path
+    
+    def get_image(self, base_image_path):
+        """Returns the localized image path (e.g., image_tl.png) if it exists."""
+        if self.current_lang == "tl":
+            # This splits "assets/history.png" into "assets/history" and ".png"
+            name, ext = os.path.splitext(base_image_path)
+            tl_path = f"{name}_tl{ext}"
+            
+            if os.path.exists(tl_path):
+                return tl_path
+        
+        return base_image_path
+
     def set_language(self, lang_code):
         """Switches the active dictionary."""
         self.load_language(lang_code)
@@ -45,6 +70,13 @@ class LanguageManager:
 # Create a single global instance of the manager
 i18n = LanguageManager()
 
-# Create a quick helper function so your UI code looks super clean
+# Create quick helper functions so your UI code looks super clean
 def get_text(key):
     return i18n.get_text(key)
+
+# ---> NEW: Export the folder helper <---
+def get_folder(base_path):
+    return i18n.get_folder(base_path)
+
+def get_image(base_image_path):
+    return i18n.get_image(base_image_path)

@@ -5,13 +5,23 @@ import threading
 import customtkinter as ctk
 import psutil
 from language_manager import get_text, i18n
-import json # Used to save the language safely
+import json 
 
-# ---> IMPORT TEXT_COLOR HERE <---
-from shared_components import SharedComponents as SC, custom_font_bold, custom_font_regular, TEXT_COLOR 
+# --- SHARED COMPONENTS IMPORTS ---
+from shared_components import (
+    SharedComponents as SC, 
+    custom_font_bold, 
+    custom_font_regular, 
+    custom_font_title, 
+    TEXT_COLOR, 
+    LEFT_PANEL_COLOR, 
+    BG_COLOR, 
+    BUTTON_COLOR, 
+    BUTTON_HOVER
+)
 
 BRIGHTNESS_FILE = "Page_files/brightness_state.txt"
-THEME_FILE = "Page_files/theme_state.txt" # --- NEW: File to store theme state ---
+THEME_FILE = "Page_files/theme_state.txt" 
 LANG_FILE = "Page_files/lang_state.txt"
 
 class SettingsPage(SC):
@@ -29,7 +39,13 @@ class SettingsPage(SC):
         self.undo_button(command=self.go_back_to_dashboard)
         
         scaled_12pt_size = self._scale_value(12, 'y')
-        self.scaled_12pt_font = ("Arial", scaled_12pt_size)
+        self.scaled_12pt_font = ("Arial", scaled_12pt_size, "bold")
+
+        scaled_10pt_size = self._scale_value(10, 'y')
+        self.scaled_10pt_font = ("Arial", scaled_10pt_size)
+
+        scaled_11pt_size = self._scale_value(11, 'y')
+        self.scaled_11pt_font = ("Arial", scaled_11pt_size)
 
         # Version Label
         label = ctk.CTkLabel(
@@ -45,11 +61,101 @@ class SettingsPage(SC):
         self.load_saved_brightness()
         
         self.create_appearance_toggle()
-        self.create_language_toggle() # <--- NEW: Call the function
+        self.create_language_toggle() 
+        self.create_about_section()
+
+    def create_about_section(self):
+        """Creates the About Us frame using shared theme colors and responsive fonts/images."""
+        
+        # --- FONT SCALING ---
+        scaled_bold_font = (custom_font_bold[0], self._scale_value(custom_font_bold[1], 'y'), "bold")
+        scaled_reg_font = (custom_font_regular[0], self._scale_value(custom_font_regular[1], 'y'))
+
+        # 1. Main Background Frame
+        about_frame = ctk.CTkFrame(
+            self.root, 
+            width=self._scale_value(320, 'x'), 
+            height=self._scale_value(380, 'y'), 
+            fg_color=LEFT_PANEL_COLOR, 
+            corner_radius=15
+        )
+        about_frame.place(x=self._scale_value(450, 'x'), y=self._scale_value(66, 'y'))
+        about_frame.pack_propagate(False) 
+
+        # 2. Section Title
+        title_label = ctk.CTkLabel(
+            about_frame, 
+            text=get_text("lbl_about_us"), 
+            font=self.scaled_12pt_font,     
+            text_color=TEXT_COLOR 
+        )
+        title_label.pack(pady=(15, 5), padx=15, anchor="w")
+
+        # 3. Project & Team Text (Dynamic Labels + Static Names)
+        about_text = (
+            f"{get_text('txt_about_desc')}\n\n"
+            f"{get_text('lbl_developers')}\n\n"
+            "• Aaron Dave L. Lim\n"
+            "• John Carlo R. Ablay\n"
+            "• Michael Johan A. Gregorio\n"
+            "• Carl Timothy R. Navea\n\n"
+            f"{get_text('lbl_special_thanks')}\n\n"
+            f"• {get_text('lbl_adviser')} Doc. Arvin De La Cruz, Doc. Julius Cansino\n"
+            f"• {get_text('lbl_panelists')} Engr. Casuat, Engr. Canlas, Engr. Racusa\n"
+            f"• {get_text('lbl_beneficiaries')} Urban Farmers PH"
+        )
+        
+        textbox = ctk.CTkTextbox(
+            about_frame, 
+            width=self._scale_value(290, 'x'), 
+            height=self._scale_value(180, 'y'), 
+            font=self.scaled_10pt_font,      
+            fg_color="transparent", 
+            text_color=TEXT_COLOR,
+            wrap="word"
+        )
+        textbox.pack(padx=15, pady=0, fill="x")
+        textbox.insert("1.0", about_text)
+        textbox.configure(state="disabled") 
+
+        # 4. Team Image Placeholder (Removed static dimensions & applied responsive scaling)
+        try:
+            from PIL import Image
+            image = Image.open("_image_assets/team photo.jpg")
+            
+            # Scale the dimensions based on the axis to keep it responsive
+            img_width = int(self._scale_value(260, 'x'))
+            img_height = int(self._scale_value(140, 'y')) 
+            
+            ctk_image = ctk.CTkImage(light_image=image, dark_image=image, size=(img_width, img_height))
+            
+            image_label = ctk.CTkLabel(about_frame, text="", image=ctk_image)
+            image_label.pack(pady=(5, 5)) 
+            
+        except FileNotFoundError:
+            # Ensure the fallback box is also responsive
+            img_width = int(self._scale_value(260, 'x'))
+            img_height = int(self._scale_value(140, 'y')) 
+
+            placeholder = ctk.CTkFrame(
+                about_frame, 
+                width=img_width, 
+                height=img_height, 
+                fg_color=BG_COLOR      
+            )
+            placeholder.pack(pady=(5, 15)) 
+            placeholder.pack_propagate(False)
+            
+            lbl = ctk.CTkLabel(
+                placeholder, 
+                text="Image", 
+                text_color=TEXT_COLOR, 
+                font=scaled_bold_font  
+            )
+            lbl.place(relx=0.5, rely=0.5, anchor="center")
 
     def create_appearance_toggle(self):
         """Creates the Light/Dark mode toggle switch."""
-        # 1. Section Title
         appearance_label = ctk.CTkLabel(
             self.root, 
             text=get_text("lbl_app_appearance"), 
@@ -58,18 +164,16 @@ class SettingsPage(SC):
         )
         appearance_label.place(x=self._scale_value(123, 'x'), y=self._scale_value(230, 'y'))
 
-        # 2. The Switch Widget
         self.mode_switch = ctk.CTkSwitch(
             self.root,
             text="Dark Mode" if ctk.get_appearance_mode() == "Dark" else "Light Mode",
             font=self.scaled_12pt_font,
             text_color=TEXT_COLOR,
-            progress_color="#FF6B6B", # Turns soft red when active!
+            progress_color="#FF6B6B",
             command=self.toggle_appearance
         )
         self.mode_switch.place(x=self._scale_value(123, 'x'), y=self._scale_value(265, 'y'))
 
-        # 3. Set initial switch position based on current mode
         if ctk.get_appearance_mode() == "Dark":
             self.mode_switch.select()
         else:
@@ -77,43 +181,32 @@ class SettingsPage(SC):
 
     def toggle_appearance(self):
         """Flipped when the user clicks the switch."""
-        
-        # 1. Change the internal CTk mode and SAVE it
         if self.mode_switch.get() == 1:
             ctk.set_appearance_mode("Dark")
             self.mode_switch.configure(text="Dark Mode")
-            self.save_theme("Dark") # --- NEW: Save choice ---
+            self.save_theme("Dark") 
         else:
             ctk.set_appearance_mode("Light")
             self.mode_switch.configure(text="Light Mode")
-            self.save_theme("Light") # --- NEW: Save choice ---
+            self.save_theme("Light") 
             
-        # 2. Force the UI to refresh by reloading the dashboard
         print(f"Theme switched to {ctk.get_appearance_mode()}. Reloading UI...")
-        
-        # Give the switch a tiny moment to finish its animation
         self.root.after(150, self.force_ui_reload)
 
     def create_language_toggle(self):
         """Creates the side-by-side Tagalog and English toggle buttons."""
-        
-        # 1. Section Title
         lang_label = ctk.CTkLabel(
             self.root, 
-            text=get_text("lbl_lang"), # A nice bilingual title!
+            text=get_text("lbl_lang"), 
             font=tuple(custom_font_bold), 
             text_color=TEXT_COLOR 
         )
-        lang_label.place(x=self._scale_value(123, 'x'), y=self._scale_value(320, 'y')) # Placed just below Appearance
+        lang_label.place(x=self._scale_value(123, 'x'), y=self._scale_value(320, 'y'))
 
-        # 2. Define Colors (Matches your Image)
-        # Using magic tuples so they adapt slightly if you switch dark/light mode
         ACTIVE_COLOR = ("#2CC9F5", "#1CA3C6") 
-        INACTIVE_COLOR = ("gray60", "gray40") 
-        TEXT_COLOR_BTN = ("white", "white")
+        INACTIVE_COLOR = BUTTON_COLOR
+        TEXT_COLOR_BTN = TEXT_COLOR
 
-        # 3. Create the Buttons side-by-side
-        # Place English on the LEFT (Default)
         self.btn_english = ctk.CTkButton(
             self.root,
             text="English",
@@ -123,11 +216,11 @@ class SettingsPage(SC):
             height=self._scale_value(40, 'y'),
             corner_radius=8,
             fg_color=ACTIVE_COLOR if i18n.current_lang == "en" else INACTIVE_COLOR,
+            hover_color=BUTTON_HOVER,
             command=lambda: self.change_language("en")
         )
         self.btn_english.place(x=self._scale_value(123, 'x'), y=self._scale_value(355, 'y'))
 
-        # Place Tagalog on the RIGHT
         self.btn_tagalog = ctk.CTkButton(
             self.root,
             text="Tagalog",
@@ -137,19 +230,17 @@ class SettingsPage(SC):
             height=self._scale_value(40, 'y'),
             corner_radius=8,
             fg_color=ACTIVE_COLOR if i18n.current_lang == "tl" else INACTIVE_COLOR,
+            hover_color=BUTTON_HOVER,
             command=lambda: self.change_language("tl")
         )
-        # (123 + 140 width + 10 padding = 273)
         self.btn_tagalog.place(x=self._scale_value(273, 'x'), y=self._scale_value(355, 'y'))
 
     def change_language(self, lang_code):
         """Swaps dictionaries, updates colors, and saves the choice."""
-        # 1. Tell the engine to swap
         i18n.set_language(lang_code)
 
-        # 2. Update Button Colors (The "Seesaw")
         ACTIVE_COLOR = ("#2CC9F5", "#1CA3C6") 
-        INACTIVE_COLOR = ("gray60", "gray40") 
+        INACTIVE_COLOR = BUTTON_COLOR
 
         if lang_code == "tl":
             self.btn_tagalog.configure(fg_color=ACTIVE_COLOR)
@@ -158,7 +249,6 @@ class SettingsPage(SC):
             self.btn_tagalog.configure(fg_color=INACTIVE_COLOR)
             self.btn_english.configure(fg_color=ACTIVE_COLOR)
         
-        # 3. Save the choice to file
         os.makedirs(os.path.dirname(LANG_FILE), exist_ok=True)
         try:
             with open(LANG_FILE, "w") as f:
@@ -167,8 +257,8 @@ class SettingsPage(SC):
             print(f"Error saving language: {e}")
             
         print(f"Language switched to {lang_code}.")
+        self.root.after(150, self.force_ui_reload)
 
-    # --- NEW: Save theme function ---
     def save_theme(self, mode):
         """Writes the selected theme to a text file so it survives reboots."""
         os.makedirs(os.path.dirname(THEME_FILE), exist_ok=True)
@@ -177,7 +267,6 @@ class SettingsPage(SC):
                 f.write(mode)
         except Exception as e:
             print(f"Error saving theme: {e}")
-    # --------------------------------
 
     def force_ui_reload(self):
         """Destroys the current window and reloads the Dashboard to apply new colors."""

@@ -220,9 +220,9 @@
   "btn_nutrient": "Nutrient",
   "btn_pest": "Pest",
   "btn_undo": "Return",
-  "lbl_temp_avg": "Temperature Avg: -- °C",
-  "lbl_hum_avg": "Humidity Avg: -- %",
-  "lbl_pres_avg": "Pressure Avg: -- hPa",
+  "lbl_avg_temp": "Temperature Avg: -- °C",
+  "lbl_avg_hum": "Humidity Avg: -- %",
+  "lbl_avg_pres": "Pressure Avg: -- hPa",
   "lbl_high_tide": "High Tide: N/A",
   "lbl_low_tide": "Low Tide: N/A",
   "lbl_disease_total": "Total Detections: --",
@@ -290,5 +290,14 @@
   "title_gallery_guide": "Capture Gallery Guide",
   "title_history_guide": "Disease Record History Guide",
   "title_dock_guide": "Dock Mode Guide",
-  "title_risk_guide": "Risk Check Guide"
+  "title_risk_guide": "Risk Check Guide",
+
+  "//About: Settings": "",
+  "lbl_about_us": "About Us",
+  "txt_about_desc": "Agrivision: Image Processing-Based Lettuce Disease Detection",
+  "lbl_developers": "Developers from PUP Manila:",
+  "lbl_special_thanks": "Special Thanks to:",
+  "lbl_adviser": "Adviser:",
+  "lbl_panelists": "Panelists:",
+  "lbl_beneficiaries": "Beneficiaries:"
 }
