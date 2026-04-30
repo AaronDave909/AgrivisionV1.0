@@ -7,6 +7,14 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import matplotlib.ticker as ticker
 import os
+import struct
+
+# Check if we're on hardware; if not, smbus2 might not be installed
+try:
+    import smbus2
+    HAS_I2C = True
+except ImportError:
+    HAS_I2C = False
 
 # Layout and color constant defaults (These now define the ORIGINAL design size)
 ORIGINAL_WIDTH = 800
@@ -608,30 +616,57 @@ class SharedComponents:
         self._update_battery_loop()
 
     def _update_battery_loop(self):
-        """Simulates battery reading for development/testing without hardware."""
-        # Check if we are in a 'simulation' state, if not, initialize it
-        if not hasattr(self, '_sim_battery_percent'):
-            self._sim_battery_percent = 100.0
-            print("🚀 Battery Simulation Started (Development Mode)")
-
-        # --- SIMULATION LOGIC ---
-        # Slowly decrease the battery by 1% each time the loop runs
-        self._sim_battery_percent -= 1.0
-        if self._sim_battery_percent < 0:
-            self._sim_battery_percent = 100.0 # Reset to full once it hits 0
-            
-        p = self._sim_battery_percent
+        """
+        Reads hardware battery via I2C (bat.py logic).
+        Falls back to simulation if hardware is unavailable or fails.
+        """
+        p = 100.0  # Default fallback
+        is_simulated = False
         text_c = self._get_color(TEXT_COLOR)
 
-        # --- 4. Update the UI safely (Same as your original UI logic) ---
-        if hasattr(self, 'battery_label') and self.battery_label.winfo_exists():
-            self.battery_label.configure(text=f"{int(p)}%")
+        try:
+            if not HAS_I2C:
+                raise RuntimeError("smbus2 not found, using simulation")
 
+            # --- 1. Hardware Read (bat.py logic) ---
+            bus = smbus2.SMBus(1)
+            address = 0x36
+            
+            # Read Capacity (Percentage)
+            read_cap = bus.read_word_data(address, 4)
+            swapped_cap = struct.unpack("<H", struct.pack(">H", read_cap))[0]
+            p = max(0.0, min(100.0, float(swapped_cap / 256.0)))
+            
+            # Read Voltage (Safety)
+            read_vol = bus.read_word_data(address, 2)
+            swapped_vol = struct.unpack("<H", struct.pack(">H", read_vol))[0]
+            voltage = swapped_vol * 1.25 / 1000.0 / 16.0
+            
+            if voltage < 3.20:
+                print(f"⚠️ Critical Voltage: {voltage:.2f}V! Shutting down...")
+                os.system("sudo nohup shutdown -h now")
+
+        except Exception as e:
+            # --- 2. Fallback Simulation Logic ---
+            is_simulated = True
+            if not hasattr(self, '_sim_battery_percent'):
+                self._sim_battery_percent = 100.0
+                print(f"🔧 Hardware unavailable ({e}). Starting Simulation Mode.")
+
+            self._sim_battery_percent -= 1.0
+            if self._sim_battery_percent < 0:
+                self._sim_battery_percent = 100.0
+            p = self._sim_battery_percent
+
+        # --- 3. Unified UI Update Logic ---
+        if hasattr(self, 'battery_label') and self.battery_label.winfo_exists():
+            # Update Text and Bar Width
+            self.battery_label.configure(text=f"{int(p)}%")
             max_width = self._scale_value(37, 'x')
             new_width = max(1, int(max_width * (p / 100.0)))
             self.battery_bar.configure(width=new_width)
 
-            # MacBook-style Color & Border Logic
+            # MacBook-style Color Styling
             if p > 20:
                 self.battery_bar.configure(fg_color="#4CAF50") # Green
                 self.battery_body.configure(border_color=text_c)
@@ -641,9 +676,11 @@ class SharedComponents:
                 self.battery_body.configure(border_color=text_c)
                 self.battery_label.configure(text_color=text_c)
             else:
-                self.battery_bar.configure(fg_color="#F44336") # Red warning
+                self.battery_bar.configure(fg_color="#F44336") # Red
                 self.battery_body.configure(border_color="#F44336")
                 self.battery_label.configure(text_color="#F44336")
-                
-            # Update faster (every 1 second) during testing so you can see it move
-            self.root.after(1000, self._update_battery_loop)
+
+            # --- 4. Schedule Next Update ---
+            # If simulating, update every 1s to see movement. If hardware, 30s is fine.
+            interval = 1000 if is_simulated else 30000
+            self.root.after(interval, self._update_battery_loop)
