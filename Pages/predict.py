@@ -51,13 +51,6 @@ def bls_risk(T, RH):
     return temp_risk * humidity_risk
 
 
-def lmv_risk(T, RH):
-    """Calculate Lettuce Mosaic Virus risk"""
-    temp_risk = gaussian_temp(T, T_opt=25, sigma=5)
-    humidity_factor = logistic_humidity(RH, k=0.15, RH_mid=55)
-    return temp_risk * humidity_factor
-
-
 def classify_risk(risk):
     """Convert risk value to percentage and classification level"""
     percent = risk * 100
@@ -429,7 +422,7 @@ class PredictPage(SC):
         powdery = classify_risk(powdery_mildew_risk(latest_temp, latest_hum))
         downy = classify_risk(downy_mildew_risk(latest_temp, latest_hum))
         bls = classify_risk(bls_risk(latest_temp, latest_hum))
-        lmv = classify_risk(lmv_risk(latest_temp, latest_hum))
+        #lmv = classify_risk(lmv_risk(latest_temp, latest_hum))
         
         def get_color(level):
             return "#FF1744" if level == "HIGH" else "#FFA500" if level == "MODERATE" else "#66BB6A"
@@ -437,7 +430,7 @@ class PredictPage(SC):
         self.auto_risk_labels["powdery"].configure(text=f"Powdery Mildew: {powdery[0]}% ({powdery[1]})", text_color=get_color(powdery[1]))
         self.auto_risk_labels["downy"].configure(text=f"Downy Mildew: {downy[0]}% ({downy[1]})", text_color=get_color(downy[1]))
         self.auto_risk_labels["bls"].configure(text=f"⚠︎ Bacterial Leaf Spot: {bls[0]}% ({bls[1]})", text_color=get_color(bls[1]))
-        self.auto_risk_labels["lmv"].configure(text=f"⚠︎ Lettuce Mosaic Virus: {lmv[0]}% ({lmv[1]})", text_color=get_color(lmv[1]))
+        #self.auto_risk_labels["lmv"].configure(text=f"⚠︎ Lettuce Mosaic Virus: {lmv[0]}% ({lmv[1]})", text_color=get_color(lmv[1]))
         
         # 3. Update Plots
         self.ax_temp.clear()
@@ -532,7 +525,7 @@ class PredictPage(SC):
             powdery = classify_risk(powdery_mildew_risk(temperature, humidity))
             downy = classify_risk(downy_mildew_risk(temperature, humidity))
             bls = classify_risk(bls_risk(temperature, humidity))
-            lmv = classify_risk(lmv_risk(temperature, humidity))
+            #lmv = classify_risk(lmv_risk(temperature, humidity))
 
             # Determine color based on risk level
             def get_color(level):
@@ -556,10 +549,10 @@ class PredictPage(SC):
                 text=f"⚠︎ Bacterial Leaf Spot: {bls[0]}% ({bls[1]})",
                 text_color=get_color(bls[1])
             )
-            self.lmv_label.configure(
-                text=f"⚠︎ Mosaic Virus: {lmv[0]}% ({lmv[1]})",
-                text_color=get_color(lmv[1])
-            )
+            #self.lmv_label.configure(
+            #    text=f"⚠︎ Mosaic Virus: {lmv[0]}% ({lmv[1]})",
+            #    text_color=get_color(lmv[1])
+            #)
             self.status_label.configure(
                 text=f"✓ Calculated at T={temperature}°C, RH={humidity}%",
                 text_color="#66BB6A"

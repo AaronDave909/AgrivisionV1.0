@@ -290,5 +290,14 @@
   "title_gallery_guide": "Capture Gallery Guide",
   "title_history_guide": "Disease Record History Guide",
   "title_dock_guide": "Dock Mode Guide",
-  "title_risk_guide": "Risk Check Guide"
+  "title_risk_guide": "Risk Check Guide",
+
+  "//About: Settings": "",
+  "lbl_about_us": "About Us",
+  "txt_about_desc": "Agrivision: Image Processing-Based Lettuce Disease Detection",
+  "lbl_developers": "Developers from PUP Manila:",
+  "lbl_special_thanks": "Special Thanks to:",
+  "lbl_adviser": "Adviser:",
+  "lbl_panelists": "Panelists:",
+  "lbl_beneficiaries": "Beneficiaries:"
 }

@@ -222,9 +222,9 @@
   "btn_nutrient": "Nutrient",
   "btn_pest": "Peste",
   "btn_undo": "Bumalik",
-  "lbl_temp_avg": "Average ng Temperatura: -- °C",
-  "lbl_hum_avg": "Average ng Humidity: -- %",
-  "lbl_pres_avg": "Average ng Pressure: -- hPa",
+  "lbl_avg_temp": "Average ng Temperatura: -- °C",
+  "lbl_avg_hum": "Average ng Humidity: -- %",
+  "lbl_avg_pres": "Average ng Pressure: -- hPa",
   "lbl_high_tide": "High Tide: N/A",  
   "lbl_low_tide": "Low Tide: N/A",
   "lbl_disease_total": "Total na Natukoy na Sakit: --",
@@ -292,5 +292,14 @@
   "title_gallery_guide": "Gabay sa Koleksyon ng Kuha",
   "title_history_guide": "Gabay sa History ng Sakit",
   "title_dock_guide": "Gabay sa Dock Mode",
-  "title_risk_guide": "Gabay sa Pagsuri ng Risk"
+  "title_risk_guide": "Gabay sa Pagsuri ng Risk",
+
+  "//Settings: About": "",
+  "lbl_about_us": "Tungkol sa Team",
+  "txt_about_desc": "Agrivision: Image Processing-Based Lettuce Disease Detection",
+  "lbl_developers": "Mga Developer mula PUP Manila:",
+  "lbl_special_thanks": "Espesyal na Pasasalamat:",
+  "lbl_adviser": "Mga Adviser:",
+  "lbl_panelists": "Mga Panelist:",
+  "lbl_beneficiaries": "Mga Benepisyaryo:"
 }

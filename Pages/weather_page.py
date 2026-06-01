@@ -172,7 +172,7 @@ class WeatherPage(SC):
         select_btn.pack(pady=(0, 15))
 
     def confirm_date(self):
-        picked_date = self.cal.get_date()
+        picked_date = self.cal.selection_get().strftime('%Y-%m-%d')
         
         if picked_date == datetime.date.today().strftime('%Y-%m-%d'):
             self.selected_filter = "Today"
@@ -603,8 +603,8 @@ class WeatherPage(SC):
         self.temp_avg_label.pack_forget()
         self.hum_avg_label.pack_forget()
         self.pres_avg_label.pack_forget()
-        self.high_tide_label.pack_forget()
-        self.low_tide_label.pack_forget()
+        #self.high_tide_label.pack_forget()
+        #self.low_tide_label.pack_forget()
         self.disease_total_label.pack_forget()
         self.pest_total_label.pack_forget()
         
@@ -657,11 +657,12 @@ class WeatherPage(SC):
             self.filter_label.configure(text=get_text("title_select_date"))
             self.weather_date_btn.pack(side="left", padx=(0, 10))
             
-            # Safely format the date text using your translation template
+            # Reset the filter to the most recent date in the CSV
+            self.selected_filter = self._get_most_recent_csv_date()
+            
+            # Update the button text to reflect the reset date
             display_date = str(self.selected_filter) if self.selected_filter else "--"
             new_text = get_text("lbl_filter_date").replace("{date}", display_date)
-
-            # Apply to the button
             self.weather_date_btn.configure(text=new_text)
             
             if not self.is_running:
@@ -767,18 +768,24 @@ class WeatherPage(SC):
                 try:
                     avg_temp, avg_hum, avg_pres = np.nan, np.nan, np.nan
                     if not is_empty_data:
+                        # Decide which subset of data to average
                         if self.selected_filter == "Today":
                             latest_time = filtered_df.index.max()
                             ten_mins_ago = latest_time - pd.Timedelta(minutes=10)
-                            recent_df = filtered_df[filtered_df.index >= ten_mins_ago]
-                            if not recent_df.empty:
-                                avg_temp = recent_df['Temperature'].mean()
-                                avg_hum = recent_df['Humidity'].mean()
-                                avg_pres = recent_df['Pressure'].mean()
+                            # Filter for the last 10 minutes of recorded data
+                            target_for_avg = filtered_df[filtered_df.index >= ten_mins_ago]
+                            
+                            # Fallback: if no data in last 10 mins, use the whole day's data
+                            if target_for_avg.empty:
+                                target_for_avg = filtered_df
                         else:
-                            avg_temp = filtered_df['Temperature'].mean()
-                            avg_hum = filtered_df['Humidity'].mean()
-                            avg_pres = filtered_df['Pressure'].mean()
+                            # For past dates, always average the entire day
+                            target_for_avg = filtered_df
+
+                        # Calculate means, ensuring we handle non-numeric data safely
+                        avg_temp = pd.to_numeric(target_for_avg['Temperature'], errors='coerce').mean()
+                        avg_hum = pd.to_numeric(target_for_avg['Humidity'], errors='coerce').mean()
+                        avg_pres = pd.to_numeric(target_for_avg['Pressure'], errors='coerce').mean()
 
                     # 1. Temperature Logic
                     t_val = f"{avg_temp:.1f}" if not pd.isna(avg_temp) else get_text("lbl_avg_na")
