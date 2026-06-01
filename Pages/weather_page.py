@@ -553,8 +553,8 @@ class WeatherPage(SC):
             self.temp_avg_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_temp_avg"), font=font_style, text_color=text_hex)
             self.hum_avg_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_hum_avg"), font=font_style, text_color=text_hex)
             self.pres_avg_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_pres_avg"), font=font_style, text_color=text_hex)
-            self.high_tide_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_high_tide"), font=font_style, text_color=text_hex)
-            self.low_tide_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_low_tide"), font=font_style, text_color=text_hex)
+            self.high_tide_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_high_tide"), font=font_style, text_color=BG_COLOR)
+            self.low_tide_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_low_tide"), font=font_style, text_color=BG_COLOR)
             self.disease_total_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_disease_total"), font=font_style, text_color=text_hex)
             self.pest_total_label = ctk.CTkLabel(self.avg_frame, text=get_text("lbl_pest_total"), font=font_style, text_color=text_hex)
 
@@ -603,8 +603,8 @@ class WeatherPage(SC):
         self.temp_avg_label.pack_forget()
         self.hum_avg_label.pack_forget()
         self.pres_avg_label.pack_forget()
-        #self.high_tide_label.pack_forget()
-        #self.low_tide_label.pack_forget()
+        self.high_tide_label.pack_forget()
+        self.low_tide_label.pack_forget()
         self.disease_total_label.pack_forget()
         self.pest_total_label.pack_forget()
         
@@ -658,7 +658,10 @@ class WeatherPage(SC):
             self.weather_date_btn.pack(side="left", padx=(0, 10))
             
             # Reset the filter to the most recent date in the CSV
-            self.selected_filter = self._get_most_recent_csv_date()
+            is_gallery_filter = "Detection" in str(self.selected_filter) or any(month in str(self.selected_filter) for month in ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+            
+            if is_gallery_filter:
+                self.selected_filter = self._get_most_recent_csv_date()
             
             # Update the button text to reflect the reset date
             display_date = str(self.selected_filter) if self.selected_filter else "--"

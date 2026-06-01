@@ -132,7 +132,7 @@ class GalleryPage(SC):
         if GalleryPage.saved_category == "Deficiencies":
             initial_sub_values = [get_text("opt_all"), "Calcium", "Magnesium", "Nitrogen", "Potassium", "Phosphorus"]
         elif GalleryPage.saved_category == "Diseases":
-            initial_sub_values = [get_text("opt_all"), "Downy Mildew", "Powdery Mildew", "Bacterial Leaf Spot", "Lettuce Mosaic Virus"]
+            initial_sub_values = [get_text("opt_all"), "Downy Mildew", "Powdery Mildew", "Bacterial", "Lettuce Mosaic Virus"]
         elif GalleryPage.saved_category == "Pests":
             initial_sub_values = [get_text("opt_all"), "Aphids", "Caterpillars", "Slugs", get_text("opt_droplets")]
 

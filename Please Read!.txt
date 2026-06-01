@@ -45,5 +45,3 @@ To upload files to rasp pi:
 
 scp -r /path/to/files/ red@raspberrypi.local:/home/red/
 
-red@raspberrypi.local:/home/red/
-

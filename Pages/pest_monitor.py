@@ -8,6 +8,8 @@ from ultralytics import YOLO
 import time
 import datetime
 import os
+# NEW: Re-integrated Picamera2
+from picamera2 import Picamera2
 
 class PestMonitorPage(SC):
     
@@ -29,6 +31,7 @@ class PestMonitorPage(SC):
         
         # --- Screen Sleep Logic ---
         self.black_overlay = None
+        self.saved_brightness = "255"     # Hardware brightness storage
         
         # --- Helpers & Model ---
         self.gallery_path = "Page_files/gallery_files"
@@ -62,7 +65,7 @@ class PestMonitorPage(SC):
         )
 
         # --- Camera Display Setup ---
-        self.cap = None 
+        self.picam2 = None 
         self.cam_x = self._scale_value(LEFT_PANEL_WIDTH, 'x')
         self.cam_y = 0 
         
@@ -80,15 +83,16 @@ class PestMonitorPage(SC):
         )
         self.cam_label.place(x=self.cam_x, y=self.cam_y)
 
-        # Start Camera and Update Loop
-        self.open_camera()
+        # Start Picamera setup
+        self.setup_picamera()
 
-    # --- Screen Sleep / Wake (Software Overlay Only for Computer) ---
+    # --- Screen Sleep / Wake (Hardware + Software Overlay) ---
     def sleep_screen(self):
+        """Activates black overlay and dims Raspberry Pi backlight."""
         if self.black_overlay is not None:
             return
             
-        print(f"💻 {get_text('log_sleep_active')}...")
+        print(f"🔋 {get_text('log_sleep_active')}...")
         self.black_overlay = ctk.CTkToplevel(self.root)
         self.black_overlay.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}+0+0")
         self.black_overlay.overrideredirect(True) 
@@ -96,34 +100,65 @@ class PestMonitorPage(SC):
         self.black_overlay.attributes('-topmost', True)
         self.black_overlay.bind("<ButtonPress-1>", self.wake_screen)
         
-        # Note: Hardware brightness calls (rpi_backlight) are skipped on PC to prevent errors.
+        # Hardware-level backlight control
+        try:
+            brightness_path = "/sys/class/backlight/rpi_backlight/brightness"
+            if os.path.exists(brightness_path):
+                with open(brightness_path, "r") as f:
+                    self.saved_brightness = f.read().strip()
+                with open(brightness_path, "w") as f:
+                    f.write("0")
+            else:
+                os.system("vcgencmd display_power 0")
+        except Exception as e:
+            print(f"Hardware sleep error: {e}")
 
     def wake_screen(self, event=None):
-        print(f"💻 {get_text('log_screen_wake')}.")
+        """Restores screen brightness and removes overlay."""
+        print(f"☀️ {get_text('log_screen_wake')}.")
+        try:
+            brightness_path = "/sys/class/backlight/rpi_backlight/brightness"
+            if os.path.exists(brightness_path):
+                with open(brightness_path, "w") as f:
+                    f.write(self.saved_brightness)
+            else:
+                os.system("vcgencmd display_power 1")
+        except Exception as e:
+            print(f"Hardware wake error: {e}")
+
         if self.black_overlay:
             self.black_overlay.destroy()
             self.black_overlay = None
 
-    # --- OpenCV Camera Setup ---
-    def open_camera(self):
+    # --- Picamera2 Setup ---
+    def setup_picamera(self):
+        """Initializes and starts the Picamera2 feed."""
+        if self.model is None:
+            self.cam_label.configure(text="Error: Model missing", text_color="red")
+            return
+            
         try:
-            self.cap = cv2.VideoCapture(0)
-            if not self.cap.isOpened():
-                raise IOError("Webcam not found")
+            self.picam2 = Picamera2()
+            config = self.picam2.create_video_configuration(main={"size": (1280, 720), "format": "RGB888"})
+            self.picam2.configure(config)
+            self.picam2.set_controls({"AfMode": 2, "AfTrigger": 0}) # Continuous Auto Focus
+            self.picam2.start()
             
             self.is_running = True
             self.root.after(100, self._update_frame)
         except Exception as e:
+            print(f"Camera error: {e}")
             self.cam_label.configure(text=f"Error: {e}", text_color="red")
 
     # --- JSON Helpers ---
     def _load_master_json(self):
         if os.path.exists(self.json_path):
-            with open(self.json_path, 'r') as f:
-                try:
-                    return json.load(f)
-                except:
-                    return {}
+            try:
+                with open(self.json_path, 'r') as f:
+                    content = f.read()
+                    return json.loads(content) if content else {}
+            except:
+                return {}
         return {}
 
     def _save_master_json(self, data):
@@ -133,6 +168,7 @@ class PestMonitorPage(SC):
     # --- Aspect Ratio Helper ---
     def _crop_to_aspect_ratio(self, frame, target_w, target_h):
         h, w, _ = frame.shape
+        if target_h == 0: return frame
         target_aspect = target_w / target_h
         frame_aspect = w / h
         if frame_aspect > target_aspect:
@@ -146,70 +182,76 @@ class PestMonitorPage(SC):
 
     # --- Main Update Loop ---
     def _update_frame(self):
-        if not self.is_running or not self.cap:
+        if not self.is_running or not self.picam2:
             return
 
-        ret, frame = self.cap.read()
-        if not ret:
-            self.root.after(100, self._update_frame)
-            return
+        try:
+            # 1. Capture and Rotate for Pi
+            raw_frame_bgr = self.picam2.capture_array()
+            rotated_bgr = cv2.rotate(raw_frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            frame_ready = self._crop_to_aspect_ratio(rotated_bgr, self.cam_w, self.cam_h)
+            
+            # 2. Run Inference
+            results = self.model(frame_ready, verbose=False)
+            annotated_frame = frame_ready.copy()
+            
+            current_time = time.time()
+            target_box = None
+            is_droplet_target = False
 
-        # Prepare frame (No Pi-specific rotation needed for standard webcams)
-        frame_ready = self._crop_to_aspect_ratio(frame, self.cam_w, self.cam_h)
-        results = self.model(frame_ready, verbose=False)
-        annotated_frame = frame_ready.copy()
-        
-        current_time = time.time()
-        target_box = None
-        is_droplet_target = False
-
-        # --- Smart Target Selection with Cooldowns ---
-        if len(results[0].boxes) > 0:
-            for box in results[0].boxes:
-                name = results[0].names[int(box.cls)].lower()
-                
-                if "droplet" in name:
-                    if current_time >= (self.last_droplet_capture_time + self.droplet_cooldown):
-                        target_box = box
-                        is_droplet_target = True
-                        break
-                else:
-                    if current_time >= (self.last_capture_time + self.capture_cooldown):
-                        target_box = box
-                        is_droplet_target = False
-                        break
-
-        # --- Timer Logic ---
-        if target_box is not None:
-            pest_name = results[0].names[int(target_box.cls)].replace("_", " ").title()
-            annotated_frame = results[0].plot()
-
-            if self.detection_start_time is None or self.last_detected_pest != pest_name:
-                self.detection_start_time = current_time
-                self.last_detected_pest = pest_name
-                log_msg = get_text("log_target_lock").replace("{pest}", pest_name)
-                print(f"🎯 {log_msg}...")
-            else:
-                if (current_time - self.detection_start_time) >= self.monitoring_duration:
-                    self._save_pest_capture(annotated_frame, results, target_box)
-                    if is_droplet_target:
-                        self.last_droplet_capture_time = current_time
-                    else:
-                        self.last_capture_time = current_time
-                    self.detection_start_time = None
-        else:
+            # --- Smart Target Selection with Cooldowns ---
             if len(results[0].boxes) > 0:
-                annotated_frame = results[0].plot() # Still show boxes even if on cooldown
-            self.detection_start_time = None
+                for box in results[0].boxes:
+                    name = results[0].names[int(box.cls)].lower()
+                    
+                    if "droplet" in name:
+                        if current_time >= (self.last_droplet_capture_time + self.droplet_cooldown):
+                            target_box = box
+                            is_droplet_target = True
+                            break
+                    else:
+                        if current_time >= (self.last_capture_time + self.capture_cooldown):
+                            target_box = box
+                            is_droplet_target = False
+                            break
 
-        # --- UI Update ---
-        rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
-        img = Image.fromarray(rgb).resize((self.cam_w, self.cam_h))
-        ctk_img = ctk.CTkImage(light_image=img, size=(self.cam_w, self.cam_h))
-        self.cam_label.configure(image=ctk_img, text="")
-        self.cam_label.image = ctk_img
+            # --- Timer Logic ---
+            if target_box is not None:
+                pest_name = results[0].names[int(target_box.cls)].replace("_", " ").title()
+                annotated_frame = results[0].plot()
 
-        self.root.after(30, self._update_frame)
+                if self.detection_start_time is None or self.last_detected_pest != pest_name:
+                    self.detection_start_time = current_time
+                    self.last_detected_pest = pest_name
+                    log_msg = get_text("log_target_lock").replace("{pest}", pest_name)
+                    print(f"🎯 {log_msg}...")
+                else:
+                    if (current_time - self.detection_start_time) >= self.monitoring_duration:
+                        self._save_pest_capture(annotated_frame, results, target_box)
+                        if is_droplet_target:
+                            self.last_droplet_capture_time = current_time
+                        else:
+                            self.last_capture_time = current_time
+                        self.detection_start_time = None
+            else:
+                if len(results[0].boxes) > 0:
+                    annotated_frame = results[0].plot() 
+                self.detection_start_time = None
+
+            # --- UI Update ---
+            rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(rgb).resize((self.cam_w, self.cam_h))
+            ctk_img = ctk.CTkImage(light_image=img, size=(self.cam_w, self.cam_h))
+            self.cam_label.configure(image=ctk_img, text="")
+            self.cam_label.image = ctk_img
+
+            if self.is_running:
+                self.root.after(30, self._update_frame)
+
+        except Exception as e:
+            print(f"Loop error: {e}")
+            if self.is_running:
+                self.root.after(1000, self._update_frame)
 
     def _save_pest_capture(self, annotated_frame, results, target_box):
         now = datetime.datetime.now()
@@ -232,9 +274,15 @@ class PestMonitorPage(SC):
         print(f"✅ {get_text('log_saved_capture')}: {img_name}")
 
     def cleanup_camera(self):
+        """Stops loop and releases Pi hardware resources."""
         self.is_running = False
-        if self.cap:
-            self.cap.release()
+        if self.picam2:
+            try:
+                self.picam2.stop()
+                self.picam2.close()
+                print("✅ Camera released.")
+            except:
+                pass
 
     def navigate_to_dashboard(self):
         self.cleanup_camera() 

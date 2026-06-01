@@ -234,7 +234,7 @@ class AnalysisPage(SC):
             ("powdery", "Powdery Mildew", "#FFA500"),
             ("downy", "Downy Mildew", "#FF6B6B"),
             ("bls", "Bacterial Leaf Spot", "#FF1744"),
-            ("lmv", "Lettuce Mosaic Virus", "#D32F2F")
+            # ("lmv", "Lettuce Mosaic Virus", "#D32F2F")
         ]
         
         for key, name, color in diseases:
@@ -314,7 +314,7 @@ class AnalysisPage(SC):
                 model_path = "Page_files/yolov11_models/nutrients.pt"
                 
             model = YOLO(model_path)
-            results = model(self.original_image_path)
+            results = model(self.original_image_path, conf=0.25)
 
             self.annotated_image_data = results[0].plot()
             self.display_image(self.annotated_image_data)
@@ -471,7 +471,7 @@ class AnalysisPage(SC):
                 powdery = classify_risk(powdery_mildew_risk(temp, humidity))
                 downy = classify_risk(downy_mildew_risk(temp, humidity))
                 bls = classify_risk(bls_risk(temp, humidity))
-                lmv = classify_risk(lmv_risk(temp, humidity))
+                # lmv = classify_risk(lmv_risk(temp, humidity))
                 
                 def get_color(level): return "#FF1744" if level == "HIGH" else "#FFA500" if level == "MODERATE" else "#66BB6A"
                 # Localize the HIGH/MODERATE/LOW text
@@ -480,7 +480,7 @@ class AnalysisPage(SC):
                 self.risk_labels["powdery"].configure(text=f"Powdery Mildew: {powdery[0]}% ({get_level_text(powdery[1])})", text_color=get_color(powdery[1]))
                 self.risk_labels["downy"].configure(text=f"Downy Mildew: {downy[0]}% ({get_level_text(downy[1])})", text_color=get_color(downy[1]))
                 self.risk_labels["bls"].configure(text=f"Bacterial Leaf Spot: {bls[0]}% ({get_level_text(bls[1])})", text_color=get_color(bls[1]))
-                self.risk_labels["lmv"].configure(text=f"Lettuce Mosaic Virus: {lmv[0]}% ({get_level_text(lmv[1])})", text_color=get_color(lmv[1]))
+                # self.risk_labels["lmv"].configure(text=f"Lettuce Mosaic Virus: {lmv[0]}% ({get_level_text(lmv[1])})", text_color=BG_COLOR)
             else:
                 names = {"powdery": "Powdery Mildew", "downy": "Downy Mildew", "bls": "Bacterial Leaf Spot", "lmv": "Lettuce Mosaic Virus"}
                 for key in self.risk_labels: 

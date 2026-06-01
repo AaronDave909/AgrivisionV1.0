@@ -4,8 +4,10 @@ PROJECT_PATH="/home/red/AgrivisionV1.0"
 # DOUBLE CHECK THIS PATH - is the venv inside AgrivisionV1.0?
 VENV_PATH="/home/red/venv"
 
-onboard --hide &
+onboard &
 ONBOARD_PID=$!
+
+sleep 2
 
 # Navigate to the directory so python finds local files easily
 cd "$PROJECT_PATH"
