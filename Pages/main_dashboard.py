@@ -1,39 +1,310 @@
 from shared_components import SharedComponents as SC
 from Pages.crop_count import show_crop_input_popup
 from Pages.gallery import GalleryPage, gallery_preview
-from Pages.settings import SettingsPage  # Import here to avoid circular import
-from PIL import Image, ImageTk
+from Pages.settings import SettingsPage
+from Pages.capture import CapturePage
+from Pages.recents import RecentDiseaseList 
+from Pages.recents import recent_disease_preview
+from Pages.records import ReportViewerPage 
+from Pages.analysis_page import AnalysisPage
+from Pages.pest_monitor import PestMonitorPage
+from Pages.weather_page import WeatherPage
+from Pages.weather_page import get_latest_weather_averages
+from Pages.predict import PredictPage 
+from Pages.help import HelpPage
+from Pages.report import ReportPage
+from language_manager import get_text
 import customtkinter as ctk
+import datetime
 import os
+from shared_components import (
+    custom_font_bold, custom_font_title, custom_font_regular, 
+    BUTTON_COLOR, BUTTON_HOVER, TEXT_COLOR, LEFT_PANEL_COLOR
+)
+import matplotlib.dates as mdates
+from collections import deque
+import matplotlib.ticker as ticker
+import pandas as pd
+import numpy as np                    # For creating the gradient
+import matplotlib.colors as mcolors
 
 class MyDashboard(SC):
 
-    def open_gallery(self):
-        geometry = self.root.geometry()  # Save current window geometry
+    CSV_FILE_PATH = "Page_files/weather.csv"
+    UPDATE_INTERVAL = 10000
+
+    # --- FIX 1: New master cleanup function to prevent X11 memory leaks ---
+    def _close_dashboard(self):
+        """Safely shuts down loops and clears X11 graphics memory."""
+        self.is_running = False
+        
+        # Free Matplotlib X11 Pixmaps before destroying the window!
+        if hasattr(self, 'weather_update_id') and self.weather_update_id:
+            try:
+                self.root.after_cancel(self.weather_update_id)
+            except Exception:
+                pass 
+            self.weather_update_id = None
+		
+        if hasattr(self, 'chart_fig'):
+            import matplotlib.pyplot as plt
+            plt.close(self.chart_fig)
+            
         self.root.destroy()
 
+    # --- FIX 1 Applied: Replaced self.root.destroy() with self._close_dashboard() ---
+    def open_gallery(self):
+        self._close_dashboard()
         gallery = GalleryPage()
-        gallery.root.geometry(geometry)  # Apply same geometry (prevents window 'jumping')
         gallery.root.mainloop()
 
     def open_settings(self):
-        geometry = self.root.geometry()
-        self.root.destroy()
+        self._close_dashboard()
         settings = SettingsPage()
-        settings.root.geometry(geometry)
         settings.root.mainloop()
+
+    def open_capture(self):
+        self._close_dashboard()
+        capture_page = CapturePage()
+        capture_page.root.mainloop()
+    
+    def open_pest_monitor(self):
+        self._close_dashboard()
+        monitor_page = PestMonitorPage()
+        monitor_page.root.mainloop()
+
+    def predict_page(self, folder_name, title):
+        """Destroys dashboard and opens the report viewer page."""
+        self._close_dashboard()
+        app = PredictPage()
+        app.root.mainloop()
+
+    def open_analysis_view(self, image_path):
+        """Destroys the dashboard and opens the analysis page in view-only mode."""
+        self._close_dashboard()
+        app = AnalysisPage(image_path=image_path, view_only=True)
+        app.root.mainloop()
+    
+    def open_weather_page(self):
+        """Destroys the dashboard and opens the WeatherPage."""
+        self._close_dashboard()
+        app = WeatherPage()
+        app.root.mainloop()
+
+    def open_help_page(self):
+        """Destroys the dashboard and opens the HelpPage."""
+        self._close_dashboard()
+        app = HelpPage()
+        app.root.mainloop()
+
+    def open_report_page(self):
+        """Destroys the dashboard and opens the ReportPage."""
+        self._close_dashboard()
+        app = ReportPage()
+        app.root.mainloop()
+    
+    def _update_temp_chart(self):
+        """Helper function to redraw the temperature chart with new data."""
+        if not hasattr(self, 'chart_ax'):
+            return # Chart not initialized yet
+
+        ax = self.chart_ax
+        ax.clear() 
+        
+        # Get the current background color (handles hover state)
+        bg_color = self.chart_fig.get_facecolor()
+        ax.set_facecolor(bg_color)
+
+        # --- 1. Set Y-axis limits based on data ---
+        if not self.chart_y_data or all(v == 0 for v in self.chart_y_data):
+             ax.set_ylim(0, 1) # Default for empty data
+        else:
+            non_zero_data = [v for v in self.chart_y_data if v != 0]
+            if non_zero_data:
+                min_val = min(non_zero_data)
+                max_val = max(non_zero_data)
+                padding = (max_val - min_val) * 0.1 if (max_val - min_val) > 0 else 0.5
+                ax.set_ylim(min_val - padding - 1, max_val + padding + 1)
+            else:
+                ax.set_ylim(0, 1) # Handle case where data is just [0, 0, 0]
+
+        # --- 2. Plot the data (X and Y) ---
+        if self.chart_x_data:
+            plot_color = '#FF5733' # Bright Red
+            x_data, y_data = self.chart_x_data, self.chart_y_data
+            
+            # Plot the main line
+            ax.plot(x_data, y_data, color=plot_color, linewidth=self._scale_value(2, 'y'), zorder=3)
+            
+            # --- 3. ADD GRADIENT FILL ---
+            try:
+                # Create a transparent fill polygon that follows the line
+                fill = ax.fill_between(x_data, y_data, color='none', zorder=2)
+                
+                # Get the path of that polygon
+                clip_path = fill.get_paths()[0]
+                
+                # Get the plot boundaries
+                xmin, xmax = mdates.date2num(x_data[0]), mdates.date2num(x_data[-1])
+                ymin, ymax = ax.get_ylim()
+
+                # Define the gradient (fading from 0.4 alpha to 0.0 alpha)
+                line_color_rgb = mcolors.to_rgb(plot_color)
+                colors = [(*line_color_rgb, 0.4), (*line_color_rgb, 0.0)]
+                cmap = mcolors.LinearSegmentedColormap.from_list('my_gradient', colors, N=256)
+                
+                # Create a vertical gradient image
+                gradient = np.linspace(1, 0, 256).reshape(-1, 1)
+                gradient_img = np.repeat(gradient, 2, axis=1) # Make it 2D
+                
+                # Draw the gradient image over the plot area
+                img = ax.imshow(gradient_img, cmap=cmap, aspect='auto', origin='lower', 
+                                extent=[xmin, xmax, ymin, ymax], zorder=1)
+                
+                # Clip the gradient image to the shape of the line chart
+                img.set_clip_path(clip_path, transform=ax.transData)
+            except Exception as e:
+                print(f"--- {get_text('log_err_gradient')}: {e}")
+
+        # --- 4. Add the grid ---
+        ax.grid(True, linestyle='--', alpha=0.3, color='gray') # Subtle grid
+
+        # --- 5. Re-apply all styling ---
+        current_mode = ctk.get_appearance_mode()
+        axis_color = TEXT_COLOR[0] if current_mode == "Light" else TEXT_COLOR[1]
+
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_color(axis_color)   
+        ax.spines['bottom'].set_color(axis_color) 
+        
+        # --- 6. Format the Ticks ---
+        ax.tick_params(axis='y', colors=axis_color, labelsize=self._scale_value(5, 'y'))
+        ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3, prune='both'))
+        
+        ax.tick_params(axis='x', colors=axis_color, labelsize=self._scale_value(5, 'y'), rotation=0)
+        
+        ax.xaxis.set_major_locator(mdates.AutoDateLocator(minticks=2, maxticks=4)) 
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%I:%M %p')) 
+        
+        # Redraw the canvas
+        self.chart_canvas.draw()
+        # --- FIX 3: Force flush of old canvas events to clear X11 pixmaps ---
+        self.chart_canvas.flush_events() 
+
+    def update_weather_data(self):
+        """
+        Fetches latest average for the label, and CSV data for the chart.
+        This function will reschedule itself.
+        """
+        if not self.is_running:
+            return 
+
+        # --- 1. Get 10-min average for the LABEL ---
+        avg_temp, _, _, latest_date = get_latest_weather_averages()
+
+        if avg_temp is not None:
+            self.temp_label.configure(text=f"{avg_temp:.1f} °C")
+        else:
+            self.temp_label.configure(text=f"{latest_date}")
+
+        # --- 2. Get LAST 20 READINGS from CSV for the CHART ---
+        try:
+            if not os.path.exists(self.CSV_FILE_PATH):
+                raise FileNotFoundError("weather.csv not found")
+
+            # --- Read CSV and parse dates ---
+            df = pd.read_csv(self.CSV_FILE_PATH)
+            if df.empty or 'Date' not in df.columns or 'Time' not in df.columns:
+                 raise ValueError("CSV empty or missing Date/Time columns")
+            
+            # --- Ensure 'Time' is a string and handle potential float conversion ---
+            df['Time'] = df['Time'].astype(str)
+            
+            df['Timestamp'] = pd.to_datetime(df['Date'] + ' ' + df['Time'])
+            
+            # --- Get the last 20 readings for BOTH columns ---
+            num_readings = 20 
+            df_tail = df.tail(num_readings)
+            
+            self.chart_x_data = df_tail['Timestamp'].tolist()
+            self.chart_y_data = df_tail['Temperature'].tolist()
+            
+            if self.chart_x_data:
+                most_recent_timestamp = self.chart_x_data[-1] 
+                date_str = most_recent_timestamp.strftime('%b %d')
+                # Localized "Petsa: [Date]"
+                self.recent_date_label.configure(text=f"{get_text('lbl_date')}: {date_str}") 
+            else:
+                self.recent_date_label.configure(text=f"{get_text('lbl_date')}: --") 
+        
+        except Exception as e:
+            # Localized terminal error for CSV
+            print(f"--- {get_text('log_err_chart_csv')}: {e}")
+            self.chart_x_data = []
+            self.chart_y_data = []
+            self.recent_date_label.configure(text=f"{get_text('lbl_date')}: --")
+
+        # 3. Update the chart 
+        self._update_temp_chart()
+        
+        # 4. Reschedule
+        if self.is_running:
+            self.weather_update_id = self.root.after(self.UPDATE_INTERVAL, self.update_weather_data)
+    
+    def _update_season_indicator(self):
+        """
+        Checks today's date and updates the season label
+        based on Philippine climate patterns.
+        """
+        try:
+            today = datetime.date.today()
+            current_month = today.month 
+
+            season = ""
+            color = "#FFFFFF" 
+
+            if current_month in [11, 12, 1, 2]: 
+                season = get_text("lbl_dry_cool")
+                color = "#A9DFFF" 
+            elif current_month in [3, 4, 5]: 
+                season = get_text("lbl_dry_hot")
+                color = "#FFD1A9" 
+            elif current_month in [6, 7, 8, 9, 10]: 
+                season = get_text("lbl_wet_season")
+                color = "#C8D3D5" 
+            
+            if hasattr(self, 'season_label'):
+                self.season_label.configure(text=season, text_color=color)
+        
+        except Exception as e:
+            # Localized terminal log and UI fallback
+            print(f"--- {get_text('log_err_season_indicator')}: {e}")
+            if hasattr(self, 'season_label'):
+                self.season_label.configure(text=get_text("lbl_season_error"), text_color="red")
 
     def __init__(self):
         super().__init__()
+        
+        self.is_running = True 
+        self.weather_update_id = None
+        self.chart_x_data = []
+        self.chart_y_data = []
+        self.root.update_idletasks()
+        
         self.create_title()
         self.create_left_panel()
         self.create_leaf_image()
-
-        # Record Button
-        self.create_record_button(x=107 / 2, y=480 / 2, command=None)
         
-        # Settings Button
+        def scale_x(val): return self._scale_value(val, 'x')
+        def scale_y(val): return self._scale_value(val, 'y')
+
+        self.create_record_button(x=107 / 2, y=480 / 2, command=self.open_capture)
         self.settings_button(command=self.open_settings)
+
+        scale_x_factor = self.scale_x
+        scale_y_factor = self.scale_y
+        scaled_title_font = tuple(custom_font_title)
 
         # === Read saved crop count from file ===
         crops_file = os.path.join("Page_files", "crops_monitored.txt")
@@ -48,11 +319,17 @@ class MyDashboard(SC):
 
         # Crops Button
         self.crops_button = self.create_button(
-            text="Crops in Monitor\n",
+            text=f"{get_text('lbl_crops_monitor')}\n",
             x=118, y=75,
             width=140, height=140,
-            anchor="s",
-            command=lambda: show_crop_input_popup(self.root, self.crops_button)
+            anchor="s", 
+            command=lambda: show_crop_input_popup(
+                self.root, 
+                self.crops_button,
+                scale_x_factor,
+                scale_y_factor,
+                scaled_title_font
+            )
         )
 
         if saved_crops > 0:
@@ -61,107 +338,238 @@ class MyDashboard(SC):
             num_label = ctk.CTkLabel(
                 frame,
                 text=str(saved_crops),
-                font=("Arial", 32, "bold"),
-                text_color="white",
-                fg_color="#2A2E3F"
+                font=scaled_title_font, 
+                text_color=self._get_color(TEXT_COLOR),
+                fg_color=self._get_color(BUTTON_COLOR)
             )
             num_label.pack()
             self.crops_button.number_frame = frame
         
         # Recent Disease Button
+        disease_name, date_str, time_str, image_path = recent_disease_preview()
+
+        # --- THE UPDATED SANITIZER ---
+        # We check for keywords in the raw disease_name to assign a consistent KEY
+        raw_lower = disease_name.lower()
+        
+        if "nitrogen" in raw_lower or "n deficiency" in raw_lower:
+            disease_key = "status_n_def"
+        elif "phosphorus" in raw_lower or "p deficiency" in raw_lower:
+            disease_key = "status_p_def"
+        elif "potassium" in raw_lower or "k deficiency" in raw_lower:
+            disease_key = "status_k_def"
+        elif "no disease" in raw_lower:
+            disease_key = "status_no_disease"
+        else:
+            # For specific diseases like Powdery Mildew, we use the standard sanitizer
+            clean_name = "_".join(raw_lower.split())
+            disease_key = f"status_{clean_name}"
+        
+        # Now get the translation (will return Tagalog if active, English if not)
+        translated_disease = get_text(disease_key)
+        # ---------------------------------
+
+        dynamic_text = translated_disease
+        btn_command = None 
+
+        if date_str and time_str and image_path:
+            # Use the translated disease
+            dynamic_text = f"{translated_disease}\n{date_str}\n{time_str}"
+            btn_command = lambda path=image_path: self.open_analysis_view(path)
+
+        # Inject the translated label at the bottom (Huling Sakit na Natukoy)
+        btn_text = f"{dynamic_text}\n\n{get_text('lbl_recent_disease')}\n"
         self.create_button(
-            text="Recent Disease\nDetected",
+            text=btn_text,
             x=270, y=75,
+            width=140, height=140,
             anchor="s",
-            command=None
+            command=btn_command
         )
 
-        # Manage Files Button with Image
+        # Generate Report Button with Image
         futures_photo = self.load_futures_icon()
-
         self.create_button(
-            text="Manage Files\n",
+            text=f"{get_text('btn_generate_report')}\n",
             x=422, y=75,
+            width=140, height=140,
             anchor="s",
-            command=None,
+            command=self.open_report_page,
             image=futures_photo,
-            compound="top"
+            compound="top",
         )
         
         # Analytics Button
-        self.create_button(
-            text="Analytics",
+        self.weather_button = self.create_weather_analytics_panel(
             x=121, y=232,
-            width=205, height=232,
+            width=205, height=220,
             anchor="n",
-            command=None
+            command=self.open_weather_page
         )
         
-
+        # Get Gallery Preview data
         gallery_photo, file_label = gallery_preview(self.root)
 
-        # Capture Gallery Button
-        self.create_button(
-            text="Capture Gallery",
+        # === Capture Gallery Button ===
+        gallery_scaled_y = self._scale_value(232, 'y')
+        gallery_scaled_hover_offset = self._scale_value(5, 'y')
+
+        self.gallery_button = self.create_button(
+            text="", 
             x=340, y=232,
-            width=222, height=232,
+            width=222, height=220,
             anchor="n",
-            image=gallery_photo,
-            compound="bottom",
-            command=self.open_gallery
+            command=self.open_gallery,
+            handle_hover=False, 
+            hover_color=self._get_color(BUTTON_COLOR), 
         )
+        self.gallery_button.pack_propagate(False) 
 
-        frame = ctk.CTkFrame(self.root, fg_color="#2A2E3F", corner_radius=8)
-        frame.place(x=443, y=430)  # position only, no width/height fixed
-
-        # === Label for filename (auto-sizes to text) ===
-        label = ctk.CTkLabel(
-            frame,
-            text=f"{file_label}",
-            justify="center",
-            text_color="white",
+        gallery_title_label = ctk.CTkLabel(
+            self.gallery_button,
+            text=get_text("lbl_capture_gallery"),
+            font=tuple(custom_font_bold), 
+            text_color=self._get_color(TEXT_COLOR),
+            fg_color="transparent"
         )
-        label.pack(anchor="center")  # left-align and let it auto-size
+        gallery_title_label.pack(pady=(self._scale_value(10, 'y'), 0))
+
+        gallery_image_label = None
+        if gallery_photo:
+            gallery_image_label = ctk.CTkLabel(
+                self.gallery_button,
+                text="",
+                image=gallery_photo,
+                fg_color="transparent"
+            )
+            gallery_image_label.pack(pady=(0, self._scale_value(5, 'y')), fill="both", expand=True)
+            
+        gallery_file_frame = None
+        gallery_file_label_widget = None
+        if file_label not in ("Gallery Empty", "No Images"):
+            gallery_file_frame = ctk.CTkFrame(
+                self.gallery_button, 
+                fg_color=self._get_color(BUTTON_COLOR), 
+                corner_radius = 0
+            )
+            
+            gallery_file_frame.pack(side="bottom", pady=(0, self._scale_value(5, 'y'))) 
+
+            gallery_file_label_widget = ctk.CTkLabel(
+                gallery_file_frame,
+                text=f"{file_label}",
+                justify="center",
+                font=tuple(custom_font_regular),
+                text_color=self._get_color(TEXT_COLOR),
+            )
+            gallery_file_label_widget.pack(padx=self._scale_value(5, 'x'), pady=self._scale_value(1, 'y'))
+
+        def on_gallery_enter(event):
+            self.gallery_button.place_configure(y=gallery_scaled_y - gallery_scaled_hover_offset)
+            self.gallery_button.configure(fg_color=BUTTON_HOVER)
+            gallery_title_label.configure(fg_color=BUTTON_HOVER)
+            if gallery_image_label:
+                gallery_image_label.configure(fg_color=BUTTON_HOVER) 
+            if gallery_file_frame:
+                gallery_file_frame.configure(fg_color=BUTTON_HOVER) 
+
+        def on_gallery_leave(event):
+            self.gallery_button.place_configure(y=gallery_scaled_y)
+            self.gallery_button.configure(fg_color=self._get_color(BUTTON_COLOR))
+            gallery_title_label.configure(fg_color="transparent")
+            if gallery_image_label:
+                gallery_image_label.configure(fg_color="transparent")
+            if gallery_file_frame:
+                gallery_file_frame.configure(fg_color=self._get_color(BUTTON_COLOR)) 
+
+        gallery_widgets_to_bind = [self.gallery_button, gallery_title_label]
+        
+        if gallery_image_label:
+            gallery_widgets_to_bind.append(gallery_image_label)
+        if gallery_file_frame:
+            gallery_widgets_to_bind.append(gallery_file_frame)
+        if gallery_file_label_widget:
+            gallery_widgets_to_bind.append(gallery_file_label_widget)
+
+        for widget in gallery_widgets_to_bind:
+             if widget is None: continue 
+             widget.bind("<Button-1>", lambda e, cmd=self.open_gallery: cmd() if cmd else None)
+             widget.bind("<Enter>", on_gallery_enter)
+             widget.bind("<Leave>", on_gallery_leave)
 
         # Disease Record Panel
-        self.create_panel(
-            text="\nDisease Record History",
+        disease_panel = self.create_panel(
+            text=f"\n{get_text('lbl_disease_history')}",
             x=572, y=75,
             anchor="nw",
             width=217, height=275
         )
         
+        disease_panel.configure(fg_color=self._get_color(BUTTON_COLOR))
+
+        list_width = self._scale_value(217, 'x') - self._scale_value(10, 'x')
+        list_height = self._scale_value(275, 'y') - self._scale_value(45, 'y') 
+        recent_list = RecentDiseaseList(
+            master=disease_panel,
+            width=list_width,
+            height=list_height,
+            fg_color=self._get_color(BUTTON_COLOR)
+        )
+        recent_list.pack(
+            side="bottom",
+            fill="both",
+            expand=True,
+            padx=self._scale_value(5, 'x'),
+            pady=(self._scale_value(50, 'y'), self._scale_value(5, 'y'))
+        )
+        
         # Dock Mode Button
         self.create_button(
-            text="Dock Mode",
+            text=get_text("btn_dock_mode"),
             x=572, y=368,
             width=217, height=37,
             anchor="center",
-            font=("Arial", 24, "bold"),
-            command=None
+            font=tuple(custom_font_bold),
+            command=self.open_pest_monitor
         )
         
         # Diseases Button
         self.create_button(
-            text="Diseases",
-            x=572, y=424,
+            text=get_text("btn_risk_check"), 
+            x=572, y=414,
             width=217, height=37,
             anchor="center",
-            font=("Arial", 24, "bold"),
-            command=None
+            font=tuple(custom_font_bold), 
+            command=lambda: self.predict_page("_diseases_", "Diseases") 
         )
 
-        # Help Button (rounded)
+        # Help Button
+        scaled_help_font_size = self._scale_value(20, 'y') 
+        scaled_help_font = ("Arial", scaled_help_font_size, "bold")
         self.create_button(
-            text="Help",
+            text=get_text("btn_help"),
             x=674, y=21,
             width=114, height=37,
             anchor="center",
-            font=("Arial", 20, "bold"),
+            font=scaled_help_font,
             corner_radius=50,
-            command=None
+            command=self.open_help_page
         )
 
+        self.create_battery_indicator(x=15, y=100)
+
+        # --- FIX 2: Removed the redundant self.root.after(1000, self.update_weather_data) loop trigger here ---
+    
+        self.season_label = ctk.CTkLabel(
+            self.weather_button,  
+            text="Loading Season...",
+            font=("Arial", 12), 
+            text_color=self._get_color(TEXT_COLOR)
+        )
+        
+        self.season_label.place(x=80, y=75)
+        self._update_season_indicator()
+
     def run(self):
-        """Runs the main loop for the dashboard."""
+        self.weather_update_id = self.root.after(100, self.update_weather_data)
         self.root.mainloop()

@@ -1,0 +1,1510 @@
+{
+    "capture_20251019_215053.jpg": {
+        "disease": "Downy_mildew_on_lettuce",
+        "accuracy": "74.10%",
+        "count": "2",
+        "timestamp": "Oct 19, 2025 09:50 PM"
+    },
+    "capture_20251019_215203.jpg": {
+        "disease": "Downy_mildew_on_lettuce",
+        "accuracy": "84.84%",
+        "count": "1",
+        "timestamp": "Oct 19, 2025 09:52 PM"
+    },
+    "capture_20251019_214804.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "56.70%",
+        "count": "2",
+        "timestamp": "Oct 19, 2025 09:48 PM"
+    },
+    "capture_20251019_215147.jpg": {
+        "disease": "Downy_mildew_on_lettuce",
+        "accuracy": "52.81%",
+        "count": "2",
+        "timestamp": "Oct 19, 2025 09:51 PM"
+    },
+    "pest_20251101_215645.jpg": {
+        "pest": "slug",
+        "accuracy": "81.61%",
+        "count": "1",
+        "timestamp": "Nov 01, 2025 09:56 PM"
+    },
+    "capture_20251103_172337.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "69.75%",
+        "count": "3",
+        "timestamp": "Nov 03, 2025 05:23 PM"
+    },
+    "capture_20251103_172602.jpg": {
+        "disease": "Downy_mildew_on_lettuce",
+        "accuracy": "34.68%",
+        "count": "2",
+        "timestamp": "Nov 03, 2025 05:26 PM"
+    },
+    "capture_20251103_172610.jpg": {
+        "disease": "Downy_mildew_on_lettuce",
+        "accuracy": "84.16%",
+        "count": "1",
+        "timestamp": "Nov 03, 2025 05:26 PM"
+    },
+    "capture_20251103_172626.jpg": {
+        "disease": "Downy_mildew_on_lettuce",
+        "accuracy": "57.73%",
+        "count": "1",
+        "timestamp": "Nov 03, 2025 05:26 PM"
+    },
+    "pest_20251103_172649.jpg": {
+        "pest": "slug",
+        "accuracy": "92.36%",
+        "count": "1",
+        "timestamp": "Nov 03, 2025 05:26 PM"
+    },
+    "pest_20251103_172740.jpg": {
+        "pest": "slug",
+        "accuracy": "77.61%",
+        "count": "1",
+        "timestamp": "Nov 03, 2025 05:27 PM"
+    },
+    "pest_20251112_175359.jpg": {
+        "pest": "caterpillar",
+        "accuracy": "57.13%",
+        "count": "1",
+        "timestamp": "Nov 12, 2025 05:53 PM"
+    },
+    "pest_20251112_175432.jpg": {
+        "pest": "slug",
+        "accuracy": "75.36%",
+        "count": "1",
+        "timestamp": "Nov 12, 2025 05:54 PM"
+    },
+    "capture_20251122_175335.jpg": {
+        "disease": "Bacterial",
+        "accuracy": "66.38%",
+        "count": "2",
+        "timestamp": "Nov 22, 2025 05:53 PM"
+    },
+    "capture_20251122_175401.jpg": {
+        "disease": "Bacterial",
+        "accuracy": "69.01%",
+        "count": "1",
+        "timestamp": "Nov 22, 2025 05:54 PM"
+    },
+    "capture_20251122_175422.jpg": {
+        "disease": "Bacterial",
+        "accuracy": "25.30%",
+        "count": "1",
+        "timestamp": "Nov 22, 2025 05:54 PM"
+    },
+    "capture_20251122_175434.jpg": {
+        "disease": "Bacterial",
+        "accuracy": "44.74%",
+        "count": "1",
+        "timestamp": "Nov 22, 2025 05:54 PM"
+    },
+    "capture_20251122_195649.jpg": {
+        "disease": "Bacterial",
+        "accuracy": "55.44%",
+        "count": "1",
+        "timestamp": "Nov 22, 2025 07:56 PM"
+    },
+    "capture_20260221_135428.jpg": {
+        "disease": "Bacterial",
+        "accuracy": "89.77%",
+        "count": "1",
+        "timestamp": "Feb 21, 2026 01:54 PM"
+    },
+    "capture_20260221_135510.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "69.70%",
+        "count": "2",
+        "timestamp": "Feb 21, 2026 01:55 PM"
+    },
+    "pest_20260226_003525.jpg": {
+        "pest": "caterpillar",
+        "accuracy": "44.81%",
+        "count": "1",
+        "timestamp": "Feb 26, 2026 12:35 AM"
+    },
+    "pest_20260226_003711.jpg": {
+        "pest": "caterpillar",
+        "accuracy": "34.04%",
+        "count": "2",
+        "timestamp": "Feb 26, 2026 12:37 AM"
+    },
+    "pest_20260226_004413.jpg": {
+        "pest": "caterpillar",
+        "accuracy": "56.73%",
+        "count": "1",
+        "timestamp": "Feb 26, 2026 12:44 AM"
+    },
+    "pest_20260307_193234.jpg": {
+        "pest": "aphid",
+        "accuracy": "52.41%",
+        "count": "1",
+        "timestamp": "Mar 07, 2026 07:32 PM"
+    },
+    "pest_20260307_193259.jpg": {
+        "pest": "aphid",
+        "accuracy": "81.61%",
+        "count": "7",
+        "timestamp": "Mar 07, 2026 07:32 PM"
+    },
+    "pest_20260307_193417.jpg": {
+        "pest": "aphid",
+        "accuracy": "76.10%",
+        "count": "3",
+        "timestamp": "Mar 07, 2026 07:34 PM"
+    },
+    "pest_20260307_193443.jpg": {
+        "pest": "aphid",
+        "accuracy": "82.28%",
+        "count": "8",
+        "timestamp": "Mar 07, 2026 07:34 PM"
+    },
+    "pest_20260307_193514.jpg": {
+        "pest": "aphid",
+        "accuracy": "83.73%",
+        "count": "12",
+        "timestamp": "Mar 07, 2026 07:35 PM"
+    },
+    "capture_20260308_103201.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 08, 2026 10:32 AM",
+        "is_healthy": true
+    },
+    "capture_20260310_093147.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 10, 2026 09:31 AM",
+        "is_healthy": true
+    },
+    "capture_20260310_093207.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 10, 2026 09:32 AM",
+        "is_healthy": true
+    },
+    "capture_20260310_093223.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "66.09%",
+        "count": "1",
+        "timestamp": "Mar 10, 2026 09:32 AM",
+        "is_healthy": false
+    },
+    "capture_20260310_093237.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "76.88%",
+        "count": "2",
+        "timestamp": "Mar 10, 2026 09:32 AM",
+        "is_healthy": false
+    },
+    "capture_20260310_093254.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "84.37%",
+        "count": "2",
+        "timestamp": "Mar 10, 2026 09:32 AM",
+        "is_healthy": false
+    },
+    "capture_20260310_093325.jpg": {
+        "disease": "Downy_mildew_on_lettuce",
+        "accuracy": "63.93%",
+        "count": "1",
+        "timestamp": "Mar 10, 2026 09:33 AM",
+        "is_healthy": false
+    },
+    "pest_20260310_093624.jpg": {
+        "pest": "aphid",
+        "accuracy": "85.44%",
+        "count": "10",
+        "timestamp": "Mar 10, 2026 09:36 AM"
+    },
+    "pest_20260310_093641.jpg": {
+        "pest": "aphid",
+        "accuracy": "83.43%",
+        "count": "99",
+        "timestamp": "Mar 10, 2026 09:36 AM"
+    },
+    "pest_20260310_093658.jpg": {
+        "pest": "aphid",
+        "accuracy": "85.51%",
+        "count": "47",
+        "timestamp": "Mar 10, 2026 09:36 AM"
+    },
+    "pest_20260310_093714.jpg": {
+        "pest": "aphid",
+        "accuracy": "85.28%",
+        "count": "7",
+        "timestamp": "Mar 10, 2026 09:37 AM"
+    },
+    "capture_20260316_083341.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 08:33 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_083427.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 08:34 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_090410.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:04 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_090436.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:04 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_090453.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:04 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_090522.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:05 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_090538.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:05 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_090559.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:06 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_090626.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:06 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_090739.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:07 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_090830.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:08 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_090843.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:08 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_090857.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:08 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_090904.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:09 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_090911.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:09 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_090933.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:09 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_091008.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:10 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_091152.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:11 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_091214.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:12 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_091221.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:12 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_091510.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:15 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_091609.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:16 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_091730.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:17 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_091748.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:17 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_091756.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:17 AM",
+        "is_healthy": true
+    },
+    "capture_20260316_091830.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 16, 2026 09:18 AM",
+        "is_healthy": true
+    },
+    "capture_20260317_094238.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "74.19%",
+        "count": "1",
+        "timestamp": "Mar 17, 2026 09:42 AM",
+        "is_healthy": false
+    },
+    "pest_20260318_153627.jpg": {
+        "pest": "droplets",
+        "accuracy": "73.96%",
+        "count": "6",
+        "timestamp": "Mar 18, 2026 03:36 PM"
+    },
+    "pest_20260318_153649.jpg": {
+        "pest": "droplets",
+        "accuracy": "79.87%",
+        "count": "16",
+        "timestamp": "Mar 18, 2026 03:36 PM"
+    },
+    "pest_20260318_153724.jpg": {
+        "pest": "droplets",
+        "accuracy": "85.44%",
+        "count": "6",
+        "timestamp": "Mar 18, 2026 03:37 PM"
+    },
+    "pest_20260318_153741.jpg": {
+        "pest": "droplets",
+        "accuracy": "80.46%",
+        "count": "16",
+        "timestamp": "Mar 18, 2026 03:37 PM"
+    },
+    "pest_20260318_153810.jpg": {
+        "pest": "droplets",
+        "accuracy": "54.16%",
+        "count": "5",
+        "timestamp": "Mar 18, 2026 03:38 PM"
+    },
+    "pest_20260318_153827.jpg": {
+        "pest": "droplets",
+        "accuracy": "76.73%",
+        "count": "5",
+        "timestamp": "Mar 18, 2026 03:38 PM"
+    },
+    "pest_20260318_153929.jpg": {
+        "pest": "droplets",
+        "accuracy": "88.54%",
+        "count": "18",
+        "timestamp": "Mar 18, 2026 03:39 PM"
+    },
+    "capture_20260319_121702.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "98.44%",
+        "count": "1",
+        "timestamp": "Mar 19, 2026 12:17 PM",
+        "is_healthy": false
+    },
+    "capture_20260319_122215.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "71.13%",
+        "count": "1",
+        "timestamp": "Mar 19, 2026 12:22 PM",
+        "is_healthy": false
+    },
+    "pest_20260323_001853.jpg": {
+        "pest": "droplets",
+        "accuracy": "74.66%",
+        "count": "21",
+        "timestamp": "Mar 23, 2026 12:18 AM"
+    },
+    "pest_20260323_001909.jpg": {
+        "pest": "droplets",
+        "accuracy": "75.86%",
+        "count": "19",
+        "timestamp": "Mar 23, 2026 12:19 AM"
+    },
+    "pest_20260323_001924.jpg": {
+        "pest": "droplets",
+        "accuracy": "73.83%",
+        "count": "27",
+        "timestamp": "Mar 23, 2026 12:19 AM"
+    },
+    "pest_20260323_001940.jpg": {
+        "pest": "droplets",
+        "accuracy": "71.32%",
+        "count": "26",
+        "timestamp": "Mar 23, 2026 12:19 AM"
+    },
+    "pest_20260323_001956.jpg": {
+        "pest": "droplets",
+        "accuracy": "76.46%",
+        "count": "26",
+        "timestamp": "Mar 23, 2026 12:19 AM"
+    },
+    "pest_20260323_002011.jpg": {
+        "pest": "droplets",
+        "accuracy": "74.04%",
+        "count": "27",
+        "timestamp": "Mar 23, 2026 12:20 AM"
+    },
+    "pest_20260323_002040.jpg": {
+        "pest": "droplets",
+        "accuracy": "75.72%",
+        "count": "14",
+        "timestamp": "Mar 23, 2026 12:20 AM"
+    },
+    "pest_20260323_002055.jpg": {
+        "pest": "droplets",
+        "accuracy": "71.92%",
+        "count": "21",
+        "timestamp": "Mar 23, 2026 12:20 AM"
+    },
+    "capture_20260323_002400.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "44.97%",
+        "count": "3",
+        "timestamp": "Mar 23, 2026 12:24 AM",
+        "is_healthy": false
+    },
+    "capture_20260323_002427.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "68.24%",
+        "count": "1",
+        "timestamp": "Mar 23, 2026 12:24 AM",
+        "is_healthy": false
+    },
+    "pest_20260323_002315.jpg": {
+        "pest": "droplets",
+        "accuracy": "66.05%",
+        "count": "6",
+        "timestamp": "Mar 23, 2026 12:23 AM"
+    },
+    "capture_20260323_002412.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 23, 2026 12:24 AM",
+        "is_healthy": true
+    },
+    "capture_20260323_002451.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 23, 2026 12:24 AM",
+        "is_healthy": true
+    },
+    "pest_20260323_002515.jpg": {
+        "pest": "droplets",
+        "accuracy": "68.66%",
+        "count": "16",
+        "timestamp": "Mar 23, 2026 12:25 AM"
+    },
+    "capture_20260323_002536.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 23, 2026 12:25 AM",
+        "is_healthy": true
+    },
+    "pest_20260323_002554.jpg": {
+        "pest": "droplets",
+        "accuracy": "78.96%",
+        "count": "9",
+        "timestamp": "Mar 23, 2026 12:25 AM"
+    },
+    "pest_20260323_002626.jpg": {
+        "pest": "droplets",
+        "accuracy": "67.97%",
+        "count": "12",
+        "timestamp": "Mar 23, 2026 12:26 AM"
+    },
+    "pest_20260323_002641.jpg": {
+        "pest": "droplets",
+        "accuracy": "67.81%",
+        "count": "10",
+        "timestamp": "Mar 23, 2026 12:26 AM"
+    },
+    "pest_20260323_002657.jpg": {
+        "pest": "droplets",
+        "accuracy": "71.59%",
+        "count": "10",
+        "timestamp": "Mar 23, 2026 12:26 AM"
+    },
+    "pest_20260323_002713.jpg": {
+        "pest": "droplets",
+        "accuracy": "65.64%",
+        "count": "15",
+        "timestamp": "Mar 23, 2026 12:27 AM"
+    },
+    "pest_20260323_002728.jpg": {
+        "pest": "droplets",
+        "accuracy": "68.05%",
+        "count": "12",
+        "timestamp": "Mar 23, 2026 12:27 AM"
+    },
+    "pest_20260323_002744.jpg": {
+        "pest": "droplets",
+        "accuracy": "65.05%",
+        "count": "13",
+        "timestamp": "Mar 23, 2026 12:27 AM"
+    },
+    "pest_20260323_002800.jpg": {
+        "pest": "droplets",
+        "accuracy": "73.47%",
+        "count": "11",
+        "timestamp": "Mar 23, 2026 12:28 AM"
+    },
+    "pest_20260323_002816.jpg": {
+        "pest": "droplets",
+        "accuracy": "69.40%",
+        "count": "11",
+        "timestamp": "Mar 23, 2026 12:28 AM"
+    },
+    "pest_20260323_002831.jpg": {
+        "pest": "droplets",
+        "accuracy": "65.03%",
+        "count": "11",
+        "timestamp": "Mar 23, 2026 12:28 AM"
+    },
+    "pest_20260323_002847.jpg": {
+        "pest": "droplets",
+        "accuracy": "65.70%",
+        "count": "11",
+        "timestamp": "Mar 23, 2026 12:28 AM"
+    },
+    "pest_20260323_002903.jpg": {
+        "pest": "droplets",
+        "accuracy": "71.40%",
+        "count": "15",
+        "timestamp": "Mar 23, 2026 12:29 AM"
+    },
+    "pest_20260323_002918.jpg": {
+        "pest": "droplets",
+        "accuracy": "66.39%",
+        "count": "17",
+        "timestamp": "Mar 23, 2026 12:29 AM"
+    },
+    "capture_20260325_181126.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "87.94%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 06:11 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_181312.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "91.23%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 06:13 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_181331.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "91.44%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 06:13 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_182011.jpg": {
+        "disease": "N_deficiency",
+        "accuracy": "87.50%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 06:20 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_221736.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "93.50%",
+        "count": "2",
+        "timestamp": "Mar 25, 2026 10:17 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_221755.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "89.21%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 10:17 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_222411.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "37.22%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 10:24 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_222508.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "90.78%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 10:25 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_223523.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "75.30%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 10:35 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_233706.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "41.15%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 11:37 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_233819.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "74.85%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 11:38 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_233840.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "65.64%",
+        "count": "2",
+        "timestamp": "Mar 25, 2026 11:38 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_233902.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "83.25%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 11:39 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_234117.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "87.18%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 11:41 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_234145.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "84.69%",
+        "count": "3",
+        "timestamp": "Mar 25, 2026 11:41 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_234243.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "90.65%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 11:42 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_234740.jpg": {
+        "disease": "N_deficiency",
+        "accuracy": "76.98%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 11:47 PM",
+        "is_healthy": false
+    },
+    "capture_20260325_234755.jpg": {
+        "disease": "N_deficiency",
+        "accuracy": "93.65%",
+        "count": "1",
+        "timestamp": "Mar 25, 2026 11:47 PM",
+        "is_healthy": false
+    },
+    "capture_20260326_114521.jpg": {
+        "disease": "N_deficiency",
+        "accuracy": "77.00%",
+        "count": "1",
+        "timestamp": "Mar 26, 2026 11:45 AM",
+        "is_healthy": false
+    },
+    "capture_20260326_115351.jpg": {
+        "disease": "N_deficiency",
+        "accuracy": "75.66%",
+        "count": "1",
+        "timestamp": "Mar 26, 2026 11:53 AM",
+        "is_healthy": false
+    },
+    "capture_20260326_115430.jpg": {
+        "disease": "N_deficiency",
+        "accuracy": "90.92%",
+        "count": "1",
+        "timestamp": "Mar 26, 2026 11:54 AM",
+        "is_healthy": false
+    },
+    "capture_20260326_151748.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "79.33%",
+        "count": "1",
+        "timestamp": "Mar 26, 2026 03:17 PM",
+        "is_healthy": false
+    },
+    "capture_20260326_151810.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "27.51%",
+        "count": "1",
+        "timestamp": "Mar 26, 2026 03:18 PM",
+        "is_healthy": false
+    },
+    "capture_20260326_151923.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "83.82%",
+        "count": "1",
+        "timestamp": "Mar 26, 2026 03:19 PM",
+        "is_healthy": false
+    },
+    "capture_20260326_152042.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "81.37%",
+        "count": "1",
+        "timestamp": "Mar 26, 2026 03:20 PM",
+        "is_healthy": false
+    },
+    "capture_20260326_152116.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "29.30%",
+        "count": "1",
+        "timestamp": "Mar 26, 2026 03:21 PM",
+        "is_healthy": false
+    },
+    "capture_20260327_101052.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "36.21%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:10 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101110.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "37.59%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:11 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101209.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "50.58%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:12 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101231.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "74.65%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:12 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101252.jpg": {
+        "disease": "Calcium_deficiency, Phosphorus_Deficiency",
+        "accuracy": "49.92%",
+        "count": "2",
+        "timestamp": "Mar 27, 2026 10:12 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101534.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "29.15%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:15 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101541.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:15 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_101559.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:16 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_101608.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:16 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_101630.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "70.22%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:16 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101639.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "36.18%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:16 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101705.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "56.03%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:17 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101835.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "77.42%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:18 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101849.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "76.65%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:18 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101854.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "86.06%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:18 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101906.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "78.83%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:19 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101918.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "61.73%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:19 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101928.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "86.04%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:19 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_101955.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:19 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_102015.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "47.28%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:20 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_102032.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "64.58%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:20 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_102217.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "36.67%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:22 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_102332.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "74.16%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:23 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_102349.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "53.49%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:23 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_102409.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "57.96%",
+        "count": "2",
+        "timestamp": "Mar 27, 2026 10:24 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_102427.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "43.89%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:24 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_102439.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "46.71%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:24 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_102742.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:27 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_102833.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:28 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_102851.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:28 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_102959.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "59.99%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:30 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_103130.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:31 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_103138.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "33.34%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:31 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_103250.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "80.60%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:32 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_103305.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "41.47%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:33 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_103329.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "33.71%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:33 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_103342.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "31.71%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:33 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_103533.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "55.39%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:35 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_103545.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "87.71%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:35 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_103554.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "48.71%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:35 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_103607.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "80.04%",
+        "count": "2",
+        "timestamp": "Mar 27, 2026 10:36 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_103617.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "89.61%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:36 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_103812.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:38 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_103853.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "92.15%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:38 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_103906.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "40.25%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:39 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_103916.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "51.17%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:39 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_103929.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:39 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_104001.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:40 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_104018.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "67.02%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:40 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_104422.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:44 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_104434.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "29.82%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:44 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_104450.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "36.19%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:44 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_104502.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:45 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_104512.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:45 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_104521.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "35.09%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:45 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_104706.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "91.58%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:47 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_104737.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "76.77%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:47 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_104753.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "93.14%",
+        "count": "2",
+        "timestamp": "Mar 27, 2026 10:47 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_104804.jpg": {
+        "disease": "Calcium_deficiency, Potassium_deficiency",
+        "accuracy": "36.71%",
+        "count": "2",
+        "timestamp": "Mar 27, 2026 10:48 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_104843.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "84.34%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:48 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_105148.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "Mar 27, 2026 10:51 AM",
+        "is_healthy": true
+    },
+    "capture_20260327_105524.jpg": {
+        "disease": "N_deficiency",
+        "accuracy": "95.38%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:55 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_105539.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "50.32%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:55 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_105559.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "87.05%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:56 AM",
+        "is_healthy": false
+    },
+    "capture_20260327_105606.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "75.87%",
+        "count": "1",
+        "timestamp": "Mar 27, 2026 10:56 AM",
+        "is_healthy": false
+    },
+    "capture_20260329_214928.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "67.49%",
+        "count": "2",
+        "timestamp": "Mar 29, 2026 09:49 PM",
+        "is_healthy": false
+    },
+    "capture_20260329_221431.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "92.04%",
+        "count": "1",
+        "timestamp": "Mar 29, 2026 10:14 PM",
+        "is_healthy": false
+    },
+    "pest_20260330_100755.jpg": {
+        "pest": "droplets",
+        "accuracy": "77.01%",
+        "count": "12",
+        "timestamp": "Mar 30, 2026 10:07 AM"
+    },
+    "pest_20260330_101427.jpg": {
+        "pest": "droplets",
+        "accuracy": "61.16%",
+        "count": "2",
+        "timestamp": "Mar 30, 2026 10:14 AM"
+    },
+    "capture_20260331_065841.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "88.65%",
+        "count": "1",
+        "timestamp": "Mar 31, 2026 06:58 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_065856.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "85.67%",
+        "count": "1",
+        "timestamp": "Mar 31, 2026 06:59 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_065906.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "93.44%",
+        "count": "1",
+        "timestamp": "Mar 31, 2026 06:59 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_065932.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "64.17%",
+        "count": "3",
+        "timestamp": "Mar 31, 2026 06:59 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_065952.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "55.28%",
+        "count": "1",
+        "timestamp": "Mar 31, 2026 06:59 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_070119.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "43.35%",
+        "count": "1",
+        "timestamp": "Mar 31, 2026 07:01 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_070256.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "72.69%",
+        "count": "1",
+        "timestamp": "Mar 31, 2026 07:03 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_070314.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "82.91%",
+        "count": "1",
+        "timestamp": "Mar 31, 2026 07:03 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_070325.jpg": {
+        "disease": "Calcium_deficiency",
+        "accuracy": "63.05%",
+        "count": "1",
+        "timestamp": "Mar 31, 2026 07:03 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_070354.jpg": {
+        "disease": "Magnesium_deficiency, Calcium_deficiency",
+        "accuracy": "82.54%",
+        "count": "2",
+        "timestamp": "Mar 31, 2026 07:03 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_070540.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "40.47%",
+        "count": "1",
+        "timestamp": "Mar 31, 2026 07:05 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_070616.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "69.44%",
+        "count": "1",
+        "timestamp": "Mar 31, 2026 07:06 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_070633.jpg": {
+        "disease": "N_deficiency",
+        "accuracy": "77.80%",
+        "count": "1",
+        "timestamp": "Mar 31, 2026 07:06 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_090630.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "39.80%",
+        "count": "1",
+        "timestamp": "Mar 31, 2026 09:06 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_091309.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "77.20%",
+        "count": "2",
+        "timestamp": "Mar 31, 2026 09:13 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_093653.jpg": {
+        "disease": "Magnesium_deficiency",
+        "accuracy": "81.10%",
+        "count": "1",
+        "timestamp": "Mar 31, 2026 09:36 AM",
+        "is_healthy": false
+    },
+    "capture_20260331_093713.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "31.45%",
+        "count": "1",
+        "timestamp": "Mar 31, 2026 09:37 AM",
+        "is_healthy": false
+    },
+    "capture_20260501_164853.jpg": {
+        "disease": "N_deficiency",
+        "accuracy": "67.01%",
+        "count": "1",
+        "timestamp": "May 01, 2026 04:48 PM",
+        "is_healthy": false
+    },
+    "capture_20260502_140342.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "50.29%",
+        "count": "1",
+        "timestamp": "May 02, 2026 02:03 PM",
+        "is_healthy": false
+    },
+    "capture_20260502_141207.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "May 02, 2026 02:12 PM",
+        "is_healthy": true
+    },
+    "capture_20260502_141228.jpg": {
+        "disease": "Healthy",
+        "accuracy": "N/A",
+        "count": "0",
+        "timestamp": "May 02, 2026 02:12 PM",
+        "is_healthy": true
+    },
+    "pest_20260504_074235.jpg": {
+        "pest": "aphid",
+        "accuracy": "60.68%",
+        "count": "1",
+        "timestamp": "May 04, 2026 07:42 AM"
+    },
+    "pest_20260504_074455.jpg": {
+        "pest": "aphid",
+        "accuracy": "86.20%",
+        "count": "26",
+        "timestamp": "May 04, 2026 07:44 AM"
+    },
+    "capture_20260504_075502.jpg": {
+        "disease": "Powdery_mildew_on_lettuce",
+        "accuracy": "39.24%",
+        "count": "4",
+        "timestamp": "May 04, 2026 07:55 AM",
+        "is_healthy": false
+    },
+    "capture_20260504_075731.jpg": {
+        "disease": "Phosphorus_Deficiency",
+        "accuracy": "91.71%",
+        "count": "1",
+        "timestamp": "May 04, 2026 07:57 AM",
+        "is_healthy": false
+    },
+    "capture_20260504_075900.jpg": {
+        "disease": "Potassium_deficiency",
+        "accuracy": "87.33%",
+        "count": "1",
+        "timestamp": "May 04, 2026 07:59 AM",
+        "is_healthy": false
+    },
+    "pest_20260504_080040.jpg": {
+        "pest": "aphid",
+        "accuracy": "83.60%",
+        "count": "27",
+        "timestamp": "May 04, 2026 08:00 AM"
+    }
+}
